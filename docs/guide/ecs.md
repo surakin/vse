@@ -28,7 +28,7 @@ with a Position" reads memory in order. The *archetype* is that group: all entit
 | to run logic every frame in a defined order | `ecs::Schedule`, `MakeQuerySystem`, `Build()`, `Run(world, dt)` | see "Systems and schedules"; include `ecs/schedule.h` |
 | one value shared by all systems (time, settings) | `world.SetResource(value)`, `world.Resource<T>()` | see "Resources" |
 | a parent-child transform hierarchy | `CreateTransformEntity`, `SetParent`, `MakeTransformSystem` | see "Transforms and hierarchy"; include `ecs/transform.h` |
-| entities drawn by the renderer | `scene::MeshRenderer`, `LightSource`, `MakeRenderSyncSystem` | see "Rendering"; include `scene/render_sync.h` |
+| entities drawn by the renderer | `scene::MeshRenderer`, `LightSource`, `Terrain`, `MakeRenderSyncSystem`, `MakeTerrainSyncSystem` | see "Rendering"; include `scene/render_sync.h` |
 | to react to a component being removed | `kTrackRemoval`, `world.RemovedCount<T>()` / `RemovedAt<T>(i)` | see "Removal tracking" |
 | to check the world's consistency | `world.Validate()` | for tests and debug builds |
 
@@ -596,7 +596,7 @@ or removing the component, appends an entry with the entity, the value at that m
 Include `scene/render_sync.h` and link `scene` (module `engine/scene`, above `ecs` and `renderer`; neither includes it). It mirrors entities into a `renderer::RenderScene`, which is unchanged.
 
 - **Components.** `scene::MeshRenderer { renderer::GpuMeshPtr mesh; u32 material; u32 flags; }` with the `WorldTransform` draws a mesh; the mesh is shared by every entity that draws it
-  (prepare its upload barriers and `MarkReady` it, as for any mesh). `scene::LightSource` makes a light (a point light at the entity's position, a directional one pointing along
+  (prepare its upload barriers and `MarkReady` it, as for any mesh). `scene::Terrain` (a shared `renderer::TerrainSource` and a `TerrainMaterial`) draws a height map at the entity's `WorldTransform`, which must be a translation and a turn about y; `MakeTerrainSyncSystem` mirrors it into the render scene (adds it, replaces it when the source, the material, the placement or the `Hidden` tag changes, removes it when the component or the entity goes) and counts a missing source or a scaled or tilted placement as `invalid`. A world may hold several terrains. `scene::LightSource` makes a light (a point light at the entity's position, a directional one pointing along
   its `direction` turned by the entity's rotation). The `scene::Hidden` tag sets `ObjectFlags::kHidden`. An entity mirrors a mesh or a light, not both.
 - **The system.** `MakeRenderSyncSystem(name)` in `ecs::kRender` needs the resources `SceneLink { RenderScene* }` and `SceneSyncReport`. It keeps a `RenderHandle` (the object and light ids, with removal
   tracking) on each mirrored entity and calls the scene only for what changed: `AddObject` for new entities, `SetTransform` when the matrix differs from the scene's, `SetFlags`, a remove and add

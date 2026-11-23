@@ -98,7 +98,7 @@ void TerrainPass::Build()
     cs.debug_name = "terrain splat";
     clamp_sampler_ = device->CreateSampler(cs);
     rhi::BufferDesc pb;
-    pb.size = kParamsRegionBytes * FrameResources::kSlots;
+    pb.size = kParamsRegionBytes * kMaxTerrainsPerFrame * FrameResources::kSlots;
     pb.usage = rhi::BufferUsage::Uniform;
     pb.location = rhi::MemoryLocation::CpuToGpu;
     pb.debug_name = "terrain material";
@@ -185,8 +185,7 @@ void TerrainPass::Release()
     }
     fallback_layers_.Reset();
     fallback_splat_.Reset();
-    layers_.Reset();
-    splat_.Reset();
+    entries_.Clear();
     if (pipeline_.IsValid())
     {
         device_->DestroyPipeline(pipeline_);
@@ -219,7 +218,6 @@ void TerrainPass::Release()
     fragment_ = {};
     vertex_ = {};
     frame_group_ = {};
-    draw_ = false;
 }
 
 bool TerrainPass::Recreate(rhi::Device* device)
@@ -235,31 +233,61 @@ bool TerrainPass::Recreate(rhi::Device* device)
 
 void TerrainPass::Clear()
 {
-    draw_ = false;
+    entries_.Clear();
+    tile_cursor_ = 0;
     tile_count_ = 0;
-    height_.Reset();
-    layers_.Reset();
-    splat_.Reset();
+}
+
+void TerrainPass::BeginFrame(u64 frame_index)
+{
+    Clear();
+    slot_ = static_cast<u32>(frame_index % FrameResources::kSlots);
 }
 
 void TerrainPass::Prepare(const TerrainDraw& draw, Span<const TerrainTile> tiles, u64 frame_index)
 {
-    Clear();
+    BeginFrame(frame_index);
+    Add(draw, tiles);
+}
+
+bool TerrainPass::Add(const TerrainDraw& draw, Span<const TerrainTile> tiles)
+{
     if (!pipeline_.IsValid() || tile_mapped_ == nullptr || !draw.height || !draw.height->Valid() ||
         draw.height->Desc().format != rhi::Format::R16_UNorm ||
         draw.height->Desc().dimension != rhi::TextureDimension::Tex2D || tiles.Size() == 0 || draw.samples_x < 2 ||
-        draw.samples_z < 2 || !(draw.cell_size > 0.0f))
+        draw.samples_z < 2 || !(draw.cell_size > 0.0f) || entries_.Size() >= kMaxTerrainsPerFrame)
     {
-        return;
+        return false;
     }
-    u32 count = static_cast<u32>(tiles.Size());
-    if (count > kMaxTerrainDrawTiles)
+    if (tile_cursor_ >= kMaxTerrainDrawTiles)
     {
         RenderLog(LogVerbosity::Warn, "TerrainPass: more tiles than the frame holds; the farthest are not drawn");
-        count = kMaxTerrainDrawTiles;
+        return false;
     }
-    slot_ = static_cast<u32>(frame_index % FrameResources::kSlots);
-    byte* base = tile_mapped_ + kTileRegionBytes * slot_;
+    u32 count = static_cast<u32>(tiles.Size());
+    if (count > kMaxTerrainDrawTiles - tile_cursor_)
+    {
+        RenderLog(LogVerbosity::Warn, "TerrainPass: more tiles than the frame holds; the farthest are not drawn");
+        count = kMaxTerrainDrawTiles - tile_cursor_;
+    }
+    const char* invalid = TerrainMaterialInvalid(draw.material);
+    if (invalid != nullptr)
+    {
+        RenderLog(LogVerbosity::Warn, "TerrainPass: the terrain material is invalid; the default material is drawn");
+    }
+    const TerrainMaterial fallback_material;
+    const TerrainMaterial& mat = invalid == nullptr ? draw.material : fallback_material;
+    Entry entry;
+    entry.height = draw.height;
+    entry.layers = mat.layer_array ? mat.layer_array : fallback_layers_;
+    entry.splat = mat.splat ? mat.splat : fallback_splat_;
+    if (!entry.layers->Valid() || !entry.splat->Valid())
+    {
+        return false;
+    }
+    entry.first_tile = tile_cursor_;
+    entry.tile_count = count;
+    byte* base = tile_mapped_ + kTileRegionBytes * slot_ + static_cast<usize>(tile_cursor_) * kTileInstanceBytes;
     for (u32 i = 0; i < count; ++i)
     {
         const f32 size = static_cast<f32>(kTerrainTileCells << tiles[i].level) * draw.cell_size;
@@ -268,36 +296,25 @@ void TerrainPass::Prepare(const TerrainDraw& draw, Span<const TerrainTile> tiles
         const f32 instance[8] = {origin_x, origin_z, size, static_cast<f32>(tiles[i].level), 0.0f, 0.0f, 0.0f, 0.0f};
         MemCopy(base + static_cast<usize>(i) * kTileInstanceBytes, instance, sizeof(instance));
     }
-    device_->FlushMappedBuffer(tile_buffer_, kTileRegionBytes * slot_, static_cast<u64>(count) * kTileInstanceBytes);
-    tile_count_ = count;
-    height_ = draw.height;
+    device_->FlushMappedBuffer(tile_buffer_,
+                               kTileRegionBytes * slot_ + static_cast<u64>(tile_cursor_) * kTileInstanceBytes,
+                               static_cast<u64>(count) * kTileInstanceBytes);
+    // the next terrain's tiles start at a multiple of 8 instances: a storage buffer range starts at an aligned offset
+    tile_cursor_ += (count + 7u) & ~7u;
+    tile_count_ += count;
     for (u32 i = 0; i < 16; ++i)
     {
-        push_.world[i] = draw.world.col[i / 4][i % 4];
+        entry.push.world[i] = draw.world.col[i / 4][i % 4];
     }
-    push_.grid[0] = draw.cell_size;
-    push_.grid[1] = draw.range_min;
-    push_.grid[2] = draw.range_max - draw.range_min;
-    push_.grid[3] = static_cast<f32>(draw.height->Desc().mip_levels);
-    push_.texture[0] = static_cast<f32>(draw.samples_x);
-    push_.texture[1] = static_cast<f32>(draw.samples_z);
-    push_.texture[2] = draw.select.first_range;
-    push_.texture[3] = draw.select.morph_fraction;
-    push_.spare[0] = push_.spare[1] = push_.spare[2] = push_.spare[3] = 0.0f;
-    const char* invalid = TerrainMaterialInvalid(draw.material);
-    if (invalid != nullptr)
-    {
-        RenderLog(LogVerbosity::Warn, "TerrainPass: the terrain material is invalid; the default material is drawn");
-    }
-    const TerrainMaterial fallback_material;
-    const TerrainMaterial& mat = invalid == nullptr ? draw.material : fallback_material;
-    layers_ = mat.layer_array ? mat.layer_array : fallback_layers_;
-    splat_ = mat.splat ? mat.splat : fallback_splat_;
-    if (!layers_->Valid() || !splat_->Valid())
-    {
-        Clear();
-        return;
-    }
+    entry.push.grid[0] = draw.cell_size;
+    entry.push.grid[1] = draw.range_min;
+    entry.push.grid[2] = draw.range_max - draw.range_min;
+    entry.push.grid[3] = static_cast<f32>(draw.height->Desc().mip_levels);
+    entry.push.texture[0] = static_cast<f32>(draw.samples_x);
+    entry.push.texture[1] = static_cast<f32>(draw.samples_z);
+    entry.push.texture[2] = draw.select.first_range;
+    entry.push.texture[3] = draw.select.morph_fraction;
+    entry.push.spare[0] = entry.push.spare[1] = entry.push.spare[2] = entry.push.spare[3] = 0.0f;
     f32 block[32] = {};
     for (u32 i = 0; i < kMaxTerrainLayers; ++i)
     {
@@ -314,18 +331,20 @@ void TerrainPass::Prepare(const TerrainDraw& draw, Span<const TerrainTile> tiles
     block[27] = static_cast<f32>(mat.layer_count);
     block[28] = mat.fade_start;
     block[29] = mat.fade_end;
-    block[30] = static_cast<f32>(layers_->Desc().mip_levels - 1);
-    block[31] = static_cast<f32>(layers_->Desc().array_layers - 1);
-    MemCopy(params_mapped_ + kParamsRegionBytes * slot_, block, sizeof(block));
-    device_->FlushMappedBuffer(params_buffer_, kParamsRegionBytes * slot_, sizeof(block));
-    draw_ = true;
+    block[30] = static_cast<f32>(entry.layers->Desc().mip_levels - 1);
+    block[31] = static_cast<f32>(entry.layers->Desc().array_layers - 1);
+    entry.params_offset = kParamsRegionBytes * (static_cast<u64>(slot_) * kMaxTerrainsPerFrame + entries_.Size());
+    MemCopy(params_mapped_ + entry.params_offset, block, sizeof(block));
+    device_->FlushMappedBuffer(params_buffer_, entry.params_offset, sizeof(block));
+    entries_.Push(Move(entry));
     frame_group_ = materials_->FrameBindGroup(frame_->FrameRegion());
+    return true;
 }
 
 bool TerrainPass::AddToGraph(RenderGraph* graph, const GBufferTargets& targets)
 {
     ENGINE_ASSERT(graph != nullptr, "TerrainPass::AddToGraph: graph is null");
-    if (!draw_ || tile_count_ == 0)
+    if (entries_.Size() == 0)
     {
         return false;
     }
@@ -342,39 +361,12 @@ bool TerrainPass::AddToGraph(RenderGraph* graph, const GBufferTargets& targets)
 void TerrainPass::Record(const PassExecuteContext& context, void* user)
 {
     TerrainPass* self = static_cast<TerrainPass*>(user);
-    if (!self->pipeline_.IsValid() || !self->frame_group_.IsValid() || !self->height_ || !self->height_->Valid() ||
-        !self->layers_ || !self->layers_->Valid() || !self->splat_ || !self->splat_->Valid())
+    if (!self->pipeline_.IsValid() || !self->frame_group_.IsValid())
     {
-        RenderLog(LogVerbosity::Error, "TerrainPass: the pipeline, the frame group or the height texture is missing");
+        RenderLog(LogVerbosity::Error, "TerrainPass: the pipeline or the frame group is missing");
         return;
     }
     const rhi::TextureDesc& desc = context.graph->TextureDescOf(self->targets_.albedo);
-    rhi::BindGroupEntry e[8];
-    e[0].binding = 0;
-    e[0].buffer = self->tile_buffer_;
-    e[0].offset = kTileRegionBytes * self->slot_;
-    e[0].size = kTileRegionBytes;
-    e[1].binding = 1;
-    e[1].texture = self->height_->Handle();  // read now: a reset may have remade it
-    e[2].binding = 2;
-    e[2].sampler = self->sampler_;
-    e[3].binding = 3;
-    e[3].buffer = self->params_buffer_;
-    e[3].offset = kParamsRegionBytes * self->slot_;
-    e[3].size = kParamsRegionBytes;
-    e[4].binding = 4;
-    e[4].texture = self->splat_->Handle();
-    e[5].binding = 5;
-    e[5].texture = self->layers_->Handle();
-    e[6].binding = 6;
-    e[6].sampler = self->repeat_sampler_;
-    e[7].binding = 7;
-    e[7].sampler = self->clamp_sampler_;
-    rhi::BindGroupDesc gd;
-    gd.layout = self->layout_;
-    gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 8);
-    gd.transient = true;
-    const rhi::BindGroupHandle group = self->device_->CreateBindGroup(gd);
     rhi::RenderingDesc rd;
     rd.color_count = 4;
     rd.color[0].texture = context.graph->ResolvedTexture(self->targets_.albedo);
@@ -396,9 +388,43 @@ void TerrainPass::Record(const PassExecuteContext& context, void* user)
         rhi::Viewport{0.0f, 0.0f, static_cast<f32>(desc.width), static_cast<f32>(desc.height), 0.0f, 1.0f});
     list->SetScissor(rhi::ScissorRect{0, 0, desc.width, desc.height});
     list->SetBindGroup(kFrameSet, self->frame_group_);
-    list->SetBindGroup(1, group);
-    list->SetPushConstants(0, &self->push_, sizeof(Push));
-    list->Draw(kTerrainTileCells * kTerrainTileCells * 6, self->tile_count_, 0, 0);
+    for (const Entry& entry : self->entries_)
+    {
+        if (!entry.height->Valid() || !entry.layers->Valid() || !entry.splat->Valid())
+        {
+            RenderLog(LogVerbosity::Error, "TerrainPass: a terrain texture is missing; the terrain is not drawn");
+            continue;
+        }
+        rhi::BindGroupEntry e[8];
+        e[0].binding = 0;
+        e[0].buffer = self->tile_buffer_;
+        e[0].offset = kTileRegionBytes * self->slot_ + static_cast<u64>(entry.first_tile) * kTileInstanceBytes;
+        e[0].size = static_cast<u64>(entry.tile_count) * kTileInstanceBytes;
+        e[1].binding = 1;
+        e[1].texture = entry.height->Handle();  // read now: a reset may have remade it
+        e[2].binding = 2;
+        e[2].sampler = self->sampler_;
+        e[3].binding = 3;
+        e[3].buffer = self->params_buffer_;
+        e[3].offset = entry.params_offset;
+        e[3].size = kParamsRegionBytes;
+        e[4].binding = 4;
+        e[4].texture = entry.splat->Handle();
+        e[5].binding = 5;
+        e[5].texture = entry.layers->Handle();
+        e[6].binding = 6;
+        e[6].sampler = self->repeat_sampler_;
+        e[7].binding = 7;
+        e[7].sampler = self->clamp_sampler_;
+        rhi::BindGroupDesc gd;
+        gd.layout = self->layout_;
+        gd.entries = rhi::Span<rhi::BindGroupEntry>(e, 8);
+        gd.transient = true;
+        const rhi::BindGroupHandle group = self->device_->CreateBindGroup(gd);
+        list->SetBindGroup(1, group);
+        list->SetPushConstants(0, &entry.push, sizeof(Push));
+        list->Draw(kTerrainTileCells * kTerrainTileCells * 6, entry.tile_count, 0, 0);
+    }
     list->EndRendering();
 }
 

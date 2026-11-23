@@ -5188,6 +5188,26 @@ The texture shares the view's bytes, so a device reset uploads it again from the
 | Fails | returns false, leaving `*out` empty, for an empty view or when the device refuses the texture. |
 | Ownership | shares the view's bytes; `*out` is written. |
 
+## `MakeTerrainSource(rhi::Device*,const HeightMapView&,renderer::DeviceResources*,renderer::TerrainSourcePtr*)` {#asset-maketerrainsource-rhi-device-star-const-heightmapview-amp-renderer-deviceresources-star-renderer-terrainsourceptr-star}
+
+`function asset::MakeTerrainSource` — defined in `engine/asset/gpu_loaders.h`
+
+```cpp
+bool MakeTerrainSource(rhi::Device* device, const HeightMapView& view, renderer::DeviceResources* resources, renderer::TerrainSourcePtr* out);
+```
+
+Makes the renderer's data of a height map: the quadtree and the height texture ([`asset::MakeHeightTexture`](#asset-makeheighttexture-rhi-device-star-const-heightmapview-amp-renderer-deviceresources-star-renderer-gputextureptr-star)).
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device. |
+| Parameter `view` | an open height map. |
+| Parameter `resources` | the registry the texture registers with, or null. |
+| Parameter `out` | set to the source on success. |
+| Returns | true on success. |
+| Fails | returns false, leaving `*out` empty, for an empty view, a map the quadtree refuses, or when the device refuses the texture. |
+| Ownership | shares the view's bytes through the texture; `*out` is written. |
+
 ## `kFallbackMeshId` {#asset-kfallbackmeshid}
 
 `variable asset::kFallbackMeshId` — defined in `engine/asset/gpu_loaders.h`

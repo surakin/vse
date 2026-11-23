@@ -11,6 +11,7 @@
 #include "renderer/gbuffer.h"
 #include "renderer/material.h"
 #include "renderer/mesh.h"
+#include "renderer/terrain_source.h"
 #include "renderer/texture.h"
 
 namespace vse::asset
@@ -126,6 +127,19 @@ template <> struct ResourceTraits<GpuMaterialAsset>
 /// - Ownership: shares the view's bytes; `*out` is written.
 bool MakeHeightTexture(rhi::Device* device, const HeightMapView& view, renderer::DeviceResources* resources,
                        renderer::GpuTexturePtr* out);
+
+/// Makes the renderer's data of a height map: the quadtree and the height texture ([[asset::MakeHeightTexture]]).
+///
+/// - Param device: the device.
+/// - Param view: an open height map.
+/// - Param resources: the registry the texture registers with, or null.
+/// - Param out: set to the source on success.
+/// - Returns: true on success.
+/// - Fails: returns false, leaving `*out` empty, for an empty view, a map the quadtree refuses, or when the device
+///   refuses the texture.
+/// - Ownership: shares the view's bytes through the texture; `*out` is written.
+bool MakeTerrainSource(rhi::Device* device, const HeightMapView& view, renderer::DeviceResources* resources,
+                       renderer::TerrainSourcePtr* out);
 
 /// The ids of the fallback resources ([[asset::RegisterGpuFallbacks]]); they are in no mount.
 inline constexpr u64 kFallbackMeshId = 0xfa11bac000000001ull;      ///< The unit cube.

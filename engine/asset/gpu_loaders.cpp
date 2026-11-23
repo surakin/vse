@@ -467,4 +467,28 @@ bool MakeHeightTexture(rhi::Device* device, const HeightMapView& view, renderer:
     return true;
 }
 
+bool MakeTerrainSource(rhi::Device* device, const HeightMapView& view, renderer::DeviceResources* resources,
+                       renderer::TerrainSourcePtr* out)
+{
+    out->Reset();
+    if (device == nullptr || view.Bytes() == nullptr || view.MipCount() == 0)
+    {
+        return false;
+    }
+    renderer::TerrainSourcePtr source = MakeShared<renderer::TerrainSource>();
+    renderer::TerrainTilesDesc desc;
+    view.MakeTilesDesc(&desc);
+    if (!source->tiles.Build(desc) || !MakeHeightTexture(device, view, resources, &source->height))
+    {
+        return false;
+    }
+    source->samples_x = view.Header().width;
+    source->samples_z = view.Header().height;
+    source->cell_size = view.Header().cell_size;
+    source->range_min = view.Header().range_min;
+    source->range_max = view.Header().range_max;
+    *out = source;
+    return true;
+}
+
 }  // namespace vse::asset

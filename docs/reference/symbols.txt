@@ -7748,46 +7748,47 @@ asset::FilesystemBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-fi
 asset::FilesystemBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-filesystembackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/filesystem_backend.h:67
 asset::FilesystemBackend::ReadTable(ResourceTable*)	function	asset	asset-filesystembackend-readtable-resourcetable-star	asset.md	engine/asset/filesystem_backend.h:68
 asset::FilesystemBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-filesystembackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/filesystem_backend.h:69
-asset::GpuAssetContext	struct	asset	asset-gpuassetcontext	asset.md	engine/asset/gpu_loaders.h:24
-asset::GpuAssetContext::device	variable	asset	asset-gpuassetcontext-device	asset.md	engine/asset/gpu_loaders.h:26
-asset::GpuAssetContext::resources	variable	asset	asset-gpuassetcontext-resources	asset.md	engine/asset/gpu_loaders.h:27
-asset::GpuAssetContext::materials	variable	asset	asset-gpuassetcontext-materials	asset.md	engine/asset/gpu_loaders.h:28
-asset::GpuAssetContext::templates	variable	asset	asset-gpuassetcontext-templates	asset.md	engine/asset/gpu_loaders.h:29
-asset::GpuMeshAsset	struct	asset	asset-gpumeshasset	asset.md	engine/asset/gpu_loaders.h:39
-asset::GpuMeshAsset::view	variable	asset	asset-gpumeshasset-view	asset.md	engine/asset/gpu_loaders.h:41
-asset::GpuMeshAsset::bytes	variable	asset	asset-gpumeshasset-bytes	asset.md	engine/asset/gpu_loaders.h:42
-asset::GpuMeshAsset::geometry	variable	asset	asset-gpumeshasset-geometry	asset.md	engine/asset/gpu_loaders.h:43
-asset::GpuMeshAsset::mesh	variable	asset	asset-gpumeshasset-mesh	asset.md	engine/asset/gpu_loaders.h:44
-asset::GpuTextureAsset	struct	asset	asset-gputextureasset	asset.md	engine/asset/gpu_loaders.h:52
-asset::GpuTextureAsset::view	variable	asset	asset-gputextureasset-view	asset.md	engine/asset/gpu_loaders.h:54
-asset::GpuTextureAsset::bytes	variable	asset	asset-gputextureasset-bytes	asset.md	engine/asset/gpu_loaders.h:55
-asset::GpuTextureAsset::texture	variable	asset	asset-gputextureasset-texture	asset.md	engine/asset/gpu_loaders.h:56
-asset::GpuMaterial	struct	asset	asset-gpumaterial	asset.md	engine/asset/gpu_loaders.h:66
-asset::GpuMaterial::GpuMaterial()	function	asset	asset-gpumaterial-gpumaterial	asset.md	engine/asset/gpu_loaders.h:68
-asset::GpuMaterial::GpuMaterial(const GpuMaterial&)	function	asset	asset-gpumaterial-gpumaterial-const-gpumaterial-amp	asset.md	engine/asset/gpu_loaders.h:69
-asset::GpuMaterial::operator=(const GpuMaterial&)	function	asset	asset-gpumaterial-operator-eq-const-gpumaterial-amp	asset.md	engine/asset/gpu_loaders.h:70
-asset::GpuMaterial::~GpuMaterial()	function	asset	asset-gpumaterial-tilde-gpumaterial	asset.md	engine/asset/gpu_loaders.h:72
-asset::GpuMaterial::materials	variable	asset	asset-gpumaterial-materials	asset.md	engine/asset/gpu_loaders.h:74
-asset::GpuMaterial::id	variable	asset	asset-gpumaterial-id	asset.md	engine/asset/gpu_loaders.h:75
-asset::GpuMaterial::flags	variable	asset	asset-gpumaterial-flags	asset.md	engine/asset/gpu_loaders.h:76
-asset::GpuMaterialPtr	alias	asset	asset-gpumaterialptr	asset.md	engine/asset/gpu_loaders.h:80
-asset::GpuMaterialAsset	struct	asset	asset-gpumaterialasset	asset.md	engine/asset/gpu_loaders.h:86
-asset::GpuMaterialAsset::material	variable	asset	asset-gpumaterialasset-material	asset.md	engine/asset/gpu_loaders.h:88
-asset::ResourceTraits<GpuMeshAsset>	struct	asset	asset-resourcetraits-lt-gpumeshasset-gt	asset.md	engine/asset/gpu_loaders.h:94
-asset::ResourceTraits<GpuMeshAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:96
-asset::ResourceTraits<GpuMeshAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:97
-asset::ResourceTraits<GpuTextureAsset>	struct	asset	asset-resourcetraits-lt-gputextureasset-gt	asset.md	engine/asset/gpu_loaders.h:102
-asset::ResourceTraits<GpuTextureAsset>::kType	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:104
-asset::ResourceTraits<GpuTextureAsset>::kKind	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:105
-asset::ResourceTraits<GpuMaterialAsset>	struct	asset	asset-resourcetraits-lt-gpumaterialasset-gt	asset.md	engine/asset/gpu_loaders.h:110
-asset::ResourceTraits<GpuMaterialAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:112
-asset::ResourceTraits<GpuMaterialAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:113
-asset::MakeHeightTexture(rhi::Device*,const HeightMapView&,renderer::DeviceResources*,renderer::GpuTexturePtr*)	function	asset	asset-makeheighttexture-rhi-device-star-const-heightmapview-amp-renderer-deviceresources-star-renderer-gputextureptr-star	asset.md	engine/asset/gpu_loaders.h:127
-asset::kFallbackMeshId	variable	asset	asset-kfallbackmeshid	asset.md	engine/asset/gpu_loaders.h:131
-asset::kFallbackTextureId	variable	asset	asset-kfallbacktextureid	asset.md	engine/asset/gpu_loaders.h:132
-asset::kFallbackMaterialId	variable	asset	asset-kfallbackmaterialid	asset.md	engine/asset/gpu_loaders.h:133
-asset::RegisterGpuFallbacks(ResourceManager*)	function	asset	asset-registergpufallbacks-resourcemanager-star	asset.md	engine/asset/gpu_loaders.h:143
-asset::RegisterGpuLoaders(ResourceManager*,GpuAssetContext*)	function	asset	asset-registergpuloaders-resourcemanager-star-gpuassetcontext-star	asset.md	engine/asset/gpu_loaders.h:153
+asset::GpuAssetContext	struct	asset	asset-gpuassetcontext	asset.md	engine/asset/gpu_loaders.h:25
+asset::GpuAssetContext::device	variable	asset	asset-gpuassetcontext-device	asset.md	engine/asset/gpu_loaders.h:27
+asset::GpuAssetContext::resources	variable	asset	asset-gpuassetcontext-resources	asset.md	engine/asset/gpu_loaders.h:28
+asset::GpuAssetContext::materials	variable	asset	asset-gpuassetcontext-materials	asset.md	engine/asset/gpu_loaders.h:29
+asset::GpuAssetContext::templates	variable	asset	asset-gpuassetcontext-templates	asset.md	engine/asset/gpu_loaders.h:30
+asset::GpuMeshAsset	struct	asset	asset-gpumeshasset	asset.md	engine/asset/gpu_loaders.h:40
+asset::GpuMeshAsset::view	variable	asset	asset-gpumeshasset-view	asset.md	engine/asset/gpu_loaders.h:42
+asset::GpuMeshAsset::bytes	variable	asset	asset-gpumeshasset-bytes	asset.md	engine/asset/gpu_loaders.h:43
+asset::GpuMeshAsset::geometry	variable	asset	asset-gpumeshasset-geometry	asset.md	engine/asset/gpu_loaders.h:44
+asset::GpuMeshAsset::mesh	variable	asset	asset-gpumeshasset-mesh	asset.md	engine/asset/gpu_loaders.h:45
+asset::GpuTextureAsset	struct	asset	asset-gputextureasset	asset.md	engine/asset/gpu_loaders.h:53
+asset::GpuTextureAsset::view	variable	asset	asset-gputextureasset-view	asset.md	engine/asset/gpu_loaders.h:55
+asset::GpuTextureAsset::bytes	variable	asset	asset-gputextureasset-bytes	asset.md	engine/asset/gpu_loaders.h:56
+asset::GpuTextureAsset::texture	variable	asset	asset-gputextureasset-texture	asset.md	engine/asset/gpu_loaders.h:57
+asset::GpuMaterial	struct	asset	asset-gpumaterial	asset.md	engine/asset/gpu_loaders.h:67
+asset::GpuMaterial::GpuMaterial()	function	asset	asset-gpumaterial-gpumaterial	asset.md	engine/asset/gpu_loaders.h:69
+asset::GpuMaterial::GpuMaterial(const GpuMaterial&)	function	asset	asset-gpumaterial-gpumaterial-const-gpumaterial-amp	asset.md	engine/asset/gpu_loaders.h:70
+asset::GpuMaterial::operator=(const GpuMaterial&)	function	asset	asset-gpumaterial-operator-eq-const-gpumaterial-amp	asset.md	engine/asset/gpu_loaders.h:71
+asset::GpuMaterial::~GpuMaterial()	function	asset	asset-gpumaterial-tilde-gpumaterial	asset.md	engine/asset/gpu_loaders.h:73
+asset::GpuMaterial::materials	variable	asset	asset-gpumaterial-materials	asset.md	engine/asset/gpu_loaders.h:75
+asset::GpuMaterial::id	variable	asset	asset-gpumaterial-id	asset.md	engine/asset/gpu_loaders.h:76
+asset::GpuMaterial::flags	variable	asset	asset-gpumaterial-flags	asset.md	engine/asset/gpu_loaders.h:77
+asset::GpuMaterialPtr	alias	asset	asset-gpumaterialptr	asset.md	engine/asset/gpu_loaders.h:81
+asset::GpuMaterialAsset	struct	asset	asset-gpumaterialasset	asset.md	engine/asset/gpu_loaders.h:87
+asset::GpuMaterialAsset::material	variable	asset	asset-gpumaterialasset-material	asset.md	engine/asset/gpu_loaders.h:89
+asset::ResourceTraits<GpuMeshAsset>	struct	asset	asset-resourcetraits-lt-gpumeshasset-gt	asset.md	engine/asset/gpu_loaders.h:95
+asset::ResourceTraits<GpuMeshAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:97
+asset::ResourceTraits<GpuMeshAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:98
+asset::ResourceTraits<GpuTextureAsset>	struct	asset	asset-resourcetraits-lt-gputextureasset-gt	asset.md	engine/asset/gpu_loaders.h:103
+asset::ResourceTraits<GpuTextureAsset>::kType	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:105
+asset::ResourceTraits<GpuTextureAsset>::kKind	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:106
+asset::ResourceTraits<GpuMaterialAsset>	struct	asset	asset-resourcetraits-lt-gpumaterialasset-gt	asset.md	engine/asset/gpu_loaders.h:111
+asset::ResourceTraits<GpuMaterialAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:113
+asset::ResourceTraits<GpuMaterialAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:114
+asset::MakeHeightTexture(rhi::Device*,const HeightMapView&,renderer::DeviceResources*,renderer::GpuTexturePtr*)	function	asset	asset-makeheighttexture-rhi-device-star-const-heightmapview-amp-renderer-deviceresources-star-renderer-gputextureptr-star	asset.md	engine/asset/gpu_loaders.h:128
+asset::MakeTerrainSource(rhi::Device*,const HeightMapView&,renderer::DeviceResources*,renderer::TerrainSourcePtr*)	function	asset	asset-maketerrainsource-rhi-device-star-const-heightmapview-amp-renderer-deviceresources-star-renderer-terrainsourceptr-star	asset.md	engine/asset/gpu_loaders.h:141
+asset::kFallbackMeshId	variable	asset	asset-kfallbackmeshid	asset.md	engine/asset/gpu_loaders.h:145
+asset::kFallbackTextureId	variable	asset	asset-kfallbacktextureid	asset.md	engine/asset/gpu_loaders.h:146
+asset::kFallbackMaterialId	variable	asset	asset-kfallbackmaterialid	asset.md	engine/asset/gpu_loaders.h:147
+asset::RegisterGpuFallbacks(ResourceManager*)	function	asset	asset-registergpufallbacks-resourcemanager-star	asset.md	engine/asset/gpu_loaders.h:157
+asset::RegisterGpuLoaders(ResourceManager*,GpuAssetContext*)	function	asset	asset-registergpuloaders-resourcemanager-star-gpuassetcontext-star	asset.md	engine/asset/gpu_loaders.h:167
 asset::kHeightMapHeaderBytes	variable	asset	asset-kheightmapheaderbytes	asset.md	engine/asset/height_map.h:35
 asset::kMinHeightMapSide	variable	asset	asset-kminheightmapside	asset.md	engine/asset/height_map.h:37
 asset::kMaxHeightMapSide	variable	asset	asset-kmaxheightmapside	asset.md	engine/asset/height_map.h:39
@@ -9778,39 +9779,45 @@ storage::WorldStorage::SaveAsync(jobs::Scheduler&,ecs::World&,KeyIndex&,const Sa
 storage::WorldStorage::LoadAsync(jobs::Scheduler&,const LoadOptions&,UniquePtr<AsyncLoad>*)	function	storage	storage-worldstorage-loadasync-jobs-scheduler-amp-const-loadoptions-amp-uniqueptr-lt-asyncload-gt-star	storage.md	engine/storage/world_storage.h:117
 storage::WorldStorage::Delete(Span<const EntityKey>)	function	storage	storage-worldstorage-delete-span-lt-const-entitykey-gt	storage.md	engine/storage/world_storage.h:124
 storage::WorldStorage::List(const KeyRange&,usize,Vector<EntityKey>*) const	function	storage	storage-worldstorage-list-const-keyrange-amp-usize-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/world_storage.h:132
-scene::kMaxSlotMaterials	variable	scene	scene-kmaxslotmaterials	scene.md	engine/scene/components.h:19
-scene::kInheritMaterial	variable	scene	scene-kinheritmaterial	scene.md	engine/scene/components.h:21
-scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:30
-scene::MeshRenderer::mesh	variable	scene	scene-meshrenderer-mesh	scene.md	engine/scene/components.h:33
-scene::MeshRenderer::material	variable	scene	scene-meshrenderer-material	scene.md	engine/scene/components.h:35
-scene::MeshRenderer::flags	variable	scene	scene-meshrenderer-flags	scene.md	engine/scene/components.h:37
-scene::MeshRenderer::slot_materials	variable	scene	scene-meshrenderer-slot-materials	scene.md	engine/scene/components.h:42
-scene::MeshRenderer::slot_count	variable	scene	scene-meshrenderer-slot-count	scene.md	engine/scene/components.h:44
-scene::Hidden	struct	scene	scene-hidden	scene.md	engine/scene/components.h:50
-scene::LightSource	struct	scene	scene-lightsource	scene.md	engine/scene/components.h:58
-scene::LightSource::type	variable	scene	scene-lightsource-type	scene.md	engine/scene/components.h:61
-scene::LightSource::color	variable	scene	scene-lightsource-color	scene.md	engine/scene/components.h:63
-scene::LightSource::intensity	variable	scene	scene-lightsource-intensity	scene.md	engine/scene/components.h:65
-scene::LightSource::radius	variable	scene	scene-lightsource-radius	scene.md	engine/scene/components.h:67
-scene::LightSource::direction	variable	scene	scene-lightsource-direction	scene.md	engine/scene/components.h:70
-scene::LightSource::inner_cone	variable	scene	scene-lightsource-inner-cone	scene.md	engine/scene/components.h:72
-scene::LightSource::outer_cone	variable	scene	scene-lightsource-outer-cone	scene.md	engine/scene/components.h:74
-scene::Camera	struct	scene	scene-camera	scene.md	engine/scene/components.h:80
-scene::Camera::fov_y	variable	scene	scene-camera-fov-y	scene.md	engine/scene/components.h:83
-scene::Camera::aspect	variable	scene	scene-camera-aspect	scene.md	engine/scene/components.h:85
-scene::Camera::near_plane	variable	scene	scene-camera-near-plane	scene.md	engine/scene/components.h:87
-scene::Camera::far_plane	variable	scene	scene-camera-far-plane	scene.md	engine/scene/components.h:89
-scene::RenderHandle	struct	scene	scene-renderhandle	scene.md	engine/scene/components.h:96
-scene::RenderHandle::kTrackRemoval	variable	scene	scene-renderhandle-ktrackremoval	scene.md	engine/scene/components.h:99
-scene::RenderHandle::object	variable	scene	scene-renderhandle-object	scene.md	engine/scene/components.h:101
-scene::RenderHandle::light	variable	scene	scene-renderhandle-light	scene.md	engine/scene/components.h:103
-scene::RenderHandle::more	variable	scene	scene-renderhandle-more	scene.md	engine/scene/components.h:105
-scene::RenderHandle::more_count	variable	scene	scene-renderhandle-more-count	scene.md	engine/scene/components.h:107
-scene::ActiveCamera	struct	scene	scene-activecamera	scene.md	engine/scene/components.h:113
-scene::ActiveCamera::entity	variable	scene	scene-activecamera-entity	scene.md	engine/scene/components.h:116
-scene::CameraOutput	struct	scene	scene-cameraoutput	scene.md	engine/scene/components.h:122
-scene::CameraOutput::camera	variable	scene	scene-cameraoutput-camera	scene.md	engine/scene/components.h:125
-scene::CameraOutput::valid	variable	scene	scene-cameraoutput-valid	scene.md	engine/scene/components.h:127
+scene::kMaxSlotMaterials	variable	scene	scene-kmaxslotmaterials	scene.md	engine/scene/components.h:21
+scene::kInheritMaterial	variable	scene	scene-kinheritmaterial	scene.md	engine/scene/components.h:23
+scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:32
+scene::MeshRenderer::mesh	variable	scene	scene-meshrenderer-mesh	scene.md	engine/scene/components.h:35
+scene::MeshRenderer::material	variable	scene	scene-meshrenderer-material	scene.md	engine/scene/components.h:37
+scene::MeshRenderer::flags	variable	scene	scene-meshrenderer-flags	scene.md	engine/scene/components.h:39
+scene::MeshRenderer::slot_materials	variable	scene	scene-meshrenderer-slot-materials	scene.md	engine/scene/components.h:44
+scene::MeshRenderer::slot_count	variable	scene	scene-meshrenderer-slot-count	scene.md	engine/scene/components.h:46
+scene::Hidden	struct	scene	scene-hidden	scene.md	engine/scene/components.h:52
+scene::LightSource	struct	scene	scene-lightsource	scene.md	engine/scene/components.h:60
+scene::LightSource::type	variable	scene	scene-lightsource-type	scene.md	engine/scene/components.h:63
+scene::LightSource::color	variable	scene	scene-lightsource-color	scene.md	engine/scene/components.h:65
+scene::LightSource::intensity	variable	scene	scene-lightsource-intensity	scene.md	engine/scene/components.h:67
+scene::LightSource::radius	variable	scene	scene-lightsource-radius	scene.md	engine/scene/components.h:69
+scene::LightSource::direction	variable	scene	scene-lightsource-direction	scene.md	engine/scene/components.h:72
+scene::LightSource::inner_cone	variable	scene	scene-lightsource-inner-cone	scene.md	engine/scene/components.h:74
+scene::LightSource::outer_cone	variable	scene	scene-lightsource-outer-cone	scene.md	engine/scene/components.h:76
+scene::Camera	struct	scene	scene-camera	scene.md	engine/scene/components.h:82
+scene::Camera::fov_y	variable	scene	scene-camera-fov-y	scene.md	engine/scene/components.h:85
+scene::Camera::aspect	variable	scene	scene-camera-aspect	scene.md	engine/scene/components.h:87
+scene::Camera::near_plane	variable	scene	scene-camera-near-plane	scene.md	engine/scene/components.h:89
+scene::Camera::far_plane	variable	scene	scene-camera-far-plane	scene.md	engine/scene/components.h:91
+scene::RenderHandle	struct	scene	scene-renderhandle	scene.md	engine/scene/components.h:98
+scene::RenderHandle::kTrackRemoval	variable	scene	scene-renderhandle-ktrackremoval	scene.md	engine/scene/components.h:101
+scene::RenderHandle::object	variable	scene	scene-renderhandle-object	scene.md	engine/scene/components.h:103
+scene::RenderHandle::light	variable	scene	scene-renderhandle-light	scene.md	engine/scene/components.h:105
+scene::RenderHandle::more	variable	scene	scene-renderhandle-more	scene.md	engine/scene/components.h:107
+scene::RenderHandle::more_count	variable	scene	scene-renderhandle-more-count	scene.md	engine/scene/components.h:109
+scene::Terrain	struct	scene	scene-terrain	scene.md	engine/scene/components.h:122
+scene::Terrain::source	variable	scene	scene-terrain-source	scene.md	engine/scene/components.h:124
+scene::Terrain::material	variable	scene	scene-terrain-material	scene.md	engine/scene/components.h:125
+scene::TerrainHandle	struct	scene	scene-terrainhandle	scene.md	engine/scene/components.h:132
+scene::TerrainHandle::kTrackRemoval	variable	scene	scene-terrainhandle-ktrackremoval	scene.md	engine/scene/components.h:135
+scene::TerrainHandle::id	variable	scene	scene-terrainhandle-id	scene.md	engine/scene/components.h:137
+scene::ActiveCamera	struct	scene	scene-activecamera	scene.md	engine/scene/components.h:143
+scene::ActiveCamera::entity	variable	scene	scene-activecamera-entity	scene.md	engine/scene/components.h:146
+scene::CameraOutput	struct	scene	scene-cameraoutput	scene.md	engine/scene/components.h:152
+scene::CameraOutput::camera	variable	scene	scene-cameraoutput-camera	scene.md	engine/scene/components.h:155
+scene::CameraOutput::valid	variable	scene	scene-cameraoutput-valid	scene.md	engine/scene/components.h:157
 scene::SpawnedLevel	struct	scene	scene-spawnedlevel	scene.md	engine/scene/level_spawner.h:28
 scene::SpawnedLevel::levels	variable	scene	scene-spawnedlevel-levels	scene.md	engine/scene/level_spawner.h:30
 scene::SpawnedLevel::materials	variable	scene	scene-spawnedlevel-materials	scene.md	engine/scene/level_spawner.h:31
@@ -9833,9 +9840,13 @@ scene::SceneSyncReport::morph_set	variable	scene	scene-scenesyncreport-morph-set
 scene::SceneSyncReport::flags_set	variable	scene	scene-scenesyncreport-flags-set	scene.md	engine/scene/render_sync.h:51
 scene::SceneSyncReport::lights_set	variable	scene	scene-scenesyncreport-lights-set	scene.md	engine/scene/render_sync.h:53
 scene::SceneSyncReport::refused_full	variable	scene	scene-scenesyncreport-refused-full	scene.md	engine/scene/render_sync.h:55
-scene::SceneSyncReport::invalid	variable	scene	scene-scenesyncreport-invalid	scene.md	engine/scene/render_sync.h:57
-scene::MakeRenderSyncSystem(const char*)	function	scene	scene-makerendersyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:84
-scene::MakeCameraSystem(const char*)	function	scene	scene-makecamerasystem-const-char-star	scene.md	engine/scene/render_sync.h:95
+scene::SceneSyncReport::terrains_added	variable	scene	scene-scenesyncreport-terrains-added	scene.md	engine/scene/render_sync.h:57
+scene::SceneSyncReport::terrains_removed	variable	scene	scene-scenesyncreport-terrains-removed	scene.md	engine/scene/render_sync.h:59
+scene::SceneSyncReport::terrains_set	variable	scene	scene-scenesyncreport-terrains-set	scene.md	engine/scene/render_sync.h:61
+scene::SceneSyncReport::invalid	variable	scene	scene-scenesyncreport-invalid	scene.md	engine/scene/render_sync.h:63
+scene::MakeRenderSyncSystem(const char*)	function	scene	scene-makerendersyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:90
+scene::MakeCameraSystem(const char*)	function	scene	scene-makecamerasystem-const-char-star	scene.md	engine/scene/render_sync.h:101
+scene::MakeTerrainSyncSystem(const char*)	function	scene	scene-maketerrainsyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:113
 scene::SceneComponentId	enum	scene	scene-scenecomponentid	scene.md	engine/scene/scene_components.h:14
 scene::kLightSourceId	enumerator	scene	scene-klightsourceid	scene.md	engine/scene/scene_components.h:16
 scene::kCameraId	enumerator	scene	scene-kcameraid	scene.md	engine/scene/scene_components.h:17
@@ -12954,95 +12965,115 @@ renderer::RenderGraph::ResolvedTexture(GraphResource) const	function	renderer	re
 renderer::RenderGraph::ResolvedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-resolvedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:548
 renderer::RenderGraph::Dump(char*,usize) const	function	renderer	renderer-rendergraph-dump-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:567
 renderer::RenderGraph::WriteDot(char*,usize) const	function	renderer	renderer-rendergraph-writedot-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:577
-renderer::ObjectId	struct	renderer	renderer-objectid	renderer.md	engine/renderer/render_scene.h:23
-renderer::ObjectId::index	variable	renderer	renderer-objectid-index	renderer.md	engine/renderer/render_scene.h:26
-renderer::ObjectId::generation	variable	renderer	renderer-objectid-generation	renderer.md	engine/renderer/render_scene.h:28
-renderer::ObjectId::IsValid() const	function	renderer	renderer-objectid-isvalid-const	renderer.md	engine/renderer/render_scene.h:32
-renderer::ObjectId::operator==(const ObjectId&) const	function	renderer	renderer-objectid-operator-eq-eq-const-objectid-amp-const	renderer.md	engine/renderer/render_scene.h:34
-renderer::ObjectId::operator!=(const ObjectId&) const	function	renderer	renderer-objectid-operator-not-eq-const-objectid-amp-const	renderer.md	engine/renderer/render_scene.h:36
-renderer::LightId	struct	renderer	renderer-lightid	renderer.md	engine/renderer/render_scene.h:42
-renderer::LightId::index	variable	renderer	renderer-lightid-index	renderer.md	engine/renderer/render_scene.h:45
-renderer::LightId::generation	variable	renderer	renderer-lightid-generation	renderer.md	engine/renderer/render_scene.h:47
-renderer::LightId::IsValid() const	function	renderer	renderer-lightid-isvalid-const	renderer.md	engine/renderer/render_scene.h:51
-renderer::LightId::operator==(const LightId&) const	function	renderer	renderer-lightid-operator-eq-eq-const-lightid-amp-const	renderer.md	engine/renderer/render_scene.h:53
-renderer::LightId::operator!=(const LightId&) const	function	renderer	renderer-lightid-operator-not-eq-const-lightid-amp-const	renderer.md	engine/renderer/render_scene.h:55
-renderer::ObjectFlags::kHidden	variable	renderer	renderer-objectflags-khidden	renderer.md	engine/renderer/render_scene.h:62
-renderer::RenderObjectDesc	struct	renderer	renderer-renderobjectdesc	renderer.md	engine/renderer/render_scene.h:69
-renderer::RenderObjectDesc::mesh	variable	renderer	renderer-renderobjectdesc-mesh	renderer.md	engine/renderer/render_scene.h:72
-renderer::RenderObjectDesc::material	variable	renderer	renderer-renderobjectdesc-material	renderer.md	engine/renderer/render_scene.h:74
-renderer::RenderObjectDesc::transform	variable	renderer	renderer-renderobjectdesc-transform	renderer.md	engine/renderer/render_scene.h:76
-renderer::RenderObjectDesc::flags	variable	renderer	renderer-renderobjectdesc-flags	renderer.md	engine/renderer/render_scene.h:78
-renderer::RenderObjectDesc::joint_matrices	variable	renderer	renderer-renderobjectdesc-joint-matrices	renderer.md	engine/renderer/render_scene.h:83
-renderer::RenderObjectDesc::joint_count	variable	renderer	renderer-renderobjectdesc-joint-count	renderer.md	engine/renderer/render_scene.h:85
-renderer::RenderObjectDesc::morph_weights	variable	renderer	renderer-renderobjectdesc-morph-weights	renderer.md	engine/renderer/render_scene.h:88
-renderer::RenderObjectDesc::morph_weight_count	variable	renderer	renderer-renderobjectdesc-morph-weight-count	renderer.md	engine/renderer/render_scene.h:90
-renderer::RenderObjectDesc::skin_bounds_scale	variable	renderer	renderer-renderobjectdesc-skin-bounds-scale	renderer.md	engine/renderer/render_scene.h:93
-renderer::RenderObjectDesc::first_index	variable	renderer	renderer-renderobjectdesc-first-index	renderer.md	engine/renderer/render_scene.h:95
-renderer::RenderObjectDesc::index_count	variable	renderer	renderer-renderobjectdesc-index-count	renderer.md	engine/renderer/render_scene.h:98
-renderer::RenderObject	struct	renderer	renderer-renderobject	renderer.md	engine/renderer/render_scene.h:105
-renderer::RenderObject::mesh	variable	renderer	renderer-renderobject-mesh	renderer.md	engine/renderer/render_scene.h:108
-renderer::RenderObject::material	variable	renderer	renderer-renderobject-material	renderer.md	engine/renderer/render_scene.h:110
-renderer::RenderObject::transform	variable	renderer	renderer-renderobject-transform	renderer.md	engine/renderer/render_scene.h:112
-renderer::RenderObject::flags	variable	renderer	renderer-renderobject-flags	renderer.md	engine/renderer/render_scene.h:114
-renderer::RenderObject::bounds	variable	renderer	renderer-renderobject-bounds	renderer.md	engine/renderer/render_scene.h:116
-renderer::RenderObject::joint_matrices	variable	renderer	renderer-renderobject-joint-matrices	renderer.md	engine/renderer/render_scene.h:121
-renderer::RenderObject::joint_count	variable	renderer	renderer-renderobject-joint-count	renderer.md	engine/renderer/render_scene.h:123
-renderer::RenderObject::morph_weights	variable	renderer	renderer-renderobject-morph-weights	renderer.md	engine/renderer/render_scene.h:126
-renderer::RenderObject::morph_weight_count	variable	renderer	renderer-renderobject-morph-weight-count	renderer.md	engine/renderer/render_scene.h:128
-renderer::RenderObject::skin_bounds_scale	variable	renderer	renderer-renderobject-skin-bounds-scale	renderer.md	engine/renderer/render_scene.h:131
-renderer::RenderObject::first_index	variable	renderer	renderer-renderobject-first-index	renderer.md	engine/renderer/render_scene.h:133
-renderer::RenderObject::index_count	variable	renderer	renderer-renderobject-index-count	renderer.md	engine/renderer/render_scene.h:135
-renderer::LightType	enum	renderer	renderer-lighttype	renderer.md	engine/renderer/render_scene.h:139
-renderer::LightType::Directional	enumerator	renderer	renderer-lighttype-directional	renderer.md	engine/renderer/render_scene.h:141
-renderer::LightType::Point	enumerator	renderer	renderer-lighttype-point	renderer.md	engine/renderer/render_scene.h:142
-renderer::LightType::Ambient	enumerator	renderer	renderer-lighttype-ambient	renderer.md	engine/renderer/render_scene.h:143
-renderer::LightType::Spot	enumerator	renderer	renderer-lighttype-spot	renderer.md	engine/renderer/render_scene.h:144
-renderer::Light	struct	renderer	renderer-light	renderer.md	engine/renderer/render_scene.h:151
-renderer::Light::type	variable	renderer	renderer-light-type	renderer.md	engine/renderer/render_scene.h:154
-renderer::Light::color	variable	renderer	renderer-light-color	renderer.md	engine/renderer/render_scene.h:156
-renderer::Light::intensity	variable	renderer	renderer-light-intensity	renderer.md	engine/renderer/render_scene.h:158
-renderer::Light::direction	variable	renderer	renderer-light-direction	renderer.md	engine/renderer/render_scene.h:160
-renderer::Light::position	variable	renderer	renderer-light-position	renderer.md	engine/renderer/render_scene.h:162
-renderer::Light::radius	variable	renderer	renderer-light-radius	renderer.md	engine/renderer/render_scene.h:165
-renderer::Light::inner_cone	variable	renderer	renderer-light-inner-cone	renderer.md	engine/renderer/render_scene.h:170
-renderer::Light::outer_cone	variable	renderer	renderer-light-outer-cone	renderer.md	engine/renderer/render_scene.h:172
-renderer::kMaxLights	variable	renderer	renderer-kmaxlights	renderer.md	engine/renderer/render_scene.h:180
-renderer::RenderSceneDesc	struct	renderer	renderer-renderscenedesc	renderer.md	engine/renderer/render_scene.h:185
-renderer::RenderSceneDesc::max_objects	variable	renderer	renderer-renderscenedesc-max-objects	renderer.md	engine/renderer/render_scene.h:188
-renderer::RenderSceneDesc::max_lights	variable	renderer	renderer-renderscenedesc-max-lights	renderer.md	engine/renderer/render_scene.h:190
-renderer::RenderScene	class	renderer	renderer-renderscene	renderer.md	engine/renderer/render_scene.h:201
-renderer::RenderScene::RenderScene(const RenderSceneDesc&)	function	renderer	renderer-renderscene-renderscene-const-renderscenedesc-amp	renderer.md	engine/renderer/render_scene.h:208
-renderer::RenderScene::~RenderScene()	function	renderer	renderer-renderscene-tilde-renderscene	renderer.md	engine/renderer/render_scene.h:210
-renderer::RenderScene::RenderScene(const RenderScene&)	function	renderer	renderer-renderscene-renderscene-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:211
-renderer::RenderScene::operator=(const RenderScene&)	function	renderer	renderer-renderscene-operator-eq-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:212
-renderer::RenderScene::AddObject(const RenderObjectDesc&)	function	renderer	renderer-renderscene-addobject-const-renderobjectdesc-amp	renderer.md	engine/renderer/render_scene.h:220
-renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renderscene-removeobject-objectid	renderer.md	engine/renderer/render_scene.h:226
-renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:233
-renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:240
-renderer::RenderScene::SetJointMatrices(ObjectId,const f32*,u32)	function	renderer	renderer-renderscene-setjointmatrices-objectid-const-f32-star-u32	renderer.md	engine/renderer/render_scene.h:250
-renderer::RenderScene::UpdatePoseBounds(ObjectId)	function	renderer	renderer-renderscene-updateposebounds-objectid	renderer.md	engine/renderer/render_scene.h:262
-renderer::RenderScene::SetMorphWeights(ObjectId,const f32*,u32)	function	renderer	renderer-renderscene-setmorphweights-objectid-const-f32-star-u32	renderer.md	engine/renderer/render_scene.h:271
-renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:279
-renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:282
-renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:284
-renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:287
-renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:290
-renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:293
-renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:302
-renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:308
-renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:315
-renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:323
-renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:326
-renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:328
-renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:331
-renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:334
-renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:344
-renderer::RenderScene::CullMode	enum	renderer	renderer-renderscene-cullmode	renderer.md	engine/renderer/render_scene.h:347
-renderer::RenderScene::CullMode::Bvh	enumerator	renderer	renderer-renderscene-cullmode-bvh	renderer.md	engine/renderer/render_scene.h:349
-renderer::RenderScene::CullMode::Flat	enumerator	renderer	renderer-renderscene-cullmode-flat	renderer.md	engine/renderer/render_scene.h:351
-renderer::RenderScene::SetCullMode(CullMode)	function	renderer	renderer-renderscene-setcullmode-cullmode	renderer.md	engine/renderer/render_scene.h:355
-renderer::RenderScene::GetCullMode() const	function	renderer	renderer-renderscene-getcullmode-const	renderer.md	engine/renderer/render_scene.h:358
-renderer::RenderScene::OptimizeCulling(u32)	function	renderer	renderer-renderscene-optimizeculling-u32	renderer.md	engine/renderer/render_scene.h:362
+renderer::ObjectId	struct	renderer	renderer-objectid	renderer.md	engine/renderer/render_scene.h:25
+renderer::ObjectId::index	variable	renderer	renderer-objectid-index	renderer.md	engine/renderer/render_scene.h:28
+renderer::ObjectId::generation	variable	renderer	renderer-objectid-generation	renderer.md	engine/renderer/render_scene.h:30
+renderer::ObjectId::IsValid() const	function	renderer	renderer-objectid-isvalid-const	renderer.md	engine/renderer/render_scene.h:34
+renderer::ObjectId::operator==(const ObjectId&) const	function	renderer	renderer-objectid-operator-eq-eq-const-objectid-amp-const	renderer.md	engine/renderer/render_scene.h:36
+renderer::ObjectId::operator!=(const ObjectId&) const	function	renderer	renderer-objectid-operator-not-eq-const-objectid-amp-const	renderer.md	engine/renderer/render_scene.h:38
+renderer::LightId	struct	renderer	renderer-lightid	renderer.md	engine/renderer/render_scene.h:44
+renderer::LightId::index	variable	renderer	renderer-lightid-index	renderer.md	engine/renderer/render_scene.h:47
+renderer::LightId::generation	variable	renderer	renderer-lightid-generation	renderer.md	engine/renderer/render_scene.h:49
+renderer::LightId::IsValid() const	function	renderer	renderer-lightid-isvalid-const	renderer.md	engine/renderer/render_scene.h:53
+renderer::LightId::operator==(const LightId&) const	function	renderer	renderer-lightid-operator-eq-eq-const-lightid-amp-const	renderer.md	engine/renderer/render_scene.h:55
+renderer::LightId::operator!=(const LightId&) const	function	renderer	renderer-lightid-operator-not-eq-const-lightid-amp-const	renderer.md	engine/renderer/render_scene.h:57
+renderer::ObjectFlags::kHidden	variable	renderer	renderer-objectflags-khidden	renderer.md	engine/renderer/render_scene.h:64
+renderer::RenderObjectDesc	struct	renderer	renderer-renderobjectdesc	renderer.md	engine/renderer/render_scene.h:71
+renderer::RenderObjectDesc::mesh	variable	renderer	renderer-renderobjectdesc-mesh	renderer.md	engine/renderer/render_scene.h:74
+renderer::RenderObjectDesc::material	variable	renderer	renderer-renderobjectdesc-material	renderer.md	engine/renderer/render_scene.h:76
+renderer::RenderObjectDesc::transform	variable	renderer	renderer-renderobjectdesc-transform	renderer.md	engine/renderer/render_scene.h:78
+renderer::RenderObjectDesc::flags	variable	renderer	renderer-renderobjectdesc-flags	renderer.md	engine/renderer/render_scene.h:80
+renderer::RenderObjectDesc::joint_matrices	variable	renderer	renderer-renderobjectdesc-joint-matrices	renderer.md	engine/renderer/render_scene.h:85
+renderer::RenderObjectDesc::joint_count	variable	renderer	renderer-renderobjectdesc-joint-count	renderer.md	engine/renderer/render_scene.h:87
+renderer::RenderObjectDesc::morph_weights	variable	renderer	renderer-renderobjectdesc-morph-weights	renderer.md	engine/renderer/render_scene.h:90
+renderer::RenderObjectDesc::morph_weight_count	variable	renderer	renderer-renderobjectdesc-morph-weight-count	renderer.md	engine/renderer/render_scene.h:92
+renderer::RenderObjectDesc::skin_bounds_scale	variable	renderer	renderer-renderobjectdesc-skin-bounds-scale	renderer.md	engine/renderer/render_scene.h:95
+renderer::RenderObjectDesc::first_index	variable	renderer	renderer-renderobjectdesc-first-index	renderer.md	engine/renderer/render_scene.h:97
+renderer::RenderObjectDesc::index_count	variable	renderer	renderer-renderobjectdesc-index-count	renderer.md	engine/renderer/render_scene.h:100
+renderer::RenderObject	struct	renderer	renderer-renderobject	renderer.md	engine/renderer/render_scene.h:107
+renderer::RenderObject::mesh	variable	renderer	renderer-renderobject-mesh	renderer.md	engine/renderer/render_scene.h:110
+renderer::RenderObject::material	variable	renderer	renderer-renderobject-material	renderer.md	engine/renderer/render_scene.h:112
+renderer::RenderObject::transform	variable	renderer	renderer-renderobject-transform	renderer.md	engine/renderer/render_scene.h:114
+renderer::RenderObject::flags	variable	renderer	renderer-renderobject-flags	renderer.md	engine/renderer/render_scene.h:116
+renderer::RenderObject::bounds	variable	renderer	renderer-renderobject-bounds	renderer.md	engine/renderer/render_scene.h:118
+renderer::RenderObject::joint_matrices	variable	renderer	renderer-renderobject-joint-matrices	renderer.md	engine/renderer/render_scene.h:123
+renderer::RenderObject::joint_count	variable	renderer	renderer-renderobject-joint-count	renderer.md	engine/renderer/render_scene.h:125
+renderer::RenderObject::morph_weights	variable	renderer	renderer-renderobject-morph-weights	renderer.md	engine/renderer/render_scene.h:128
+renderer::RenderObject::morph_weight_count	variable	renderer	renderer-renderobject-morph-weight-count	renderer.md	engine/renderer/render_scene.h:130
+renderer::RenderObject::skin_bounds_scale	variable	renderer	renderer-renderobject-skin-bounds-scale	renderer.md	engine/renderer/render_scene.h:133
+renderer::RenderObject::first_index	variable	renderer	renderer-renderobject-first-index	renderer.md	engine/renderer/render_scene.h:135
+renderer::RenderObject::index_count	variable	renderer	renderer-renderobject-index-count	renderer.md	engine/renderer/render_scene.h:137
+renderer::LightType	enum	renderer	renderer-lighttype	renderer.md	engine/renderer/render_scene.h:141
+renderer::LightType::Directional	enumerator	renderer	renderer-lighttype-directional	renderer.md	engine/renderer/render_scene.h:143
+renderer::LightType::Point	enumerator	renderer	renderer-lighttype-point	renderer.md	engine/renderer/render_scene.h:144
+renderer::LightType::Ambient	enumerator	renderer	renderer-lighttype-ambient	renderer.md	engine/renderer/render_scene.h:145
+renderer::LightType::Spot	enumerator	renderer	renderer-lighttype-spot	renderer.md	engine/renderer/render_scene.h:146
+renderer::Light	struct	renderer	renderer-light	renderer.md	engine/renderer/render_scene.h:153
+renderer::Light::type	variable	renderer	renderer-light-type	renderer.md	engine/renderer/render_scene.h:156
+renderer::Light::color	variable	renderer	renderer-light-color	renderer.md	engine/renderer/render_scene.h:158
+renderer::Light::intensity	variable	renderer	renderer-light-intensity	renderer.md	engine/renderer/render_scene.h:160
+renderer::Light::direction	variable	renderer	renderer-light-direction	renderer.md	engine/renderer/render_scene.h:162
+renderer::Light::position	variable	renderer	renderer-light-position	renderer.md	engine/renderer/render_scene.h:164
+renderer::Light::radius	variable	renderer	renderer-light-radius	renderer.md	engine/renderer/render_scene.h:167
+renderer::Light::inner_cone	variable	renderer	renderer-light-inner-cone	renderer.md	engine/renderer/render_scene.h:172
+renderer::Light::outer_cone	variable	renderer	renderer-light-outer-cone	renderer.md	engine/renderer/render_scene.h:174
+renderer::TerrainId	struct	renderer	renderer-terrainid	renderer.md	engine/renderer/render_scene.h:180
+renderer::TerrainId::index	variable	renderer	renderer-terrainid-index	renderer.md	engine/renderer/render_scene.h:183
+renderer::TerrainId::generation	variable	renderer	renderer-terrainid-generation	renderer.md	engine/renderer/render_scene.h:185
+renderer::TerrainId::IsValid() const	function	renderer	renderer-terrainid-isvalid-const	renderer.md	engine/renderer/render_scene.h:189
+renderer::TerrainId::operator==(const TerrainId&) const	function	renderer	renderer-terrainid-operator-eq-eq-const-terrainid-amp-const	renderer.md	engine/renderer/render_scene.h:191
+renderer::TerrainId::operator!=(const TerrainId&) const	function	renderer	renderer-terrainid-operator-not-eq-const-terrainid-amp-const	renderer.md	engine/renderer/render_scene.h:193
+renderer::TerrainObject	struct	renderer	renderer-terrainobject	renderer.md	engine/renderer/render_scene.h:200
+renderer::TerrainObject::source	variable	renderer	renderer-terrainobject-source	renderer.md	engine/renderer/render_scene.h:202
+renderer::TerrainObject::material	variable	renderer	renderer-terrainobject-material	renderer.md	engine/renderer/render_scene.h:203
+renderer::TerrainObject::world	variable	renderer	renderer-terrainobject-world	renderer.md	engine/renderer/render_scene.h:204
+renderer::TerrainObject::flags	variable	renderer	renderer-terrainobject-flags	renderer.md	engine/renderer/render_scene.h:206
+renderer::kMaxLights	variable	renderer	renderer-kmaxlights	renderer.md	engine/renderer/render_scene.h:214
+renderer::RenderSceneDesc	struct	renderer	renderer-renderscenedesc	renderer.md	engine/renderer/render_scene.h:219
+renderer::RenderSceneDesc::max_objects	variable	renderer	renderer-renderscenedesc-max-objects	renderer.md	engine/renderer/render_scene.h:222
+renderer::RenderSceneDesc::max_lights	variable	renderer	renderer-renderscenedesc-max-lights	renderer.md	engine/renderer/render_scene.h:224
+renderer::RenderSceneDesc::max_terrains	variable	renderer	renderer-renderscenedesc-max-terrains	renderer.md	engine/renderer/render_scene.h:226
+renderer::RenderScene	class	renderer	renderer-renderscene	renderer.md	engine/renderer/render_scene.h:237
+renderer::RenderScene::RenderScene(const RenderSceneDesc&)	function	renderer	renderer-renderscene-renderscene-const-renderscenedesc-amp	renderer.md	engine/renderer/render_scene.h:244
+renderer::RenderScene::~RenderScene()	function	renderer	renderer-renderscene-tilde-renderscene	renderer.md	engine/renderer/render_scene.h:246
+renderer::RenderScene::RenderScene(const RenderScene&)	function	renderer	renderer-renderscene-renderscene-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:247
+renderer::RenderScene::operator=(const RenderScene&)	function	renderer	renderer-renderscene-operator-eq-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:248
+renderer::RenderScene::AddObject(const RenderObjectDesc&)	function	renderer	renderer-renderscene-addobject-const-renderobjectdesc-amp	renderer.md	engine/renderer/render_scene.h:256
+renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renderscene-removeobject-objectid	renderer.md	engine/renderer/render_scene.h:262
+renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:269
+renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:276
+renderer::RenderScene::SetJointMatrices(ObjectId,const f32*,u32)	function	renderer	renderer-renderscene-setjointmatrices-objectid-const-f32-star-u32	renderer.md	engine/renderer/render_scene.h:286
+renderer::RenderScene::UpdatePoseBounds(ObjectId)	function	renderer	renderer-renderscene-updateposebounds-objectid	renderer.md	engine/renderer/render_scene.h:298
+renderer::RenderScene::SetMorphWeights(ObjectId,const f32*,u32)	function	renderer	renderer-renderscene-setmorphweights-objectid-const-f32-star-u32	renderer.md	engine/renderer/render_scene.h:307
+renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:315
+renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:318
+renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:320
+renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:323
+renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:326
+renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:329
+renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:338
+renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:344
+renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:351
+renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:359
+renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:362
+renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:364
+renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:367
+renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:370
+renderer::RenderScene::AddTerrain(const TerrainObject&)	function	renderer	renderer-renderscene-addterrain-const-terrainobject-amp	renderer.md	engine/renderer/render_scene.h:379
+renderer::RenderScene::RemoveTerrain(TerrainId)	function	renderer	renderer-renderscene-removeterrain-terrainid	renderer.md	engine/renderer/render_scene.h:385
+renderer::RenderScene::SetTerrain(TerrainId,const TerrainObject&)	function	renderer	renderer-renderscene-setterrain-terrainid-const-terrainobject-amp	renderer.md	engine/renderer/render_scene.h:393
+renderer::RenderScene::FindTerrain(TerrainId) const	function	renderer	renderer-renderscene-findterrain-terrainid-const	renderer.md	engine/renderer/render_scene.h:401
+renderer::RenderScene::TerrainCount() const	function	renderer	renderer-renderscene-terraincount-const	renderer.md	engine/renderer/render_scene.h:404
+renderer::RenderScene::TerrainSlotCount() const	function	renderer	renderer-renderscene-terrainslotcount-const	renderer.md	engine/renderer/render_scene.h:406
+renderer::RenderScene::TerrainSlotAlive(u32) const	function	renderer	renderer-renderscene-terrainslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:409
+renderer::RenderScene::TerrainAt(u32) const	function	renderer	renderer-renderscene-terrainat-u32-const	renderer.md	engine/renderer/render_scene.h:412
+renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:422
+renderer::RenderScene::CullMode	enum	renderer	renderer-renderscene-cullmode	renderer.md	engine/renderer/render_scene.h:425
+renderer::RenderScene::CullMode::Bvh	enumerator	renderer	renderer-renderscene-cullmode-bvh	renderer.md	engine/renderer/render_scene.h:427
+renderer::RenderScene::CullMode::Flat	enumerator	renderer	renderer-renderscene-cullmode-flat	renderer.md	engine/renderer/render_scene.h:429
+renderer::RenderScene::SetCullMode(CullMode)	function	renderer	renderer-renderscene-setcullmode-cullmode	renderer.md	engine/renderer/render_scene.h:433
+renderer::RenderScene::GetCullMode() const	function	renderer	renderer-renderscene-getcullmode-const	renderer.md	engine/renderer/render_scene.h:436
+renderer::RenderScene::OptimizeCulling(u32)	function	renderer	renderer-renderscene-optimizeculling-u32	renderer.md	engine/renderer/render_scene.h:440
 renderer::kMaxSettings	variable	renderer	renderer-kmaxsettings	renderer.md	engine/renderer/render_settings.h:19
 renderer::kSettingTextBytes	variable	renderer	renderer-ksettingtextbytes	renderer.md	engine/renderer/render_settings.h:21
 renderer::kMaxCapabilities	variable	renderer	renderer-kmaxcapabilities	renderer.md	engine/renderer/render_settings.h:23
@@ -13267,69 +13298,71 @@ renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frame
 renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:13
 renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:23
 RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:46
-renderer::SceneFrameSetup	struct	renderer	renderer-sceneframesetup	renderer.md	engine/renderer/scene_frame.h:35
-renderer::SceneFrameSetup::device	variable	renderer	renderer-sceneframesetup-device	renderer.md	engine/renderer/scene_frame.h:38
-renderer::SceneFrameSetup::swapchain	variable	renderer	renderer-sceneframesetup-swapchain	renderer.md	engine/renderer/scene_frame.h:40
-renderer::SceneFrameSetup::max_objects	variable	renderer	renderer-sceneframesetup-max-objects	renderer.md	engine/renderer/scene_frame.h:42
-renderer::SceneFrameSetup::max_lights	variable	renderer	renderer-sceneframesetup-max-lights	renderer.md	engine/renderer/scene_frame.h:44
-renderer::SceneFrameSetup::max_joint_matrices	variable	renderer	renderer-sceneframesetup-max-joint-matrices	renderer.md	engine/renderer/scene_frame.h:47
-renderer::SceneFrameSetup::gbuffer_layer	variable	renderer	renderer-sceneframesetup-gbuffer-layer	renderer.md	engine/renderer/scene_frame.h:49
-renderer::SceneFrameSetup::exposure	variable	renderer	renderer-sceneframesetup-exposure	renderer.md	engine/renderer/scene_frame.h:51
-renderer::SceneFrameSetup::scheduler	variable	renderer	renderer-sceneframesetup-scheduler	renderer.md	engine/renderer/scene_frame.h:53
-renderer::SceneFrameSetup::resources	variable	renderer	renderer-sceneframesetup-resources	renderer.md	engine/renderer/scene_frame.h:55
-renderer::SceneFrameSetup::prewarm_pipelines	variable	renderer	renderer-sceneframesetup-prewarm-pipelines	renderer.md	engine/renderer/scene_frame.h:57
-renderer::SceneFrameSetup::host	variable	renderer	renderer-sceneframesetup-host	renderer.md	engine/renderer/scene_frame.h:59
-renderer::SceneFrameSetup::create_info	variable	renderer	renderer-sceneframesetup-create-info	renderer.md	engine/renderer/scene_frame.h:61
-renderer::SceneFrameSetup::initial_settings	variable	renderer	renderer-sceneframesetup-initial-settings	renderer.md	engine/renderer/scene_frame.h:63
-renderer::SceneFrameSetup::window	variable	renderer	renderer-sceneframesetup-window	renderer.md	engine/renderer/scene_frame.h:65
-renderer::SceneFrameSetup::recovery	variable	renderer	renderer-sceneframesetup-recovery	renderer.md	engine/renderer/scene_frame.h:67
-renderer::SceneFrameSetup::before_present	variable	renderer	renderer-sceneframesetup-before-present	renderer.md	engine/renderer/scene_frame.h:69
-renderer::SceneFrameSetup::before_present_user	variable	renderer	renderer-sceneframesetup-before-present-user	renderer.md	engine/renderer/scene_frame.h:71
-renderer::SceneFrameSetup::font_path	variable	renderer	renderer-sceneframesetup-font-path	renderer.md	engine/renderer/scene_frame.h:74
-renderer::SceneFrameCompose	struct	renderer	renderer-sceneframecompose	renderer.md	engine/renderer/scene_frame.h:81
-renderer::SceneFrameCompose::scene_target	variable	renderer	renderer-sceneframecompose-scene-target	renderer.md	engine/renderer/scene_frame.h:85
-renderer::SceneFrameCompose::after_scene	variable	renderer	renderer-sceneframecompose-after-scene	renderer.md	engine/renderer/scene_frame.h:88
-renderer::SceneFrameCompose::user	variable	renderer	renderer-sceneframecompose-user	renderer.md	engine/renderer/scene_frame.h:90
-Hash<renderer::detail::LabelKey>	struct	renderer	hash-lt-renderer-detail-labelkey-gt	renderer.md	engine/renderer/scene_frame.h:131
-Hash<renderer::detail::LabelKey>::operator()(const renderer::detail::LabelKey&) const	function	renderer	hash-lt-renderer-detail-labelkey-gt-operator-call-const-renderer-detail-labelkey-amp-const	renderer.md	engine/renderer/scene_frame.h:134
-Hash<renderer::detail::LabelKeyView>	struct	renderer	hash-lt-renderer-detail-labelkeyview-gt	renderer.md	engine/renderer/scene_frame.h:142
-Hash<renderer::detail::LabelKeyView>::operator()(const renderer::detail::LabelKeyView&) const	function	renderer	hash-lt-renderer-detail-labelkeyview-gt-operator-call-const-renderer-detail-labelkeyview-amp-const	renderer.md	engine/renderer/scene_frame.h:145
-renderer::SceneFrame	class	renderer	renderer-sceneframe	renderer.md	engine/renderer/scene_frame.h:162
-renderer::SceneFrame::SceneFrame()	function	renderer	renderer-sceneframe-sceneframe	renderer.md	engine/renderer/scene_frame.h:166
-renderer::SceneFrame::~SceneFrame()	function	renderer	renderer-sceneframe-tilde-sceneframe	renderer.md	engine/renderer/scene_frame.h:168
-renderer::SceneFrame::SceneFrame(const SceneFrame&)	function	renderer	renderer-sceneframe-sceneframe-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:169
-renderer::SceneFrame::operator=(const SceneFrame&)	function	renderer	renderer-sceneframe-operator-eq-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:170
-renderer::SceneFrame::Create(const SceneFrameSetup&)	function	renderer	renderer-sceneframe-create-const-sceneframesetup-amp	renderer.md	engine/renderer/scene_frame.h:176
-renderer::SceneFrame::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-sceneframe-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/scene_frame.h:180
-renderer::SceneFrame::Destroy()	function	renderer	renderer-sceneframe-destroy	renderer.md	engine/renderer/scene_frame.h:182
-renderer::SceneFrame::GetRenderer()	function	renderer	renderer-sceneframe-getrenderer	renderer.md	engine/renderer/scene_frame.h:188
-renderer::SceneFrame::Materials()	function	renderer	renderer-sceneframe-materials	renderer.md	engine/renderer/scene_frame.h:193
-renderer::SceneFrame::Templates() const	function	renderer	renderer-sceneframe-templates-const	renderer.md	engine/renderer/scene_frame.h:195
-renderer::SceneFrame::SetCompose(const SceneFrameCompose&)	function	renderer	renderer-sceneframe-setcompose-const-sceneframecompose-amp	renderer.md	engine/renderer/scene_frame.h:198
-renderer::SceneFrame::SetTime(f32,f32)	function	renderer	renderer-sceneframe-settime-f32-f32	renderer.md	engine/renderer/scene_frame.h:200
-renderer::SceneFrame::SetEnvironment(f32,const Vec3&,f32)	function	renderer	renderer-sceneframe-setenvironment-f32-const-vec3-amp-f32	renderer.md	engine/renderer/scene_frame.h:211
-renderer::SceneFrame::SetExposure(f32)	function	renderer	renderer-sceneframe-setexposure-f32	renderer.md	engine/renderer/scene_frame.h:223
-renderer::SceneFrame::SetSky(const SkySettings&,f32)	function	renderer	renderer-sceneframe-setsky-const-skysettings-amp-f32	renderer.md	engine/renderer/scene_frame.h:234
-renderer::SceneFrame::Sky() const	function	renderer	renderer-sceneframe-sky-const	renderer.md	engine/renderer/scene_frame.h:237
-renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:239
-renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:246
-renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:250
-renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:254
-renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:257
-renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:259
-renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:266
-renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:270
-renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:274
-renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:281
-renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:285
-renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:289
-renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:294
-renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:296
-renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:298
-renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:300
-renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:302
-renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:304
-renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:308
+renderer::SceneFrameSetup	struct	renderer	renderer-sceneframesetup	renderer.md	engine/renderer/scene_frame.h:36
+renderer::SceneFrameSetup::device	variable	renderer	renderer-sceneframesetup-device	renderer.md	engine/renderer/scene_frame.h:39
+renderer::SceneFrameSetup::swapchain	variable	renderer	renderer-sceneframesetup-swapchain	renderer.md	engine/renderer/scene_frame.h:41
+renderer::SceneFrameSetup::max_objects	variable	renderer	renderer-sceneframesetup-max-objects	renderer.md	engine/renderer/scene_frame.h:43
+renderer::SceneFrameSetup::max_lights	variable	renderer	renderer-sceneframesetup-max-lights	renderer.md	engine/renderer/scene_frame.h:45
+renderer::SceneFrameSetup::max_joint_matrices	variable	renderer	renderer-sceneframesetup-max-joint-matrices	renderer.md	engine/renderer/scene_frame.h:48
+renderer::SceneFrameSetup::gbuffer_layer	variable	renderer	renderer-sceneframesetup-gbuffer-layer	renderer.md	engine/renderer/scene_frame.h:50
+renderer::SceneFrameSetup::exposure	variable	renderer	renderer-sceneframesetup-exposure	renderer.md	engine/renderer/scene_frame.h:52
+renderer::SceneFrameSetup::scheduler	variable	renderer	renderer-sceneframesetup-scheduler	renderer.md	engine/renderer/scene_frame.h:54
+renderer::SceneFrameSetup::resources	variable	renderer	renderer-sceneframesetup-resources	renderer.md	engine/renderer/scene_frame.h:56
+renderer::SceneFrameSetup::prewarm_pipelines	variable	renderer	renderer-sceneframesetup-prewarm-pipelines	renderer.md	engine/renderer/scene_frame.h:58
+renderer::SceneFrameSetup::host	variable	renderer	renderer-sceneframesetup-host	renderer.md	engine/renderer/scene_frame.h:60
+renderer::SceneFrameSetup::create_info	variable	renderer	renderer-sceneframesetup-create-info	renderer.md	engine/renderer/scene_frame.h:62
+renderer::SceneFrameSetup::initial_settings	variable	renderer	renderer-sceneframesetup-initial-settings	renderer.md	engine/renderer/scene_frame.h:64
+renderer::SceneFrameSetup::window	variable	renderer	renderer-sceneframesetup-window	renderer.md	engine/renderer/scene_frame.h:66
+renderer::SceneFrameSetup::recovery	variable	renderer	renderer-sceneframesetup-recovery	renderer.md	engine/renderer/scene_frame.h:68
+renderer::SceneFrameSetup::before_present	variable	renderer	renderer-sceneframesetup-before-present	renderer.md	engine/renderer/scene_frame.h:70
+renderer::SceneFrameSetup::before_present_user	variable	renderer	renderer-sceneframesetup-before-present-user	renderer.md	engine/renderer/scene_frame.h:72
+renderer::SceneFrameSetup::font_path	variable	renderer	renderer-sceneframesetup-font-path	renderer.md	engine/renderer/scene_frame.h:75
+renderer::SceneFrameCompose	struct	renderer	renderer-sceneframecompose	renderer.md	engine/renderer/scene_frame.h:82
+renderer::SceneFrameCompose::scene_target	variable	renderer	renderer-sceneframecompose-scene-target	renderer.md	engine/renderer/scene_frame.h:86
+renderer::SceneFrameCompose::after_scene	variable	renderer	renderer-sceneframecompose-after-scene	renderer.md	engine/renderer/scene_frame.h:89
+renderer::SceneFrameCompose::user	variable	renderer	renderer-sceneframecompose-user	renderer.md	engine/renderer/scene_frame.h:91
+Hash<renderer::detail::LabelKey>	struct	renderer	hash-lt-renderer-detail-labelkey-gt	renderer.md	engine/renderer/scene_frame.h:132
+Hash<renderer::detail::LabelKey>::operator()(const renderer::detail::LabelKey&) const	function	renderer	hash-lt-renderer-detail-labelkey-gt-operator-call-const-renderer-detail-labelkey-amp-const	renderer.md	engine/renderer/scene_frame.h:135
+Hash<renderer::detail::LabelKeyView>	struct	renderer	hash-lt-renderer-detail-labelkeyview-gt	renderer.md	engine/renderer/scene_frame.h:143
+Hash<renderer::detail::LabelKeyView>::operator()(const renderer::detail::LabelKeyView&) const	function	renderer	hash-lt-renderer-detail-labelkeyview-gt-operator-call-const-renderer-detail-labelkeyview-amp-const	renderer.md	engine/renderer/scene_frame.h:146
+renderer::SceneFrame	class	renderer	renderer-sceneframe	renderer.md	engine/renderer/scene_frame.h:163
+renderer::SceneFrame::SceneFrame()	function	renderer	renderer-sceneframe-sceneframe	renderer.md	engine/renderer/scene_frame.h:167
+renderer::SceneFrame::~SceneFrame()	function	renderer	renderer-sceneframe-tilde-sceneframe	renderer.md	engine/renderer/scene_frame.h:169
+renderer::SceneFrame::SceneFrame(const SceneFrame&)	function	renderer	renderer-sceneframe-sceneframe-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:170
+renderer::SceneFrame::operator=(const SceneFrame&)	function	renderer	renderer-sceneframe-operator-eq-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:171
+renderer::SceneFrame::Create(const SceneFrameSetup&)	function	renderer	renderer-sceneframe-create-const-sceneframesetup-amp	renderer.md	engine/renderer/scene_frame.h:177
+renderer::SceneFrame::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-sceneframe-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/scene_frame.h:181
+renderer::SceneFrame::Destroy()	function	renderer	renderer-sceneframe-destroy	renderer.md	engine/renderer/scene_frame.h:183
+renderer::SceneFrame::GetRenderer()	function	renderer	renderer-sceneframe-getrenderer	renderer.md	engine/renderer/scene_frame.h:189
+renderer::SceneFrame::Materials()	function	renderer	renderer-sceneframe-materials	renderer.md	engine/renderer/scene_frame.h:194
+renderer::SceneFrame::Templates() const	function	renderer	renderer-sceneframe-templates-const	renderer.md	engine/renderer/scene_frame.h:196
+renderer::SceneFrame::SetCompose(const SceneFrameCompose&)	function	renderer	renderer-sceneframe-setcompose-const-sceneframecompose-amp	renderer.md	engine/renderer/scene_frame.h:199
+renderer::SceneFrame::SetTime(f32,f32)	function	renderer	renderer-sceneframe-settime-f32-f32	renderer.md	engine/renderer/scene_frame.h:201
+renderer::SceneFrame::SetEnvironment(f32,const Vec3&,f32)	function	renderer	renderer-sceneframe-setenvironment-f32-const-vec3-amp-f32	renderer.md	engine/renderer/scene_frame.h:212
+renderer::SceneFrame::SetExposure(f32)	function	renderer	renderer-sceneframe-setexposure-f32	renderer.md	engine/renderer/scene_frame.h:224
+renderer::SceneFrame::SetSky(const SkySettings&,f32)	function	renderer	renderer-sceneframe-setsky-const-skysettings-amp-f32	renderer.md	engine/renderer/scene_frame.h:235
+renderer::SceneFrame::SetTerrainSelect(const TerrainSelectSettings&)	function	renderer	renderer-sceneframe-setterrainselect-const-terrainselectsettings-amp	renderer.md	engine/renderer/scene_frame.h:241
+renderer::SceneFrame::TerrainSelect() const	function	renderer	renderer-sceneframe-terrainselect-const	renderer.md	engine/renderer/scene_frame.h:244
+renderer::SceneFrame::Sky() const	function	renderer	renderer-sceneframe-sky-const	renderer.md	engine/renderer/scene_frame.h:247
+renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:249
+renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:256
+renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:260
+renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:264
+renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:267
+renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:269
+renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:276
+renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:280
+renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:284
+renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:291
+renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:295
+renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:299
+renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:304
+renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:306
+renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:308
+renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:310
+renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:312
+renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:314
+renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:318
 renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:19
 renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:21
 renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:26
@@ -13512,32 +13545,47 @@ renderer::TerrainMaterial::splat	variable	renderer	renderer-terrainmaterial-spla
 renderer::TerrainMaterialInvalid(const TerrainMaterial&)	function	renderer	renderer-terrainmaterialinvalid-const-terrainmaterial-amp	renderer.md	engine/renderer/terrain_material.h:64
 renderer::TerrainNormalizeWeights(u8[4])	function	renderer	renderer-terrainnormalizeweights-u8-4	renderer.md	engine/renderer/terrain_material.h:73
 renderer::TerrainLayerWeights(const TerrainMaterial&,const f32[4],f32,f32[4])	function	renderer	renderer-terrainlayerweights-const-terrainmaterial-amp-const-f32-4-f32-f32-4	renderer.md	engine/renderer/terrain_material.h:85
-renderer::kMaxTerrainDrawTiles	variable	renderer	renderer-kmaxterraindrawtiles	renderer.md	engine/renderer/terrain_pass.h:29
-renderer::TerrainDraw	struct	renderer	renderer-terraindraw	renderer.md	engine/renderer/terrain_pass.h:34
-renderer::TerrainDraw::height	variable	renderer	renderer-terraindraw-height	renderer.md	engine/renderer/terrain_pass.h:36
-renderer::TerrainDraw::samples_x	variable	renderer	renderer-terraindraw-samples-x	renderer.md	engine/renderer/terrain_pass.h:37
-renderer::TerrainDraw::samples_z	variable	renderer	renderer-terraindraw-samples-z	renderer.md	engine/renderer/terrain_pass.h:38
-renderer::TerrainDraw::cell_size	variable	renderer	renderer-terraindraw-cell-size	renderer.md	engine/renderer/terrain_pass.h:39
-renderer::TerrainDraw::range_min	variable	renderer	renderer-terraindraw-range-min	renderer.md	engine/renderer/terrain_pass.h:40
-renderer::TerrainDraw::range_max	variable	renderer	renderer-terraindraw-range-max	renderer.md	engine/renderer/terrain_pass.h:41
-renderer::TerrainDraw::world	variable	renderer	renderer-terraindraw-world	renderer.md	engine/renderer/terrain_pass.h:42
-renderer::TerrainDraw::material	variable	renderer	renderer-terraindraw-material	renderer.md	engine/renderer/terrain_pass.h:43
-renderer::TerrainDraw::select	variable	renderer	renderer-terraindraw-select	renderer.md	engine/renderer/terrain_pass.h:44
-renderer::TerrainPass	class	renderer	renderer-terrainpass	renderer.md	engine/renderer/terrain_pass.h:51
-renderer::TerrainPass::TerrainPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-terrainpass-terrainpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/terrain_pass.h:62
-renderer::TerrainPass::~TerrainPass()	function	renderer	renderer-terrainpass-tilde-terrainpass	renderer.md	engine/renderer/terrain_pass.h:64
-renderer::TerrainPass::TerrainPass(const TerrainPass&)	function	renderer	renderer-terrainpass-terrainpass-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:65
-renderer::TerrainPass::operator=(const TerrainPass&)	function	renderer	renderer-terrainpass-operator-eq-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:66
-renderer::TerrainPass::RegisterWith(DeviceResources*)	function	renderer	renderer-terrainpass-registerwith-deviceresources-star	renderer.md	engine/renderer/terrain_pass.h:74
-renderer::TerrainPass::Release()	function	renderer	renderer-terrainpass-release	renderer.md	engine/renderer/terrain_pass.h:77
-renderer::TerrainPass::Recreate(rhi::Device*)	function	renderer	renderer-terrainpass-recreate-rhi-device-star	renderer.md	engine/renderer/terrain_pass.h:84
-renderer::TerrainPass::Live() const	function	renderer	renderer-terrainpass-live-const	renderer.md	engine/renderer/terrain_pass.h:85
-renderer::TerrainPass::RecreatableName() const	function	renderer	renderer-terrainpass-recreatablename-const	renderer.md	engine/renderer/terrain_pass.h:86
-renderer::TerrainPass::Valid() const	function	renderer	renderer-terrainpass-valid-const	renderer.md	engine/renderer/terrain_pass.h:90
-renderer::TerrainPass::Prepare(const TerrainDraw&,Span<const TerrainTile>,u64)	function	renderer	renderer-terrainpass-prepare-const-terraindraw-amp-span-lt-const-terraintile-gt-u64	renderer.md	engine/renderer/terrain_pass.h:99
-renderer::TerrainPass::Clear()	function	renderer	renderer-terrainpass-clear	renderer.md	engine/renderer/terrain_pass.h:103
-renderer::TerrainPass::AddToGraph(RenderGraph*,const GBufferTargets&)	function	renderer	renderer-terrainpass-addtograph-rendergraph-star-const-gbuffertargets-amp	renderer.md	engine/renderer/terrain_pass.h:113
-renderer::TerrainPass::DrawnTiles() const	function	renderer	renderer-terrainpass-drawntiles-const	renderer.md	engine/renderer/terrain_pass.h:117
+renderer::kMaxTerrainDrawTiles	variable	renderer	renderer-kmaxterraindrawtiles	renderer.md	engine/renderer/terrain_pass.h:30
+renderer::kMaxTerrainsPerFrame	variable	renderer	renderer-kmaxterrainsperframe	renderer.md	engine/renderer/terrain_pass.h:33
+renderer::TerrainDraw	struct	renderer	renderer-terraindraw	renderer.md	engine/renderer/terrain_pass.h:38
+renderer::TerrainDraw::height	variable	renderer	renderer-terraindraw-height	renderer.md	engine/renderer/terrain_pass.h:40
+renderer::TerrainDraw::samples_x	variable	renderer	renderer-terraindraw-samples-x	renderer.md	engine/renderer/terrain_pass.h:41
+renderer::TerrainDraw::samples_z	variable	renderer	renderer-terraindraw-samples-z	renderer.md	engine/renderer/terrain_pass.h:42
+renderer::TerrainDraw::cell_size	variable	renderer	renderer-terraindraw-cell-size	renderer.md	engine/renderer/terrain_pass.h:43
+renderer::TerrainDraw::range_min	variable	renderer	renderer-terraindraw-range-min	renderer.md	engine/renderer/terrain_pass.h:44
+renderer::TerrainDraw::range_max	variable	renderer	renderer-terraindraw-range-max	renderer.md	engine/renderer/terrain_pass.h:45
+renderer::TerrainDraw::world	variable	renderer	renderer-terraindraw-world	renderer.md	engine/renderer/terrain_pass.h:46
+renderer::TerrainDraw::material	variable	renderer	renderer-terraindraw-material	renderer.md	engine/renderer/terrain_pass.h:47
+renderer::TerrainDraw::select	variable	renderer	renderer-terraindraw-select	renderer.md	engine/renderer/terrain_pass.h:48
+renderer::TerrainPass	class	renderer	renderer-terrainpass	renderer.md	engine/renderer/terrain_pass.h:55
+renderer::TerrainPass::TerrainPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-terrainpass-terrainpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/terrain_pass.h:66
+renderer::TerrainPass::~TerrainPass()	function	renderer	renderer-terrainpass-tilde-terrainpass	renderer.md	engine/renderer/terrain_pass.h:68
+renderer::TerrainPass::TerrainPass(const TerrainPass&)	function	renderer	renderer-terrainpass-terrainpass-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:69
+renderer::TerrainPass::operator=(const TerrainPass&)	function	renderer	renderer-terrainpass-operator-eq-const-terrainpass-amp	renderer.md	engine/renderer/terrain_pass.h:70
+renderer::TerrainPass::RegisterWith(DeviceResources*)	function	renderer	renderer-terrainpass-registerwith-deviceresources-star	renderer.md	engine/renderer/terrain_pass.h:78
+renderer::TerrainPass::Release()	function	renderer	renderer-terrainpass-release	renderer.md	engine/renderer/terrain_pass.h:81
+renderer::TerrainPass::Recreate(rhi::Device*)	function	renderer	renderer-terrainpass-recreate-rhi-device-star	renderer.md	engine/renderer/terrain_pass.h:88
+renderer::TerrainPass::Live() const	function	renderer	renderer-terrainpass-live-const	renderer.md	engine/renderer/terrain_pass.h:89
+renderer::TerrainPass::RecreatableName() const	function	renderer	renderer-terrainpass-recreatablename-const	renderer.md	engine/renderer/terrain_pass.h:90
+renderer::TerrainPass::Valid() const	function	renderer	renderer-terrainpass-valid-const	renderer.md	engine/renderer/terrain_pass.h:94
+renderer::TerrainPass::BeginFrame(u64)	function	renderer	renderer-terrainpass-beginframe-u64	renderer.md	engine/renderer/terrain_pass.h:100
+renderer::TerrainPass::Add(const TerrainDraw&,Span<const TerrainTile>)	function	renderer	renderer-terrainpass-add-const-terraindraw-amp-span-lt-const-terraintile-gt	renderer.md	engine/renderer/terrain_pass.h:112
+renderer::TerrainPass::Prepare(const TerrainDraw&,Span<const TerrainTile>,u64)	function	renderer	renderer-terrainpass-prepare-const-terraindraw-amp-span-lt-const-terraintile-gt-u64	renderer.md	engine/renderer/terrain_pass.h:120
+renderer::TerrainPass::Clear()	function	renderer	renderer-terrainpass-clear	renderer.md	engine/renderer/terrain_pass.h:124
+renderer::TerrainPass::AddToGraph(RenderGraph*,const GBufferTargets&)	function	renderer	renderer-terrainpass-addtograph-rendergraph-star-const-gbuffertargets-amp	renderer.md	engine/renderer/terrain_pass.h:134
+renderer::TerrainPass::DrawnTiles() const	function	renderer	renderer-terrainpass-drawntiles-const	renderer.md	engine/renderer/terrain_pass.h:138
+renderer::TerrainSource	class	renderer	renderer-terrainsource	renderer.md	engine/renderer/terrain_source.h:23
+renderer::TerrainSource::tiles	variable	renderer	renderer-terrainsource-tiles	renderer.md	engine/renderer/terrain_source.h:26
+renderer::TerrainSource::height	variable	renderer	renderer-terrainsource-height	renderer.md	engine/renderer/terrain_source.h:27
+renderer::TerrainSource::samples_x	variable	renderer	renderer-terrainsource-samples-x	renderer.md	engine/renderer/terrain_source.h:28
+renderer::TerrainSource::samples_z	variable	renderer	renderer-terrainsource-samples-z	renderer.md	engine/renderer/terrain_source.h:29
+renderer::TerrainSource::cell_size	variable	renderer	renderer-terrainsource-cell-size	renderer.md	engine/renderer/terrain_source.h:30
+renderer::TerrainSource::range_min	variable	renderer	renderer-terrainsource-range-min	renderer.md	engine/renderer/terrain_source.h:31
+renderer::TerrainSource::range_max	variable	renderer	renderer-terrainsource-range-max	renderer.md	engine/renderer/terrain_source.h:32
+renderer::TerrainSource::Valid() const	function	renderer	renderer-terrainsource-valid-const	renderer.md	engine/renderer/terrain_source.h:36
+renderer::TerrainSourcePtr	alias	renderer	renderer-terrainsourceptr	renderer.md	engine/renderer/terrain_source.h:40
+renderer::TerrainSourceConstPtr	alias	renderer	renderer-terrainsourceconstptr	renderer.md	engine/renderer/terrain_source.h:42
+renderer::TerrainWorldValid(const Mat4&)	function	renderer	renderer-terrainworldvalid-const-mat4-amp	renderer.md	engine/renderer/terrain_source.h:51
 renderer::kTerrainTileCells	variable	renderer	renderer-kterraintilecells	renderer.md	engine/renderer/terrain_tiles.h:23
 renderer::kMaxTerrainLevels	variable	renderer	renderer-kmaxterrainlevels	renderer.md	engine/renderer/terrain_tiles.h:25
 renderer::TerrainTilesDesc	struct	renderer	renderer-terraintilesdesc	renderer.md	engine/renderer/terrain_tiles.h:30

@@ -10,6 +10,8 @@
 #include "renderer/camera.h"
 #include "renderer/mesh.h"
 #include "renderer/render_scene.h"
+#include "renderer/terrain_material.h"
+#include "renderer/terrain_source.h"
 #include "types.h"
 
 namespace vse::scene
@@ -105,6 +107,34 @@ struct RenderHandle
     renderer::ObjectId more[kMaxSlotMaterials - 1];
     /// How many of `more` exist.
     u32 more_count = 0;
+};
+
+/// A terrain at the entity's `WorldTransform`: the height map's data and its surface. The transform must be a
+/// translation and a turn about the y axis ([[renderer::TerrainWorldValid]]): a scaled or tilted terrain is not drawn
+/// (counted as invalid by the sync) because the quadtree, the morph distances and the height-field collider work in
+/// the terrain's own metres. A world may hold several terrains (neighbouring maps); each is drawn alone, and hiding the
+/// seam between two maps is the caller's. [[scene::Hidden]] skips it. Giving the entity a new `source` (a reloaded
+/// height map) makes the next sync draw the new heights.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: shares the source and the material's textures; the render sync holds one more share per terrain it
+///   added.
+struct Terrain
+{
+    renderer::TerrainSourcePtr source;   ///< The height map's data; null or not valid means "draw nothing".
+    renderer::TerrainMaterial material;  ///< The surface.
+};
+
+/// What the sync keeps on a mirrored terrain entity: its id in the render scene. The world logs the removal of this
+/// component, which is how the sync learns that a terrain entity was destroyed.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct TerrainHandle
+{
+    /// The world logs removals of this component (see [[ecs::World::RemovedCount]]).
+    static constexpr bool kTrackRemoval = true;
+    /// The terrain in the render scene, or invalid.
+    renderer::TerrainId id;
 };
 
 /// The resource naming the camera entity (the entity needs [[scene::Camera]] and a `WorldTransform`).

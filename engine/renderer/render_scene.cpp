@@ -50,6 +50,8 @@ RenderScene::RenderScene(const RenderSceneDesc& desc)
     light_capacity_ = desc.max_lights;
     objects_.Resize(object_capacity_);
     lights_.Resize(light_capacity_);
+    terrain_capacity_ = desc.max_terrains;
+    terrains_.Resize(terrain_capacity_);
 }
 
 struct RenderScene::CullIndex
@@ -419,6 +421,80 @@ u32 RenderScene::CullFlat(const Frustum& frustum, u32* out_slots) const
         }
     }
     return count;
+}
+
+namespace
+{
+void CheckTerrain(const TerrainObject& t)
+{
+    ENGINE_ASSERT(t.source && t.source->Valid(), "terrain: the source is missing or not valid");
+    ENGINE_ASSERT(TerrainWorldValid(t.world), "terrain: the world matrix is not a translation and a turn about y");
+}
+}  // namespace
+
+TerrainId RenderScene::AddTerrain(const TerrainObject& terrain)
+{
+    CheckTerrain(terrain);
+    u32 slot;
+    if (free_terrain_ != kNoSlot)
+    {
+        slot = free_terrain_;
+        free_terrain_ = terrains_[slot].next_free;
+    }
+    else if (terrain_slots_used_ < terrain_capacity_)
+    {
+        slot = terrain_slots_used_++;
+    }
+    else
+    {
+        return TerrainId{};
+    }
+    TerrainSlot& s = terrains_[slot];
+    s.alive = true;
+    s.terrain = terrain;
+    ++terrain_count_;
+    return TerrainId{slot, s.generation};
+}
+
+void RenderScene::RemoveTerrain(TerrainId id)
+{
+    ENGINE_ASSERT(FindTerrain(id) != nullptr, "RemoveTerrain: the id is invalid or stale");
+    TerrainSlot& s = terrains_[id.index];
+    s.alive = false;
+    s.terrain = TerrainObject();
+    s.generation = NextGeneration(s.generation);
+    s.next_free = free_terrain_;
+    free_terrain_ = id.index;
+    --terrain_count_;
+}
+
+void RenderScene::SetTerrain(TerrainId id, const TerrainObject& terrain)
+{
+    ENGINE_ASSERT(FindTerrain(id) != nullptr, "SetTerrain: the id is invalid or stale");
+    CheckTerrain(terrain);
+    terrains_[id.index].terrain = terrain;
+}
+
+const TerrainObject* RenderScene::FindTerrain(TerrainId id) const
+{
+    if (!id.IsValid() || id.index >= terrain_slots_used_)
+    {
+        return nullptr;
+    }
+    const TerrainSlot& s = terrains_[id.index];
+    return s.alive && s.generation == id.generation ? &s.terrain : nullptr;
+}
+
+bool RenderScene::TerrainSlotAlive(u32 slot) const
+{
+    ENGINE_ASSERT(slot < terrain_slots_used_, "TerrainSlotAlive: slot out of range");
+    return terrains_[slot].alive;
+}
+
+const TerrainObject& RenderScene::TerrainAt(u32 slot) const
+{
+    ENGINE_ASSERT(slot < terrain_slots_used_ && terrains_[slot].alive, "TerrainAt: slot out of range or dead");
+    return terrains_[slot].terrain;
 }
 
 }  // namespace vse::renderer

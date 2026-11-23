@@ -33,6 +33,7 @@ void SceneFrame::Destroy()
     label_cache_.Clear();
     debug_view_.Reset();
     sky_.Reset();
+    terrain_.Reset();
     tonemap_.Reset();
     lighting_.Reset();
     gbuffer_.Reset();
@@ -88,9 +89,11 @@ bool SceneFrame::Create(const SceneFrameSetup& setup)
     lighting_ = MakeUnique<LightingPass>(setup.device, materials_.Get(), frame_.Get());
     tonemap_ = MakeUnique<TonemapPass>(setup.device);
     sky_ = MakeUnique<SkyPass>(setup.device, materials_.Get(), frame_.Get());
+    terrain_ = MakeUnique<TerrainPass>(setup.device, materials_.Get(), frame_.Get());
     debug_view_ = MakeUnique<GBufferDebugView>(setup.device);
     const bool registered = lighting_->RegisterWith(setup.resources) && tonemap_->RegisterWith(setup.resources) &&
-                            sky_->RegisterWith(setup.resources) && debug_view_->RegisterWith(setup.resources);
+                            sky_->RegisterWith(setup.resources) && terrain_->RegisterWith(setup.resources) &&
+                            debug_view_->RegisterWith(setup.resources);
     if (!registered || !templates_.plain.IsValid() || !templates_.colored.IsValid() || !lighting_->Valid() ||
         !tonemap_->Valid() || !debug_view_->Valid())
     {
@@ -302,9 +305,58 @@ void SceneFrame::SetSky(const SkySettings& settings, f32 sky_reflection)
         settings.mode == SkyMode::Cube && environment.Get() == settings.cube.Get() ? settings.rotation : 0.0f);
 }
 
+void SceneFrame::SetTerrainSelect(const TerrainSelectSettings& settings)
+{
+    ENGINE_ASSERT(IsFinite(settings.first_range) && settings.first_range > 0.0f && settings.morph_fraction >= 0.0f &&
+                      settings.morph_fraction < 1.0f && settings.max_distance >= 0.0f,
+                  "SceneFrame::SetTerrainSelect: a setting is out of range");
+    terrain_select_ = settings;
+}
+
 FrameStatus SceneFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen)
 {
     return renderer_->RenderFrame(scene, camera, offscreen);
+}
+
+void SceneFrame::PrepareTerrains(const RenderScene& scene, const Camera& camera, u64 frame_index)
+{
+    terrain_->BeginFrame(frame_index);
+    for (u32 slot = 0; slot < scene.TerrainSlotCount(); ++slot)
+    {
+        if (!scene.TerrainSlotAlive(slot))
+        {
+            continue;
+        }
+        const TerrainObject& object = scene.TerrainAt(slot);
+        if ((object.flags & ObjectFlags::kHidden) != 0)
+        {
+            continue;
+        }
+        const TerrainSource& source = *object.source;
+        // The camera and the frustum in terrain space: the world matrix is a turn about y and a translation, so its
+        // inverse is the transposed turn.
+        const Mat4& w = object.world;
+        const Vec3 d = camera.position - Vec3(w.col[3][0], w.col[3][1], w.col[3][2]);
+        const Vec3 local(w.col[0][0] * d.x + w.col[0][1] * d.y + w.col[0][2] * d.z,
+                         w.col[1][0] * d.x + w.col[1][1] * d.y + w.col[1][2] * d.z,
+                         w.col[2][0] * d.x + w.col[2][1] * d.y + w.col[2][2] * d.z);
+        const Frustum frustum = Frustum::FromViewProjection(camera.ViewProjection() * w);
+        TerrainSelectSettings select = terrain_select_;
+        select.first_range = FMax(select.first_range, 3.0f * static_cast<f32>(kTerrainTileCells) * source.cell_size);
+        tile_scratch_.Clear();
+        source.tiles.Select(local, &frustum, select, &tile_scratch_);
+        TerrainDraw draw;
+        draw.height = source.height;
+        draw.samples_x = source.samples_x;
+        draw.samples_z = source.samples_z;
+        draw.cell_size = source.cell_size;
+        draw.range_min = source.range_min;
+        draw.range_max = source.range_max;
+        draw.world = w;
+        draw.material = object.material;
+        draw.select = select;
+        terrain_->Add(draw, Span<const TerrainTile>(tile_scratch_.Data(), tile_scratch_.Size()));
+    }
 }
 
 bool SceneFrame::Build(const FrameContext& context, void* user)
@@ -338,11 +390,13 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
         rhi::RhiLogV(LogVerbosity::Warn, "scene frame: some objects were not drawn: %s", self->gbuffer_->LastError());
     }
     self->gbuffer_stats_ = self->gbuffer_->Stats();
+    self->PrepareTerrains(*context.scene, *context.camera, context.frame_index);
     self->light_summary_ = self->lighting_->Prepare(*context.scene, data);
     self->sky_->Prepare(self->sky_settings_);
     self->frame_->Flush();
 
     const GBufferTargets targets = self->gbuffer_->AddToGraph(context.graph, scene_width, scene_height);
+    self->terrain_->AddToGraph(context.graph, targets);
     if (self->gbuffer_layer_ >= 0)
     {
         self->debug_view_->SetInverseViewProjection(data.inverse_view_projection);

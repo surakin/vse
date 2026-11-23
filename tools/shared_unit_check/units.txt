@@ -13,3 +13,4 @@ ConvexHull|ConvexHullPtr|ConvexHullConstPtr|engine/physics/hull.h
 TriangleMesh|TriangleMeshPtr|TriangleMeshConstPtr|engine/physics/triangle_mesh.h
 CompoundShape|CompoundShapePtr|CompoundShapeConstPtr|engine/physics/compound.h
 AudioClip|AudioClipPtr|AudioClipConstPtr|engine/audio/clip.h
+TerrainSource|TerrainSourcePtr|TerrainSourceConstPtr|engine/renderer/terrain_source.h

@@ -12,7 +12,11 @@
 #include "containers/span.h"
 #include "gbuffer_rig.h"
 #include "renderer/lighting.h"
+#include "ecs/schedule.h"
+#include "ecs/transform.h"
+#include "renderer/scene_frame.h"
 #include "renderer/terrain_pass.h"
+#include "scene/render_sync.h"
 
 using namespace vse;
 using namespace vse::renderer;
@@ -703,6 +707,137 @@ TEST_CASE("Far terrain fades to the layer's average colour, and a reset keeps th
             const TgFrame again = TgRender(rig, pass, scene, cam, draw, map.tiles, TerrainSelectSettings{});
             REQUIRE(again.layers.ok);
             CHECK(Same(far_frame.layers.albedo, again.layers.albedo));
+            device->WaitIdle();
+        }
+        device->WaitIdle();
+        device.Reset();
+    }
+}
+
+namespace
+{
+
+constexpr u32 kTgShot = 128;
+
+// Renders `scene` through a SceneFrame to an offscreen target and returns its pixels (RGBA8).
+Vector<byte> TgShot(rhi::Device* device, SceneFrame& frame, const RenderScene& scene, const Camera& camera)
+{
+    rhi::TextureDesc td;
+    td.width = kTgShot;
+    td.height = kTgShot;
+    td.format = rhi::Format::RGBA8_SRGB;
+    td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
+    const rhi::TextureHandle target = device->CreateTexture(td);
+    REQUIRE(target.IsValid());
+    FrameTarget ft;
+    ft.texture = target;
+    ft.width = kTgShot;
+    ft.height = kTgShot;
+    ft.format = rhi::Format::RGBA8_SRGB;
+    ft.initial = rhi::ResourceState::Undefined;
+    ft.final_state = rhi::ResourceState::CopySrc;
+    frame.SetTime(0.5f, 0.016f);
+    REQUIRE(frame.Render(&scene, &camera, &ft) == FrameStatus::Ok);
+    device->WaitIdle();
+    Vector<byte> pixels;
+    pixels.Resize(static_cast<usize>(kTgShot) * kTgShot * 4);
+    REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), rhi::ResourceState::CopySrc));
+    device->DestroyTexture(target);
+    return pixels;
+}
+
+int TgBright(const Vector<byte>& px, u32 x, u32 y)
+{
+    const byte* p = px.Data() + (static_cast<usize>(y) * kTgShot + x) * 4;
+    return static_cast<int>(p[0]) + p[1] + p[2];
+}
+
+}  // namespace
+
+TEST_CASE("A world with terrain entities draws them through the scene frame, and drops them with the entity",
+          "[rhi][gpu][terrain]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        {
+            SceneFrame frame;
+            SceneFrameSetup fs;
+            fs.device = device.Get();
+            fs.max_objects = 16;
+            fs.max_lights = 4;
+            REQUIRE(frame.Create(fs));
+            RenderSceneDesc sd;
+            sd.max_objects = 16;
+            sd.max_lights = 4;
+            sd.max_terrains = 4;
+            RenderScene scene(sd);
+            Light ambient;
+            ambient.type = LightType::Ambient;
+            ambient.color = Vec3(0.8f, 0.8f, 0.8f);
+            scene.AddLight(ambient);
+
+            ecs::World world;
+            ecs::Schedule schedule;
+            world.SetResource(ecs::TransformReport{});
+            world.SetResource(scene::SceneLink{&scene});
+            world.SetResource(scene::SceneSyncReport{});
+            schedule.Add(ecs::MakeTransformSystem("transforms"));
+            schedule.Add(scene::MakeTerrainSyncSystem("terrain_sync").InStage(ecs::kRender));
+            REQUIRE(schedule.Build().ok);
+
+            TgMap a;
+            TgMap b;
+            REQUIRE(TgMake(device.Get(), &a, 65, 1.0f, 10.0f, &TgFlat));
+            REQUIRE(TgMake(device.Get(), &b, 65, 1.0f, 10.0f, &TgFlat));
+            TerrainSourcePtr source_a = MakeShared<TerrainSource>();
+            source_a->tiles = Move(a.tiles);
+            source_a->height = a.texture;
+            source_a->samples_x = source_a->samples_z = 65;
+            source_a->cell_size = 1.0f;
+            source_a->range_max = 10.0f;
+            TerrainSourcePtr source_b = MakeShared<TerrainSource>();
+            source_b->tiles = Move(b.tiles);
+            source_b->height = b.texture;
+            source_b->samples_x = source_b->samples_z = 65;
+            source_b->cell_size = 1.0f;
+            source_b->range_max = 10.0f;
+            auto spawn = [&](f32 x, const TerrainSourcePtr& source)
+            {
+                ecs::LocalTransform t;
+                t.position = Vec3(x, 0.0f, 0.0f);
+                scene::Terrain terrain;
+                terrain.source = source;
+                return world.Create(t, ecs::WorldTransform{}, terrain);
+            };
+            const ecs::Entity left = spawn(0.0f, source_a);
+            spawn(64.0f, source_b);
+            schedule.Run(world, 0.016f);
+            schedule.Run(world, 0.016f);
+            REQUIRE(scene.TerrainCount() == 2);
+
+            Camera cam = MakeLookAtCamera(Vec3(64, 100, 32), Vec3(64, 0, 32), Vec3(0, 0, -1));
+            cam.aspect = 1.0f;
+            cam.near_plane = 1.0f;
+            cam.far_plane = 300.0f;
+            const Vector<byte> both = TgShot(device.Get(), frame, scene, cam);
+            const Pixel l = Project(cam, Vec3(32, 0, 32));
+            const Pixel r = Project(cam, Vec3(96, 0, 32));
+            const u32 lx = l.x * kTgShot / kW;
+            const u32 ly = l.y * kTgShot / kH;
+            const u32 rx = r.x * kTgShot / kW;
+            const u32 ry = r.y * kTgShot / kH;
+            CHECK(TgBright(both, lx, ly) > 60);
+            CHECK(TgBright(both, rx, ry) > 60);
+
+            world.Destroy(left);
+            schedule.Run(world, 0.016f);
+            schedule.Run(world, 0.016f);
+            CHECK(scene.TerrainCount() == 1);
+            const Vector<byte> one = TgShot(device.Get(), frame, scene, cam);
+            CHECK(TgBright(one, lx, ly) == 0);
+            CHECK(TgBright(one, rx, ry) > 60);
             device->WaitIdle();
         }
         device->WaitIdle();

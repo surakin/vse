@@ -11,6 +11,8 @@
 #include "renderer/bounds.h"
 #include "renderer/frustum.h"
 #include "renderer/mesh.h"
+#include "renderer/terrain_material.h"
+#include "renderer/terrain_source.h"
 #include "types.h"
 
 namespace vse::renderer
@@ -172,6 +174,38 @@ struct Light
     f32 outer_cone = 0.7853981634f;
 };
 
+/// A generation-checked reference to a terrain in a [[renderer::RenderScene]]; see [[renderer::ObjectId]].
+///
+/// - Thread-safety: thread-safe plain value.
+struct TerrainId
+{
+    /// The slot in the scene.
+    u32 index = 0;
+    /// The slot's generation when the id was made; 0 means invalid.
+    u32 generation = 0;
+
+    /// Returns whether this is not the invalid (all-zero) id.
+    /// - Fails: never.
+    constexpr bool IsValid() const { return generation != 0; }
+    /// Returns whether both ids name the same terrain.
+    constexpr bool operator==(const TerrainId& o) const { return index == o.index && generation == o.generation; }
+    /// Returns whether the ids differ.
+    constexpr bool operator!=(const TerrainId& o) const { return !(*this == o); }
+};
+
+/// What a terrain in a scene is: its data, its surface and where it stands.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: shares the source and the material's textures.
+struct TerrainObject
+{
+    TerrainSourcePtr source;        ///< The height map's data; must be valid.
+    TerrainMaterial material;       ///< The surface.
+    Mat4 world = Mat4::Identity();  ///< Terrain space to world space: a translation and a turn about y
+                                    ///< ([[renderer::TerrainWorldValid]]).
+    u32 flags = 0;                  ///< `ObjectFlags` bits; `kHidden` skips the terrain.
+};
+
 /// The most lights a scene or a [[renderer::FrameResources]] can hold: 16384.
 ///
 /// A light is 48 bytes in the light buffer, so that is 768 KiB per frame slot. Asking for more aborts; a frame with
@@ -188,6 +222,8 @@ struct RenderSceneDesc
     u32 max_objects = 1024;
     /// Capacity for lights, from 1 to [[renderer::kMaxLights]].
     u32 max_lights = 64;
+    /// Capacity for terrains; 0 for a scene with none.
+    u32 max_terrains = 8;
 };
 
 /// A fixed-capacity list of objects and lights.
@@ -333,6 +369,48 @@ public:
     /// - Aborts: `slot` is out of range or dead.
     const Light& LightAt(u32 slot) const;
 
+    /// Adds a terrain.
+    ///
+    /// - Param terrain: the terrain; its source must be valid and its world a valid placement.
+    /// - Returns: its id, or the invalid id if the scene holds `max_terrains` already.
+    /// - Fails: reported through the return value.
+    /// - Aborts: the source is null or not valid, or the world is not [[renderer::TerrainWorldValid]].
+    /// - Ownership: shares the source and the textures.
+    TerrainId AddTerrain(const TerrainObject& terrain);
+
+    /// Removes a terrain; its id becomes stale.
+    ///
+    /// - Param id: a live terrain.
+    /// - Aborts: `id` is invalid or stale.
+    void RemoveTerrain(TerrainId id);
+
+    /// Replaces a terrain (a reloaded height map, a moved terrain, a new material); the id stays.
+    ///
+    /// - Param id: a live terrain.
+    /// - Param terrain: the new values, checked as for [[renderer::RenderScene::AddTerrain]].
+    /// - Aborts: `id` is invalid or stale, or `terrain` is invalid.
+    /// - Ownership: shares the source and the textures.
+    void SetTerrain(TerrainId id, const TerrainObject& terrain);
+
+    /// Looks a terrain up.
+    ///
+    /// - Param id: any id.
+    /// - Returns: the terrain, or null if `id` is invalid or stale.
+    /// - Fails: reported through the return value.
+    /// - Ownership: borrowed from the scene; valid until the terrain is removed or replaced.
+    const TerrainObject* FindTerrain(TerrainId id) const;
+
+    /// Returns the number of live terrains.
+    u32 TerrainCount() const { return terrain_count_; }
+    /// Returns the number of terrain slots ever used.
+    u32 TerrainSlotCount() const { return terrain_slots_used_; }
+    /// Returns whether a terrain slot is live.
+    /// - Aborts: `slot` is not below [[renderer::RenderScene::TerrainSlotCount]].
+    bool TerrainSlotAlive(u32 slot) const;
+    /// Returns the terrain in a live slot.
+    /// - Aborts: `slot` is out of range or dead.
+    const TerrainObject& TerrainAt(u32 slot) const;
+
     /// Finds the objects that may be visible: live, not hidden, and not culled by the frustum.
     ///
     /// - Param frustum: the view volume, in world space.
@@ -377,6 +455,13 @@ private:
         u32 next_free = 0;
         bool alive = false;
     };
+    struct TerrainSlot
+    {
+        TerrainObject terrain;
+        u32 generation = 1;
+        u32 next_free = 0;
+        bool alive = false;
+    };
     static constexpr u32 kNoSlot = 0xffffffffu;
     struct CullIndex;
     void IndexObject(u32 slot);
@@ -388,6 +473,11 @@ private:
 
     Vector<ObjectSlot> objects_;
     Vector<LightSlot> lights_;
+    Vector<TerrainSlot> terrains_;
+    u32 terrain_capacity_ = 0;
+    u32 terrain_count_ = 0;
+    u32 terrain_slots_used_ = 0;
+    u32 free_terrain_ = kNoSlot;
     u32 object_capacity_ = 0;
     u32 light_capacity_ = 0;
     u32 object_count_ = 0;

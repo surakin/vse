@@ -2,6 +2,7 @@
 # Built plain, ASan and TSan from one source list, each linked against the matching ecs and renderer variant.
 set(SCENE_SOURCES
   render_sync.cpp
+  terrain_sync.cpp  # Phase 28 Day 490
   level_spawner.cpp  # Phase 22 Day 329
   scene_components.cpp  # Phase 27 Day 456
 )

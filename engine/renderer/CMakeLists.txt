@@ -14,6 +14,7 @@ set(RENDERER_SOURCES
   render_settings.cpp
   terrain_tiles.cpp  # Phase 28 Day 487
   terrain_material.cpp  # Phase 28 Day 489
+  terrain_source.cpp  # Phase 28 Day 490
   shared_settings.cpp
   device_resources.cpp
   texture.cpp

@@ -10,6 +10,7 @@
 #include "renderer/gbuffer.h"
 #include "renderer/lighting.h"
 #include "renderer/sky.h"
+#include "renderer/terrain_pass.h"
 #include "renderer/material.h"
 #include "renderer/renderer.h"
 #include "renderer/text_renderer.h"
@@ -232,6 +233,15 @@ public:
     /// - Param sky_reflection: how much of the sky the lit surfaces reflect, not negative.
     /// - Aborts: the settings are invalid.
     void SetSky(const SkySettings& settings, f32 sky_reflection = 0.0f);
+    /// Sets how the scene's terrains choose their tiles (the ranges at which the levels change and morph). The first
+    /// range is raised for a terrain whose cell size would make it too small for the one-level neighbour rule.
+    ///
+    /// - Param settings: `first_range` above 0, `morph_fraction` in [0, 1), `max_distance` not negative.
+    /// - Aborts: a setting is out of range.
+    void SetTerrainSelect(const TerrainSelectSettings& settings);
+    /// Returns the terrain tile settings last set.
+    /// - Fails: never.
+    const TerrainSelectSettings& TerrainSelect() const { return terrain_select_; }
     /// Returns the sky last set.
     /// - Fails: never.
     const SkySettings& Sky() const { return sky_settings_; }
@@ -319,6 +329,10 @@ private:
     UniquePtr<LightingPass> lighting_;
     UniquePtr<TonemapPass> tonemap_;
     UniquePtr<SkyPass> sky_;
+    UniquePtr<TerrainPass> terrain_;
+    TerrainSelectSettings terrain_select_;
+    Vector<TerrainTile> tile_scratch_;
+    void PrepareTerrains(const RenderScene& scene, const Camera& camera, u64 frame_index);
     GpuTexturePtr environment_cube_;  // the procedural sky's cube, for the lighting pass
     SkySettings environment_source_;  // the settings it was made from
     SkySettings sky_settings_;

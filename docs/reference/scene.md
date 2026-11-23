@@ -315,6 +315,75 @@ u32 more_count;
 
 How many of `more` exist.
 
+## `Terrain` {#scene-terrain}
+
+`struct scene::Terrain` — defined in `engine/scene/components.h`
+
+```cpp
+struct Terrain { ... }
+```
+
+A terrain at the entity's `WorldTransform`: the height map's data and its surface. The transform must be a translation and a turn about the y axis ([`renderer::TerrainWorldValid`](renderer.md#renderer-terrainworldvalid-const-mat4-amp)): a scaled or tilted terrain is not drawn (counted as invalid by the sync) because the quadtree, the morph distances and the height-field collider work in the terrain's own metres. A world may hold several terrains (neighbouring maps); each is drawn alone, and hiding the seam between two maps is the caller's. [`scene::Hidden`](#scene-hidden) skips it. Giving the entity a new `source` (a reloaded height map) makes the next sync draw the new heights.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | shares the source and the material's textures; the render sync holds one more share per terrain it added. |
+
+### `source` {#scene-terrain-source}
+
+`variable scene::Terrain::source` — defined in `engine/scene/components.h`
+
+```cpp
+renderer::TerrainSourcePtr source;
+```
+
+The height map's data; null or not valid means "draw nothing".
+
+### `material` {#scene-terrain-material}
+
+`variable scene::Terrain::material` — defined in `engine/scene/components.h`
+
+```cpp
+renderer::TerrainMaterial material;
+```
+
+The surface.
+
+## `TerrainHandle` {#scene-terrainhandle}
+
+`struct scene::TerrainHandle` — defined in `engine/scene/components.h`
+
+```cpp
+struct TerrainHandle { ... }
+```
+
+What the sync keeps on a mirrored terrain entity: its id in the render scene. The world logs the removal of this component, which is how the sync learns that a terrain entity was destroyed.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `kTrackRemoval` {#scene-terrainhandle-ktrackremoval}
+
+`variable scene::TerrainHandle::kTrackRemoval` — defined in `engine/scene/components.h`
+
+```cpp
+static constexpr bool kTrackRemoval;
+```
+
+The world logs removals of this component (see [`ecs::World::RemovedCount`](ecs.md#ecs-world-removedcount-const)).
+
+### `id` {#scene-terrainhandle-id}
+
+`variable scene::TerrainHandle::id` — defined in `engine/scene/components.h`
+
+```cpp
+renderer::TerrainId id;
+```
+
+The terrain in the render scene, or invalid.
+
 ## `ActiveCamera` {#scene-activecamera}
 
 `struct scene::ActiveCamera` — defined in `engine/scene/components.h`
@@ -626,6 +695,36 @@ u64 refused_full;
 
 Adds the full render scene refused (an entity is retried every frame until there is room).
 
+### `terrains_added` {#scene-scenesyncreport-terrains-added}
+
+`variable scene::SceneSyncReport::terrains_added` — defined in `engine/scene/render_sync.h`
+
+```cpp
+u64 terrains_added;
+```
+
+Terrains added to the render scene (a re-add counts again).
+
+### `terrains_removed` {#scene-scenesyncreport-terrains-removed}
+
+`variable scene::SceneSyncReport::terrains_removed` — defined in `engine/scene/render_sync.h`
+
+```cpp
+u64 terrains_removed;
+```
+
+Terrains removed from the render scene.
+
+### `terrains_set` {#scene-scenesyncreport-terrains-set}
+
+`variable scene::SceneSyncReport::terrains_set` — defined in `engine/scene/render_sync.h`
+
+```cpp
+u64 terrains_set;
+```
+
+`SetTerrain` calls (a new source, material, placement or hidden state).
+
 ### `invalid` {#scene-scenesyncreport-invalid}
 
 `variable scene::SceneSyncReport::invalid` — defined in `engine/scene/render_sync.h`
@@ -682,6 +781,23 @@ Needs the resources `ActiveCamera` and `CameraOutput`.
 | Returns | the system description to `Schedule::Add`. |
 | Aborts | a needed resource is missing. |
 | Thread-safety | thread-compatible. |
+
+## `MakeTerrainSyncSystem(const char*)` {#scene-maketerrainsyncsystem-const-char-star}
+
+`function scene::MakeTerrainSyncSystem` — defined in `engine/scene/render_sync.h`
+
+```cpp
+ecs::SystemDesc MakeTerrainSyncSystem(const char* name);
+```
+
+Builds the system that mirrors [`scene::Terrain`](#scene-terrain) entities into the [`scene::SceneLink`](#scene-scenelink) scene: it adds a terrain when an entity gets the component, replaces it when the source, the material, the placement or the [`scene::Hidden`](#scene-hidden) tag changes, and removes it when the component or the entity goes. It reports in [`scene::SceneSyncReport`](#scene-scenesyncreport) and counts a terrain with no valid source or a placement that is not a translation and a turn about y as `invalid`.
+
+| Field | Value |
+|---|---|
+| Parameter `name` | the system's name. |
+| Returns | the description to add to a schedule; it reads `Terrain`, `Hidden` and `WorldTransform`, writes `TerrainHandle`, and writes the link and report resources. |
+| Fails | never. |
+| Ownership | the system keeps one share of each terrain's source and textures through the render scene. |
 
 ## `SceneComponentId` {#scene-scenecomponentid}
 

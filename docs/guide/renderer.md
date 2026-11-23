@@ -821,6 +821,12 @@ The slope rule replaces the splat weights by the slope layer's where `1 - normal
 
 The terrain is not a mesh material. It has no emissive, no `emissive_from_albedo`, no `reflection_intensity`, no flags and no slot overrides; the G-buffer gets albedo, roughness and metallic from the layers and nothing else. There are no normal maps, no height-based blending and no triplanar sampling: the layers are plain colour textures.
 
+### Terrains in a scene
+
+A `RenderScene` holds terrains next to its objects and lights: `AddTerrain(TerrainObject)` returns a generation-checked `TerrainId` (invalid when the scene holds `RenderSceneDesc::max_terrains` already), `SetTerrain` replaces one (a reloaded height map, a new material, a moved terrain), `RemoveTerrain` removes it, and `TerrainSlotCount`, `TerrainSlotAlive` and `TerrainAt` iterate them as objects are. A terrain is not an object: it does not count against `max_objects` and is not in the culling hierarchy. A `TerrainObject` shares a `TerrainSource` (the quadtree and the height texture of one height map, made by `asset::MakeTerrainSource`; several terrains may share one), a `TerrainMaterial`, a world matrix and the `kHidden` flag. The world matrix is a translation and a turn about the y axis (`TerrainWorldValid`): the quadtree, the morph distances and the heights are in the terrain's own metres, so a scale or a tilt is refused.
+
+`SceneFrame` draws every live terrain that is not hidden: for each it puts the camera and the frustum into the terrain's space, selects the tiles (`SceneFrame::SetTerrainSelect` gives the ranges; the first range is raised to three tile widths of that terrain's cell size when it is smaller) and adds them to the one `TerrainPass`, up to `kMaxTerrainsPerFrame` terrains and `kMaxTerrainDrawTiles` tiles together. Neighbouring terrains are separate draws: the engine promises no cracks inside one map, and hiding the seam between two maps is the caller's.
+
 ### Surviving a reset
 
 The device can be destroyed and created again while the program runs (a settings change, a lost device; see the RHI guide, "Lifecycle and

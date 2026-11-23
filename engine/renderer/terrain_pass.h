@@ -10,6 +10,7 @@
 //! level's range, so levels meet without cracks or popping.
 
 #include "containers/span.h"
+#include "containers/vector.h"
 #include "math/matrix.h"
 #include "renderer/device_resources.h"
 #include "renderer/frame_data.h"
@@ -25,8 +26,11 @@
 namespace vse::renderer
 {
 
-/// The most tiles one frame draws; tiles beyond it are dropped (a log warning).
+/// The most tiles one frame draws, all terrains together; tiles beyond it are dropped (a log warning).
 inline constexpr u32 kMaxTerrainDrawTiles = 4096;
+
+/// The most terrains one frame draws.
+inline constexpr u32 kMaxTerrainsPerFrame = 8;
 
 /// What the terrain is drawn from, for one frame.
 ///
@@ -89,16 +93,33 @@ public:
     /// - Fails: never.
     bool Valid() const { return pipeline_.IsValid(); }
 
-    /// Takes the frame's terrain and writes the tile instances. Call after `FrameResources::BeginFrame`.
+    /// Starts a frame: forgets the terrains of the last one and picks the buffer region for `frame_index`.
     ///
-    /// - Param draw: the terrain; its height texture must be a ready 2D `R16_UNorm` texture, or nothing is drawn. An
-    ///   invalid material ([[renderer::TerrainMaterialInvalid]]) is logged and drawn as the default material.
+    /// - Param frame_index: the frame number (as `FrameResources::BeginFrame`).
+    /// - Fails: never.
+    void BeginFrame(u64 frame_index);
+
+    /// Adds one terrain to the frame and writes its tile instances; call after `BeginFrame`, up to
+    /// `kMaxTerrainsPerFrame` times.
+    ///
+    /// - Param draw: the terrain; its height texture must be a ready 2D `R16_UNorm` texture. An invalid material
+    ///   ([[renderer::TerrainMaterialInvalid]]) is logged and drawn as the default material.
     /// - Param tiles: the tiles [[renderer::TerrainTiles::Select]] chose, in terrain space.
-    /// - Param frame_index: the frame number (picks the buffer region, as `FrameResources::BeginFrame`).
-    /// - Ownership: shares `draw.height` until the next `Prepare`; copies the tiles.
+    /// - Returns: false if the terrain was not added (no pipeline, a bad texture, no tiles, too many terrains or
+    /// tiles).
+    /// - Fails: returns false as above.
+    /// - Ownership: shares the textures until the next `BeginFrame`; copies the tiles.
+    bool Add(const TerrainDraw& draw, Span<const TerrainTile> tiles);
+
+    /// `BeginFrame` and `Add` for a frame of one terrain.
+    ///
+    /// - Param draw: as for `Add`.
+    /// - Param tiles: as for `Add`.
+    /// - Param frame_index: the frame number.
+    /// - Ownership: as for `Add`.
     void Prepare(const TerrainDraw& draw, Span<const TerrainTile> tiles, u64 frame_index);
 
-    /// Clears the frame's terrain: no pass is added until the next `Prepare`.
+    /// Clears the frame's terrains: no pass is added until the next `Add`.
     /// - Fails: never.
     void Clear();
 
@@ -112,7 +133,7 @@ public:
     /// - Ownership: the pass keeps a pointer to this object until the graph is executed.
     bool AddToGraph(RenderGraph* graph, const GBufferTargets& targets);
 
-    /// The tiles of the last `Prepare` that will be drawn.
+    /// The tiles of the frame that will be drawn, all terrains together.
     /// - Fails: never.
     u32 DrawnTiles() const { return tile_count_; }
 
@@ -142,16 +163,23 @@ private:
     byte* params_mapped_ = nullptr;
     GpuTexturePtr fallback_layers_;  // one grey layer: what a material with no layer array draws
     GpuTexturePtr fallback_splat_;   // one texel, layer 0 alone
-    GpuTexturePtr layers_;
-    GpuTexturePtr splat_;
     rhi::BufferHandle tile_buffer_;
     byte* tile_mapped_ = nullptr;
     rhi::BindGroupHandle frame_group_;
-    GpuTexturePtr height_;
-    Push push_ = {};
+    struct Entry
+    {
+        Push push = {};
+        GpuTexturePtr height;
+        GpuTexturePtr layers;
+        GpuTexturePtr splat;
+        u32 first_tile = 0;
+        u32 tile_count = 0;
+        u64 params_offset = 0;
+    };
+    Vector<Entry> entries_;
+    u32 tile_cursor_ = 0;  // the next free instance in the slot's region
     u32 tile_count_ = 0;
     u32 slot_ = 0;
-    bool draw_ = false;
     GBufferTargets targets_;
 };
 

@@ -417,6 +417,7 @@ tests/scene/scene_spikes_test.cpp                   24   # Phase 24 Day 358: spi
 tests/scene/scene_cost_test.cpp                     17   # Phase 17 Day 233
 tests/scene/level_spawner_test.cpp               22   # Phase 22 Day 329
 tests/scene/scene_components_test.cpp            27   # Phase 27 Day 456: the scene's components in the storage registry
+tests/scene/terrain_sync_test.cpp                28   # Phase 28 Day 490
 tests/scene/CMakeLists.txt                      17
 
 # --- Phase 20: networking ---

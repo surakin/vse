@@ -53,6 +53,12 @@ struct SceneSyncReport
     u64 lights_set = 0;
     /// Adds the full render scene refused (an entity is retried every frame until there is room).
     u64 refused_full = 0;
+    /// Terrains added to the render scene (a re-add counts again).
+    u64 terrains_added = 0;
+    /// Terrains removed from the render scene.
+    u64 terrains_removed = 0;
+    /// `SetTerrain` calls (a new source, material, placement or hidden state).
+    u64 terrains_set = 0;
     /// Entities skipped because their mesh is missing or empty, or their light has values the scene would abort on.
     u64 invalid = 0;
 };
@@ -93,5 +99,17 @@ ecs::SystemDesc MakeRenderSyncSystem(const char* name);
 /// - Aborts: a needed resource is missing.
 /// - Thread-safety: thread-compatible.
 ecs::SystemDesc MakeCameraSystem(const char* name);
+
+/// Builds the system that mirrors [[scene::Terrain]] entities into the [[scene::SceneLink]] scene: it adds a terrain
+/// when an entity gets the component, replaces it when the source, the material, the placement or the [[scene::Hidden]]
+/// tag changes, and removes it when the component or the entity goes. It reports in [[scene::SceneSyncReport]] and
+/// counts a terrain with no valid source or a placement that is not a translation and a turn about y as `invalid`.
+///
+/// - Param name: the system's name.
+/// - Returns: the description to add to a schedule; it reads `Terrain`, `Hidden` and `WorldTransform`, writes
+///   `TerrainHandle`, and writes the link and report resources.
+/// - Fails: never.
+/// - Ownership: the system keeps one share of each terrain's source and textures through the render scene.
+ecs::SystemDesc MakeTerrainSyncSystem(const char* name);
 
 }  // namespace vse::scene
