@@ -19,6 +19,7 @@ set(RENDERER_TEST_SOURCES
   sky_test.cpp
   terrain_tiles_test.cpp  # Phase 28 Day 487
   terrain_material_test.cpp  # Phase 28 Day 489
+  instance_set_test.cpp  # Phase 28 Day 495
   renderer_fault_test.cpp
   render_settings_test.cpp
   device_resources_test.cpp
@@ -74,6 +75,11 @@ function(engine_add_renderer_tests target suffix label spec)
     list(APPEND env MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert MTL_SHADER_VALIDATION=1)
   endif()
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}" PROPERTIES LABELS "${label}" ENVIRONMENT "${env}")
+  # The instance set's million-instance form (1,000,000 instead of 50,000, tests/support/soak.h): the plain flavor only.
+  if(label STREQUAL "renderer")
+    engine_soak_catch_test(${target} "An instance set holds and edits a million instances and agrees with a model"
+      SOURCE tests/renderer/instance_set_test.cpp)
+  endif()
 endfunction()
 
 engine_add_renderer_tests(renderer_tests "" "renderer" "")
