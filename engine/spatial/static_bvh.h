@@ -122,7 +122,7 @@ public:
     u32 ItemCount() const { return static_cast<u32>(items_.Size()); }
     /// Returns the number of levels: 1 for a tree of one leaf, 0 for an empty tree.
     u32 Depth() const { return depth_; }
-    /// Returns the box of the whole tree, or [[Aabb::Empty]] when there are no items.
+    /// Returns the box of the whole tree, or [[AabbT::Empty]] when there are no items.
     Aabb Bounds() const { return nodes_.Size() != 0 ? nodes_[0].box : Aabb::Empty(); }
     /// Returns the nodes in depth-first order (node 0 is the root).
     Span<const Node> Nodes() const { return Span<const Node>(nodes_.Data(), nodes_.Size()); }
@@ -156,7 +156,7 @@ public:
     /// item of each leaf whose box the ray enters before `max_t`; it may lower `max_t` (a closest-hit search) and
     /// returns false to stop.
     ///
-    /// - Param ray: the ray ([[Ray::Make]]).
+    /// - Param ray: the ray ([[RayT::Make]]).
     /// - Param max_t: the farthest parameter to consider.
     /// - Param item_visit: the item visitor.
     /// - Returns: what the traversal did.

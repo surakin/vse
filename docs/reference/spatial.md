@@ -680,7 +680,7 @@ Returns the root's height (0 for a single leaf and for an empty tree).
 Aabb Bounds() const;
 ```
 
-Returns the box of the whole tree (fat boxes), or [`Aabb::Empty`](foundation-math.md#aabb-empty) when it is empty.
+Returns the box of the whole tree (fat boxes), or [`AabbT::Empty`](foundation-math.md#aabbt-empty) when it is empty.
 
 ### `SahCost()` {#spatial-dynamicbvh-sahcost-const}
 
@@ -748,7 +748,7 @@ Visits the leaves a ray reaches, nearest child first, as [`spatial::StaticBvh::T
 
 | Field | Value |
 |---|---|
-| Parameter `ray` | the ray ([`Ray::Make`](foundation-math.md#ray-make-const-vec3-amp-const-vec3-amp)). |
+| Parameter `ray` | the ray ([`RayT::Make`](foundation-math.md#rayt-make-const-vec3t-lt-s-gt-amp-const-vec3t-lt-s-gt-amp)). |
 | Parameter `max_t` | the farthest parameter to consider. |
 | Parameter `item_visit` | the item visitor. |
 | Returns | what the traversal did. |
@@ -2067,7 +2067,7 @@ template <class Tree, class Visit>
 QueryStats Overlap(const Tree& tree, const Frustum& frustum, const QueryFilter& filter, Visit&& visit);
 ```
 
-Visits every item whose box may be inside `frustum` (conservative, as [`Frustum::TestAabb`](foundation-math.md#frustum-testaabb-const-aabb-amp-const)), in traversal order. Below a node entirely inside the frustum no node is tested; each item's own box still is (one plane test per item).
+Visits every item whose box may be inside `frustum` (conservative, as [`FrustumT::TestAabb`](foundation-math.md#frustumt-testaabb-const-aabbt-lt-s-gt-amp-const)), in traversal order. Below a node entirely inside the frustum no node is tested; each item's own box still is (one plane test per item).
 
 | Field | Value |
 |---|---|
@@ -2114,7 +2114,7 @@ Casts a ray and collects what it hits, as `mode` says.
 | Field | Value |
 |---|---|
 | Parameter `tree` | the structure. |
-| Parameter `ray` | the ray ([`Ray::Make`](foundation-math.md#ray-make-const-vec3-amp-const-vec3-amp)). |
+| Parameter `ray` | the ray ([`RayT::Make`](foundation-math.md#rayt-make-const-vec3t-lt-s-gt-amp-const-vec3t-lt-s-gt-amp)). |
 | Parameter `max_t` | the farthest parameter that counts (in units of the direction's length). |
 | Parameter `filter` | which items count. |
 | Parameter `mode` | `Closest` (one hit: the nearest, the smaller key on a tie), `Any` (one hit, the first found) or `All`. |
@@ -4061,7 +4061,7 @@ Returns the number of levels: 1 for a tree of one leaf, 0 for an empty tree.
 Aabb Bounds() const;
 ```
 
-Returns the box of the whole tree, or [`Aabb::Empty`](foundation-math.md#aabb-empty) when there are no items.
+Returns the box of the whole tree, or [`AabbT::Empty`](foundation-math.md#aabbt-empty) when there are no items.
 
 ### `Nodes()` {#spatial-staticbvh-nodes-const}
 
@@ -4139,7 +4139,7 @@ Visits the leaves a ray reaches, nearest child first: `item_visit(const Item&, f
 
 | Field | Value |
 |---|---|
-| Parameter `ray` | the ray ([`Ray::Make`](foundation-math.md#ray-make-const-vec3-amp-const-vec3-amp)). |
+| Parameter `ray` | the ray ([`RayT::Make`](foundation-math.md#rayt-make-const-vec3t-lt-s-gt-amp-const-vec3t-lt-s-gt-amp)). |
 | Parameter `max_t` | the farthest parameter to consider. |
 | Parameter `item_visit` | the item visitor. |
 | Returns | what the traversal did. |

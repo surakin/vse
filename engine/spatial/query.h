@@ -212,7 +212,7 @@ QueryStats Overlap(const Tree& tree, const Sphere& sphere, const QueryFilter& fi
     return stats;
 }
 
-/// Visits every item whose box may be inside `frustum` (conservative, as [[Frustum::TestAabb]]), in traversal order.
+/// Visits every item whose box may be inside `frustum` (conservative, as [[FrustumT::TestAabb]]), in traversal order.
 /// Below a node entirely inside the frustum no node is tested; each item's own box still is (one plane test per item).
 ///
 /// - Param tree: the structure.
@@ -290,7 +290,7 @@ QueryStats OverlapKeys(const Tree& tree, const Shape& shape, const QueryFilter& 
 /// Casts a ray and collects what it hits, as `mode` says.
 ///
 /// - Param tree: the structure.
-/// - Param ray: the ray ([[Ray::Make]]).
+/// - Param ray: the ray ([[RayT::Make]]).
 /// - Param max_t: the farthest parameter that counts (in units of the direction's length).
 /// - Param filter: which items count.
 /// - Param mode: `Closest` (one hit: the nearest, the smaller key on a tie), `Any` (one hit, the first found) or `All`.

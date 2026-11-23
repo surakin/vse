@@ -27,6 +27,7 @@ set(FOUNDATION_BASE_TEST_SOURCES
   string_test.cpp
   vector_test.cpp
   matrix_test.cpp
+  double_precision_math_test.cpp
   quaternion_test.cpp
   transform_test.cpp
   log_test.cpp

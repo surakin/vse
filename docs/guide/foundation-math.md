@@ -202,6 +202,25 @@ origin via matrix: x=10.0 z=-1.0
 `Compose` is the simple TRS composition: it is exact when the parent's scale is uniform, and not for a non-uniform parent scale combined with a rotated child (a
 shear cannot be expressed in position/rotation/scale). The ECS builds its transform hierarchy on it ([ECS](ecs.md)).
 
+## Double precision
+
+The vector, box, sphere, plane, ray and frustum types are templates on the scalar (`Vec3T<S>`, `AabbT<S>`, `FrustumT<S>`, ...).
+The old names are aliases of the single-precision form (`Vec3 = Vec3T<f32>`, `Aabb`, `Frustum`), and the double-precision
+forms are `Vec2d`, `Vec3d`, `Vec4d`, `Aabbd`, `Sphered`, `Boundsd`, `Planed`, `Rayd` and `Frustumd`. The rule for the engine is:
+a world position (a translation, a world box) is `f64`; rotations, scales, directions, normals, own-space values and everything
+sent to the GPU are `f32`.
+
+- Widening `f32` to `f64` is implicit and exact (a `Vec3` converts to a `Vec3d`, an `Aabb` to an `Aabbd`).
+- Narrowing is always the named call `Narrow()`, so it cannot happen by accident. Compute a difference of two world positions in
+  `f64` first, then narrow it: the result is the nearest `f32` of the exact difference.
+- `Mat4` and `Quaternion` stay `f32`. `Placement` (`math/placement.h`) is a single-precision linear part (rotation and scale)
+  plus a `Vec3d` position; `Placement::RelativeTo(origin)` gives the `Mat4` whose translation is `position - origin`
+  computed in `f64`, which is how a far-away object is drawn precisely.
+- `FrustumT<S>::Translated(origin)` moves a frustum built in camera space into world space, so an `f64` scene is culled
+  without first converting every box.
+- The out-of-line functions are instantiated for both scalars in `geometry.cpp`; they use `+ - * / Sqrt` only, so results are
+  the same on every machine.
+
 ## Numerical notes
 
 - **`f32` has about seven significant digits.** Far from the origin (tens of kilometres) positions lose precision; large worlds shift the origin.

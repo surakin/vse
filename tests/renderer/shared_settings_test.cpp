@@ -129,13 +129,13 @@ engine_test::Text Slurp(const io::Path& path)
 }  // namespace
 
 TEST_CASE(
-    "The 15 rendering settings are declared under renderer. with the same types, defaults, ranges and apply classes",
+    "The 18 rendering settings are declared under renderer. with the same types, defaults, ranges and apply classes",
     "[shared_settings]")
 {
     Rig rig;
     const rs::SettingsRegistry& builtin = rs::SettingsRegistry::Builtin();
     REQUIRE(rig.registry.Count() == builtin.Count());
-    CHECK(rig.registry.Count() == 15);
+    CHECK(rig.registry.Count() == 18);
     CHECK(rig.registry.SchemaVersion("renderer") == rs::kRendererSchemaVersion);
     for (u32 i = 1; i <= builtin.Count(); ++i)
     {
@@ -160,7 +160,10 @@ TEST_CASE(
         }
         else if (old.type == rs::SettingType::Float)
         {
-            CHECK(CStrToDouble(new_text, nullptr) == CStrToDouble(old_text, nullptr));
+            // The old registry prints nine digits, the new one the exact value: both are the same single-precision
+            // number.
+            CHECK(static_cast<f32>(CStrToDouble(new_text, nullptr)) ==
+                  static_cast<f32>(CStrToDouble(old_text, nullptr)));
         }
         else
         {

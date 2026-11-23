@@ -1049,66 +1049,85 @@ io::PathBuilder::Append(StringView)	function	foundation/io	io-pathbuilder-append
 io::PathBuilder::CStr() const	function	foundation/io	io-pathbuilder-cstr-const	foundation-io.md	engine/foundation/io/path.h:241
 io::PathBuilder::View() const	function	foundation/io	io-pathbuilder-view-const	foundation-io.md	engine/foundation/io/path.h:243
 io::PathBuilder::Style() const	function	foundation/io	io-pathbuilder-style-const	foundation-io.md	engine/foundation/io/path.h:245
-Sphere	struct	foundation/math	sphere	foundation-math.md	engine/foundation/math/geometry.h:18
-Sphere::center	variable	foundation/math	sphere-center	foundation-math.md	engine/foundation/math/geometry.h:21
-Sphere::radius	variable	foundation/math	sphere-radius	foundation-math.md	engine/foundation/math/geometry.h:23
-BoundingSphere	alias	foundation/math	boundingsphere	foundation-math.md	engine/foundation/math/geometry.h:27
-Aabb	struct	foundation/math	aabb	foundation-math.md	engine/foundation/math/geometry.h:32
-Aabb::min	variable	foundation/math	aabb-min	foundation-math.md	engine/foundation/math/geometry.h:35
-Aabb::max	variable	foundation/math	aabb-max	foundation-math.md	engine/foundation/math/geometry.h:37
-Aabb::Center() const	function	foundation/math	aabb-center-const	foundation-math.md	engine/foundation/math/geometry.h:40
-Aabb::HalfExtents() const	function	foundation/math	aabb-halfextents-const	foundation-math.md	engine/foundation/math/geometry.h:42
-Aabb::Extents() const	function	foundation/math	aabb-extents-const	foundation-math.md	engine/foundation/math/geometry.h:44
-Aabb::IsEmpty() const	function	foundation/math	aabb-isempty-const	foundation-math.md	engine/foundation/math/geometry.h:47
-Aabb::Empty()	function	foundation/math	aabb-empty	foundation-math.md	engine/foundation/math/geometry.h:51
-Aabb::FromMinMax(const Vec3&,const Vec3&)	function	foundation/math	aabb-fromminmax-const-vec3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:57
-Bounds	struct	foundation/math	bounds	foundation-math.md	engine/foundation/math/geometry.h:69
-Bounds::sphere	variable	foundation/math	bounds-sphere	foundation-math.md	engine/foundation/math/geometry.h:72
-Bounds::box	variable	foundation/math	bounds-box	foundation-math.md	engine/foundation/math/geometry.h:74
-Plane	struct	foundation/math	plane	foundation-math.md	engine/foundation/math/geometry.h:81
-Plane::normal	variable	foundation/math	plane-normal	foundation-math.md	engine/foundation/math/geometry.h:84
-Plane::d	variable	foundation/math	plane-d	foundation-math.md	engine/foundation/math/geometry.h:86
-Plane::Distance(const Vec3&) const	function	foundation/math	plane-distance-const-vec3-amp-const	foundation-math.md	engine/foundation/math/geometry.h:89
-Plane::FromPointNormal(const Vec3&,const Vec3&)	function	foundation/math	plane-frompointnormal-const-vec3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:97
-Ray	struct	foundation/math	ray	foundation-math.md	engine/foundation/math/geometry.h:105
-Ray::origin	variable	foundation/math	ray-origin	foundation-math.md	engine/foundation/math/geometry.h:108
-Ray::direction	variable	foundation/math	ray-direction	foundation-math.md	engine/foundation/math/geometry.h:110
-Ray::inverse_direction	variable	foundation/math	ray-inverse-direction	foundation-math.md	engine/foundation/math/geometry.h:112
-Ray::Make(const Vec3&,const Vec3&)	function	foundation/math	ray-make-const-vec3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:120
-Ray::At(f32) const	function	foundation/math	ray-at-f32-const	foundation-math.md	engine/foundation/math/geometry.h:123
-Containment	enum	foundation/math	containment	foundation-math.md	engine/foundation/math/geometry.h:127
-Containment::Outside	enumerator	foundation/math	containment-outside	foundation-math.md	engine/foundation/math/geometry.h:129
-Containment::Intersects	enumerator	foundation/math	containment-intersects	foundation-math.md	engine/foundation/math/geometry.h:130
-Containment::Inside	enumerator	foundation/math	containment-inside	foundation-math.md	engine/foundation/math/geometry.h:131
-Frustum	struct	foundation/math	frustum	foundation-math.md	engine/foundation/math/geometry.h:137
-Frustum::planes	variable	foundation/math	frustum-planes	foundation-math.md	engine/foundation/math/geometry.h:141
-Frustum::FromViewProjection(const Mat4&)	function	foundation/math	frustum-fromviewprojection-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:149
-Frustum::TestSphere(const Sphere&) const	function	foundation/math	frustum-testsphere-const-sphere-amp-const	foundation-math.md	engine/foundation/math/geometry.h:158
-Frustum::TestAabb(const Aabb&) const	function	foundation/math	frustum-testaabb-const-aabb-amp-const	foundation-math.md	engine/foundation/math/geometry.h:165
-Frustum::Visible(const Bounds&) const	function	foundation/math	frustum-visible-const-bounds-amp-const	foundation-math.md	engine/foundation/math/geometry.h:173
-ComputeAabb(const void*,u32,u32)	function	foundation/math	computeaabb-const-void-star-u32-u32	foundation-math.md	engine/foundation/math/geometry.h:185
-ComputeBounds(const void*,u32,u32)	function	foundation/math	computebounds-const-void-star-u32-u32	foundation-math.md	engine/foundation/math/geometry.h:198
-TransformAabb(const Aabb&,const Mat4&)	function	foundation/math	transformaabb-const-aabb-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:209
-TransformBounds(const Bounds&,const Mat4&)	function	foundation/math	transformbounds-const-bounds-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:220
-Center(const Aabb&)	function	foundation/math	center-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:223
-Union(const Aabb&,const Aabb&)	function	foundation/math	union-const-aabb-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:229
-Union(const Aabb&,const Vec3&)	function	foundation/math	union-const-aabb-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:232
-Intersection(const Aabb&,const Aabb&)	function	foundation/math	intersection-const-aabb-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:235
-Expand(const Aabb&,f32)	function	foundation/math	expand-const-aabb-amp-f32	foundation-math.md	engine/foundation/math/geometry.h:238
-Contains(const Aabb&,const Vec3&)	function	foundation/math	contains-const-aabb-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:245
-Contains(const Aabb&,const Aabb&)	function	foundation/math	contains-const-aabb-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:252
-Contains(const Sphere&,const Vec3&)	function	foundation/math	contains-const-sphere-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:255
-Overlaps(const Aabb&,const Aabb&)	function	foundation/math	overlaps-const-aabb-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:261
-Overlaps(const Aabb&,const Sphere&)	function	foundation/math	overlaps-const-aabb-amp-const-sphere-amp	foundation-math.md	engine/foundation/math/geometry.h:264
-Overlaps(const Sphere&,const Sphere&)	function	foundation/math	overlaps-const-sphere-amp-const-sphere-amp	foundation-math.md	engine/foundation/math/geometry.h:267
-Overlaps(const Frustum&,const Aabb&)	function	foundation/math	overlaps-const-frustum-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:271
-Overlaps(const Frustum&,const Sphere&)	function	foundation/math	overlaps-const-frustum-amp-const-sphere-amp	foundation-math.md	engine/foundation/math/geometry.h:277
-SurfaceArea(const Aabb&)	function	foundation/math	surfacearea-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:283
-Volume(const Aabb&)	function	foundation/math	volume-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:286
-Distance2(const Vec3&,const Aabb&)	function	foundation/math	distance2-const-vec3-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:289
-Intersect(const Ray&,const Aabb&,f32,f32*)	function	foundation/math	intersect-const-ray-amp-const-aabb-amp-f32-f32-star	foundation-math.md	engine/foundation/math/geometry.h:299
-Intersect(const Ray&,const Sphere&,f32,f32*)	function	foundation/math	intersect-const-ray-amp-const-sphere-amp-f32-f32-star	foundation-math.md	engine/foundation/math/geometry.h:310
-Intersect(const Ray&,const Plane&,f32,f32*)	function	foundation/math	intersect-const-ray-amp-const-plane-amp-f32-f32-star	foundation-math.md	engine/foundation/math/geometry.h:321
+SphereT	struct	foundation/math	spheret	foundation-math.md	engine/foundation/math/geometry.h:19
+SphereT::center	variable	foundation/math	spheret-center	foundation-math.md	engine/foundation/math/geometry.h:22
+SphereT::radius	variable	foundation/math	spheret-radius	foundation-math.md	engine/foundation/math/geometry.h:24
+AabbT	struct	foundation/math	aabbt	foundation-math.md	engine/foundation/math/geometry.h:31
+AabbT::min	variable	foundation/math	aabbt-min	foundation-math.md	engine/foundation/math/geometry.h:34
+AabbT::max	variable	foundation/math	aabbt-max	foundation-math.md	engine/foundation/math/geometry.h:36
+AabbT::Center() const	function	foundation/math	aabbt-center-const	foundation-math.md	engine/foundation/math/geometry.h:39
+AabbT::HalfExtents() const	function	foundation/math	aabbt-halfextents-const	foundation-math.md	engine/foundation/math/geometry.h:41
+AabbT::Extents() const	function	foundation/math	aabbt-extents-const	foundation-math.md	engine/foundation/math/geometry.h:43
+AabbT::IsEmpty() const	function	foundation/math	aabbt-isempty-const	foundation-math.md	engine/foundation/math/geometry.h:46
+AabbT::Empty()	function	foundation/math	aabbt-empty	foundation-math.md	engine/foundation/math/geometry.h:50
+AabbT::FromMinMax(const Vec3T<S>&,const Vec3T<S>&)	function	foundation/math	aabbt-fromminmax-const-vec3t-lt-s-gt-amp-const-vec3t-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:56
+AabbT::AabbT(const AabbT<T>&)	function	foundation/math	aabbt-aabbt-const-aabbt-lt-t-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:64
+AabbT::AabbT()	function	foundation/math	aabbt-aabbt	foundation-math.md	engine/foundation/math/geometry.h:70
+AabbT::AabbT(const Vec3T<S>&,const Vec3T<S>&)	function	foundation/math	aabbt-aabbt-const-vec3t-lt-s-gt-amp-const-vec3t-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:72
+AabbT::Narrow() const	function	foundation/math	aabbt-narrow-const	foundation-math.md	engine/foundation/math/geometry.h:77
+BoundsT	struct	foundation/math	boundst	foundation-math.md	engine/foundation/math/geometry.h:87
+BoundsT::sphere	variable	foundation/math	boundst-sphere	foundation-math.md	engine/foundation/math/geometry.h:90
+BoundsT::box	variable	foundation/math	boundst-box	foundation-math.md	engine/foundation/math/geometry.h:92
+PlaneT	struct	foundation/math	planet	foundation-math.md	engine/foundation/math/geometry.h:99
+PlaneT::normal	variable	foundation/math	planet-normal	foundation-math.md	engine/foundation/math/geometry.h:102
+PlaneT::d	variable	foundation/math	planet-d	foundation-math.md	engine/foundation/math/geometry.h:104
+PlaneT::Distance(const Vec3T<S>&) const	function	foundation/math	planet-distance-const-vec3t-lt-s-gt-amp-const	foundation-math.md	engine/foundation/math/geometry.h:107
+PlaneT::FromPointNormal(const Vec3T<S>&,const Vec3T<S>&)	function	foundation/math	planet-frompointnormal-const-vec3t-lt-s-gt-amp-const-vec3t-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:115
+RayT	struct	foundation/math	rayt	foundation-math.md	engine/foundation/math/geometry.h:123
+RayT::origin	variable	foundation/math	rayt-origin	foundation-math.md	engine/foundation/math/geometry.h:126
+RayT::direction	variable	foundation/math	rayt-direction	foundation-math.md	engine/foundation/math/geometry.h:128
+RayT::inverse_direction	variable	foundation/math	rayt-inverse-direction	foundation-math.md	engine/foundation/math/geometry.h:130
+RayT::Make(const Vec3T<S>&,const Vec3T<S>&)	function	foundation/math	rayt-make-const-vec3t-lt-s-gt-amp-const-vec3t-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:138
+RayT::At(S) const	function	foundation/math	rayt-at-s-const	foundation-math.md	engine/foundation/math/geometry.h:141
+Containment	enum	foundation/math	containment	foundation-math.md	engine/foundation/math/geometry.h:145
+Containment::Outside	enumerator	foundation/math	containment-outside	foundation-math.md	engine/foundation/math/geometry.h:147
+Containment::Intersects	enumerator	foundation/math	containment-intersects	foundation-math.md	engine/foundation/math/geometry.h:148
+Containment::Inside	enumerator	foundation/math	containment-inside	foundation-math.md	engine/foundation/math/geometry.h:149
+FrustumT	struct	foundation/math	frustumt	foundation-math.md	engine/foundation/math/geometry.h:156
+FrustumT::planes	variable	foundation/math	frustumt-planes	foundation-math.md	engine/foundation/math/geometry.h:160
+FrustumT::FromViewProjection(const Mat4&)	function	foundation/math	frustumt-fromviewprojection-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:169
+FrustumT::Translated(const Vec3T<S>&) const	function	foundation/math	frustumt-translated-const-vec3t-lt-s-gt-amp-const	foundation-math.md	engine/foundation/math/geometry.h:178
+FrustumT::FrustumT(const FrustumT<T>&)	function	foundation/math	frustumt-frustumt-const-frustumt-lt-t-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:181
+FrustumT::FrustumT()	function	foundation/math	frustumt-frustumt	foundation-math.md	engine/foundation/math/geometry.h:192
+FrustumT::TestSphere(const SphereT<S>&) const	function	foundation/math	frustumt-testsphere-const-spheret-lt-s-gt-amp-const	foundation-math.md	engine/foundation/math/geometry.h:201
+FrustumT::TestAabb(const AabbT<S>&) const	function	foundation/math	frustumt-testaabb-const-aabbt-lt-s-gt-amp-const	foundation-math.md	engine/foundation/math/geometry.h:208
+FrustumT::Visible(const BoundsT<S>&) const	function	foundation/math	frustumt-visible-const-boundst-lt-s-gt-amp-const	foundation-math.md	engine/foundation/math/geometry.h:216
+Sphere	alias	foundation/math	sphere	foundation-math.md	engine/foundation/math/geometry.h:220
+Sphered	alias	foundation/math	sphered	foundation-math.md	engine/foundation/math/geometry.h:222
+BoundingSphere	alias	foundation/math	boundingsphere	foundation-math.md	engine/foundation/math/geometry.h:224
+Aabb	alias	foundation/math	aabb	foundation-math.md	engine/foundation/math/geometry.h:226
+Aabbd	alias	foundation/math	aabbd	foundation-math.md	engine/foundation/math/geometry.h:228
+Bounds	alias	foundation/math	bounds	foundation-math.md	engine/foundation/math/geometry.h:230
+Boundsd	alias	foundation/math	boundsd	foundation-math.md	engine/foundation/math/geometry.h:232
+Plane	alias	foundation/math	plane	foundation-math.md	engine/foundation/math/geometry.h:234
+Planed	alias	foundation/math	planed	foundation-math.md	engine/foundation/math/geometry.h:236
+Ray	alias	foundation/math	ray	foundation-math.md	engine/foundation/math/geometry.h:238
+Rayd	alias	foundation/math	rayd	foundation-math.md	engine/foundation/math/geometry.h:240
+Frustum	alias	foundation/math	frustum	foundation-math.md	engine/foundation/math/geometry.h:242
+Frustumd	alias	foundation/math	frustumd	foundation-math.md	engine/foundation/math/geometry.h:244
+ComputeAabb(const void*,u32,u32)	function	foundation/math	computeaabb-const-void-star-u32-u32	foundation-math.md	engine/foundation/math/geometry.h:255
+ComputeBounds(const void*,u32,u32)	function	foundation/math	computebounds-const-void-star-u32-u32	foundation-math.md	engine/foundation/math/geometry.h:268
+TransformAabb(const Aabb&,const Mat4&)	function	foundation/math	transformaabb-const-aabb-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:279
+TransformBounds(const Bounds&,const Mat4&)	function	foundation/math	transformbounds-const-bounds-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:290
+Center(const AabbT<S>&)	function	foundation/math	center-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:293
+Union(const AabbT<S>&,const AabbT<S>&)	function	foundation/math	union-const-aabbt-lt-s-gt-amp-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:299
+Union(const AabbT<S>&,const Vec3T<S>&)	function	foundation/math	union-const-aabbt-lt-s-gt-amp-const-vec3t-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:302
+Intersection(const AabbT<S>&,const AabbT<S>&)	function	foundation/math	intersection-const-aabbt-lt-s-gt-amp-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:305
+Expand(const AabbT<S>&,TypeIdentity<S>)	function	foundation/math	expand-const-aabbt-lt-s-gt-amp-typeidentity-lt-s-gt	foundation-math.md	engine/foundation/math/geometry.h:308
+Contains(const AabbT<S>&,const Vec3T<S>&)	function	foundation/math	contains-const-aabbt-lt-s-gt-amp-const-vec3t-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:315
+Contains(const AabbT<S>&,const AabbT<S>&)	function	foundation/math	contains-const-aabbt-lt-s-gt-amp-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:322
+Contains(const SphereT<S>&,const Vec3T<S>&)	function	foundation/math	contains-const-spheret-lt-s-gt-amp-const-vec3t-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:325
+Overlaps(const AabbT<S>&,const AabbT<S>&)	function	foundation/math	overlaps-const-aabbt-lt-s-gt-amp-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:331
+Overlaps(const AabbT<S>&,const SphereT<S>&)	function	foundation/math	overlaps-const-aabbt-lt-s-gt-amp-const-spheret-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:334
+Overlaps(const SphereT<S>&,const SphereT<S>&)	function	foundation/math	overlaps-const-spheret-lt-s-gt-amp-const-spheret-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:337
+Overlaps(const FrustumT<S>&,const AabbT<S>&)	function	foundation/math	overlaps-const-frustumt-lt-s-gt-amp-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:341
+Overlaps(const FrustumT<S>&,const SphereT<S>&)	function	foundation/math	overlaps-const-frustumt-lt-s-gt-amp-const-spheret-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:347
+SurfaceArea(const AabbT<S>&)	function	foundation/math	surfacearea-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:353
+Volume(const AabbT<S>&)	function	foundation/math	volume-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:356
+Distance2(const Vec3T<S>&,const AabbT<S>&)	function	foundation/math	distance2-const-vec3t-lt-s-gt-amp-const-aabbt-lt-s-gt-amp	foundation-math.md	engine/foundation/math/geometry.h:359
+Intersect(const RayT<S>&,const AabbT<S>&,TypeIdentity<S>,TypeIdentity<S>*)	function	foundation/math	intersect-const-rayt-lt-s-gt-amp-const-aabbt-lt-s-gt-amp-typeidentity-lt-s-gt-typeidentity-lt-s-gt-star	foundation-math.md	engine/foundation/math/geometry.h:369
+Intersect(const RayT<S>&,const SphereT<S>&,TypeIdentity<S>,TypeIdentity<S>*)	function	foundation/math	intersect-const-rayt-lt-s-gt-amp-const-spheret-lt-s-gt-amp-typeidentity-lt-s-gt-typeidentity-lt-s-gt-star	foundation-math.md	engine/foundation/math/geometry.h:380
+Intersect(const RayT<S>&,const PlaneT<S>&,TypeIdentity<S>,TypeIdentity<S>*)	function	foundation/math	intersect-const-rayt-lt-s-gt-amp-const-planet-lt-s-gt-amp-typeidentity-lt-s-gt-typeidentity-lt-s-gt-star	foundation-math.md	engine/foundation/math/geometry.h:392
 kPi	variable	foundation/math	kpi	foundation-math.md	engine/foundation/math/math_util.h:12
 Mat3	struct	foundation/math	mat3	foundation-math.md	engine/foundation/math/matrix.h:20
 Mat3::col	variable	foundation/math	mat3-col	foundation-math.md	engine/foundation/math/matrix.h:23
@@ -1125,6 +1144,13 @@ Mat4::FromColumns(const Vec4&,const Vec4&,const Vec4&,const Vec4&)	function	foun
 Mat4::Transpose() const	function	foundation/math	mat4-transpose-const	foundation-math.md	engine/foundation/math/matrix.h:131
 operator*(const Mat4&,const Vec4&)	function	foundation/math	operator-star-const-mat4-amp-const-vec4-amp	foundation-math.md	engine/foundation/math/matrix.h:146
 operator*(const Mat4&,const Mat4&)	function	foundation/math	operator-star-const-mat4-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/matrix.h:152
+Placement	struct	foundation/math	placement	foundation-math.md	engine/foundation/math/placement.h:17
+Placement::linear	variable	foundation/math	placement-linear	foundation-math.md	engine/foundation/math/placement.h:20
+Placement::position	variable	foundation/math	placement-position	foundation-math.md	engine/foundation/math/placement.h:22
+Placement::From(const Vec3d&,const Mat4&)	function	foundation/math	placement-from-const-vec3d-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/placement.h:29
+Placement::TransformPoint(const Vec3d&) const	function	foundation/math	placement-transformpoint-const-vec3d-amp-const	foundation-math.md	engine/foundation/math/placement.h:35
+Placement::Compose(const Placement&) const	function	foundation/math	placement-compose-const-placement-amp-const	foundation-math.md	engine/foundation/math/placement.h:43
+Placement::RelativeTo(const Vec3d&) const	function	foundation/math	placement-relativeto-const-vec3d-amp-const	foundation-math.md	engine/foundation/math/placement.h:50
 Quaternion	struct	foundation/math	quaternion	foundation-math.md	engine/foundation/math/quaternion.h:22
 Quaternion::x	variable	foundation/math	quaternion-x	foundation-math.md	engine/foundation/math/quaternion.h:25
 Quaternion::y	variable	foundation/math	quaternion-y	foundation-math.md	engine/foundation/math/quaternion.h:27
@@ -1153,59 +1179,71 @@ Transform::scale	variable	foundation/math	transform-scale	foundation-math.md	eng
 Transform::Identity()	function	foundation/math	transform-identity	foundation-math.md	engine/foundation/math/transform.h:26
 Transform::ToMatrix() const	function	foundation/math	transform-tomatrix-const	foundation-math.md	engine/foundation/math/transform.h:29
 Compose(const Transform&,const Transform&)	function	foundation/math	compose-const-transform-amp-const-transform-amp	foundation-math.md	engine/foundation/math/transform.h:47
-Vec2	struct	foundation/math	vec2	foundation-math.md	engine/foundation/math/vector.h:19
-Vec2::x	variable	foundation/math	vec2-x	foundation-math.md	engine/foundation/math/vector.h:22
-Vec2::y	variable	foundation/math	vec2-y	foundation-math.md	engine/foundation/math/vector.h:24
-Vec2::Vec2()	function	foundation/math	vec2-vec2	foundation-math.md	engine/foundation/math/vector.h:27
-Vec2::Vec2(f32,f32)	function	foundation/math	vec2-vec2-f32-f32	foundation-math.md	engine/foundation/math/vector.h:29
-Vec2::operator[](usize)	function	foundation/math	vec2-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:34
-Vec2::operator[](usize) const	function	foundation/math	vec2-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:38
-Vec2::operator+(const Vec2&) const	function	foundation/math	vec2-operator-plus-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:41
-Vec2::operator-(const Vec2&) const	function	foundation/math	vec2-operator-minus-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:43
-Vec2::operator*(f32) const	function	foundation/math	vec2-operator-star-f32-const	foundation-math.md	engine/foundation/math/vector.h:45
-Vec2::Dot(const Vec2&) const	function	foundation/math	vec2-dot-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:48
-Vec2::LengthSquared() const	function	foundation/math	vec2-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:51
-Vec2::Length() const	function	foundation/math	vec2-length-const	foundation-math.md	engine/foundation/math/vector.h:53
-Vec2::Normalized() const	function	foundation/math	vec2-normalized-const	foundation-math.md	engine/foundation/math/vector.h:58
-Vec2::operator==(const Vec2&) const	function	foundation/math	vec2-operator-eq-eq-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:66
-Vec2::operator!=(const Vec2&) const	function	foundation/math	vec2-operator-not-eq-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:68
-Vec3	struct	foundation/math	vec3	foundation-math.md	engine/foundation/math/vector.h:76
-Vec3::x	variable	foundation/math	vec3-x	foundation-math.md	engine/foundation/math/vector.h:79
-Vec3::y	variable	foundation/math	vec3-y	foundation-math.md	engine/foundation/math/vector.h:81
-Vec3::z	variable	foundation/math	vec3-z	foundation-math.md	engine/foundation/math/vector.h:83
-Vec3::Vec3()	function	foundation/math	vec3-vec3	foundation-math.md	engine/foundation/math/vector.h:86
-Vec3::Vec3(f32,f32,f32)	function	foundation/math	vec3-vec3-f32-f32-f32	foundation-math.md	engine/foundation/math/vector.h:88
-Vec3::operator[](usize)	function	foundation/math	vec3-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:93
-Vec3::operator[](usize) const	function	foundation/math	vec3-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:105
-Vec3::operator+(const Vec3&) const	function	foundation/math	vec3-operator-plus-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:116
-Vec3::operator-(const Vec3&) const	function	foundation/math	vec3-operator-minus-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:118
-Vec3::operator*(f32) const	function	foundation/math	vec3-operator-star-f32-const	foundation-math.md	engine/foundation/math/vector.h:120
-Vec3::Dot(const Vec3&) const	function	foundation/math	vec3-dot-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:123
-Vec3::Cross(const Vec3&) const	function	foundation/math	vec3-cross-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:126
-Vec3::LengthSquared() const	function	foundation/math	vec3-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:129
-Vec3::Length() const	function	foundation/math	vec3-length-const	foundation-math.md	engine/foundation/math/vector.h:131
-Vec3::Normalized() const	function	foundation/math	vec3-normalized-const	foundation-math.md	engine/foundation/math/vector.h:136
-Vec3::operator==(const Vec3&) const	function	foundation/math	vec3-operator-eq-eq-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:144
-Vec3::operator!=(const Vec3&) const	function	foundation/math	vec3-operator-not-eq-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:146
-Vec4	struct	foundation/math	vec4	foundation-math.md	engine/foundation/math/vector.h:154
-Vec4::x	variable	foundation/math	vec4-x	foundation-math.md	engine/foundation/math/vector.h:157
-Vec4::y	variable	foundation/math	vec4-y	foundation-math.md	engine/foundation/math/vector.h:159
-Vec4::z	variable	foundation/math	vec4-z	foundation-math.md	engine/foundation/math/vector.h:161
-Vec4::w	variable	foundation/math	vec4-w	foundation-math.md	engine/foundation/math/vector.h:163
-Vec4::Vec4()	function	foundation/math	vec4-vec4	foundation-math.md	engine/foundation/math/vector.h:166
-Vec4::Vec4(f32,f32,f32,f32)	function	foundation/math	vec4-vec4-f32-f32-f32-f32	foundation-math.md	engine/foundation/math/vector.h:168
-Vec4::Vec4(const Vec3&,f32)	function	foundation/math	vec4-vec4-const-vec3-amp-f32	foundation-math.md	engine/foundation/math/vector.h:170
-Vec4::operator[](usize)	function	foundation/math	vec4-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:175
-Vec4::operator[](usize) const	function	foundation/math	vec4-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:188
-Vec4::operator+(const Vec4&) const	function	foundation/math	vec4-operator-plus-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:200
-Vec4::operator-(const Vec4&) const	function	foundation/math	vec4-operator-minus-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:202
-Vec4::operator*(f32) const	function	foundation/math	vec4-operator-star-f32-const	foundation-math.md	engine/foundation/math/vector.h:204
-Vec4::Dot(const Vec4&) const	function	foundation/math	vec4-dot-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:207
-Vec4::LengthSquared() const	function	foundation/math	vec4-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:210
-Vec4::Length() const	function	foundation/math	vec4-length-const	foundation-math.md	engine/foundation/math/vector.h:212
-Vec4::Normalized() const	function	foundation/math	vec4-normalized-const	foundation-math.md	engine/foundation/math/vector.h:217
-Vec4::operator==(const Vec4&) const	function	foundation/math	vec4-operator-eq-eq-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:225
-Vec4::operator!=(const Vec4&) const	function	foundation/math	vec4-operator-not-eq-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:227
+Vec2T	struct	foundation/math	vec2t	foundation-math.md	engine/foundation/math/vector.h:27
+Vec2T::x	variable	foundation/math	vec2t-x	foundation-math.md	engine/foundation/math/vector.h:30
+Vec2T::y	variable	foundation/math	vec2t-y	foundation-math.md	engine/foundation/math/vector.h:32
+Vec2T::Vec2T()	function	foundation/math	vec2t-vec2t	foundation-math.md	engine/foundation/math/vector.h:35
+Vec2T::Vec2T(S,S)	function	foundation/math	vec2t-vec2t-s-s	foundation-math.md	engine/foundation/math/vector.h:37
+Vec2T::Vec2T(const Vec2T<T>&)	function	foundation/math	vec2t-vec2t-const-vec2t-lt-t-gt-amp	foundation-math.md	engine/foundation/math/vector.h:39
+Vec2T::Narrow() const	function	foundation/math	vec2t-narrow-const	foundation-math.md	engine/foundation/math/vector.h:47
+Vec2T::operator[](usize)	function	foundation/math	vec2t-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:56
+Vec2T::operator[](usize) const	function	foundation/math	vec2t-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:60
+Vec2T::operator+(const Vec2T&) const	function	foundation/math	vec2t-operator-plus-const-vec2t-amp-const	foundation-math.md	engine/foundation/math/vector.h:63
+Vec2T::operator-(const Vec2T&) const	function	foundation/math	vec2t-operator-minus-const-vec2t-amp-const	foundation-math.md	engine/foundation/math/vector.h:65
+Vec2T::operator*(S) const	function	foundation/math	vec2t-operator-star-s-const	foundation-math.md	engine/foundation/math/vector.h:67
+Vec2T::Dot(const Vec2T&) const	function	foundation/math	vec2t-dot-const-vec2t-amp-const	foundation-math.md	engine/foundation/math/vector.h:70
+Vec2T::LengthSquared() const	function	foundation/math	vec2t-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:73
+Vec2T::Length() const	function	foundation/math	vec2t-length-const	foundation-math.md	engine/foundation/math/vector.h:75
+Vec2T::Normalized() const	function	foundation/math	vec2t-normalized-const	foundation-math.md	engine/foundation/math/vector.h:80
+Vec2T::operator==(const Vec2T&) const	function	foundation/math	vec2t-operator-eq-eq-const-vec2t-amp-const	foundation-math.md	engine/foundation/math/vector.h:88
+Vec2T::operator!=(const Vec2T&) const	function	foundation/math	vec2t-operator-not-eq-const-vec2t-amp-const	foundation-math.md	engine/foundation/math/vector.h:90
+Vec3T	struct	foundation/math	vec3t	foundation-math.md	engine/foundation/math/vector.h:98
+Vec3T::x	variable	foundation/math	vec3t-x	foundation-math.md	engine/foundation/math/vector.h:101
+Vec3T::y	variable	foundation/math	vec3t-y	foundation-math.md	engine/foundation/math/vector.h:103
+Vec3T::z	variable	foundation/math	vec3t-z	foundation-math.md	engine/foundation/math/vector.h:105
+Vec3T::Vec3T()	function	foundation/math	vec3t-vec3t	foundation-math.md	engine/foundation/math/vector.h:108
+Vec3T::Vec3T(S,S,S)	function	foundation/math	vec3t-vec3t-s-s-s	foundation-math.md	engine/foundation/math/vector.h:110
+Vec3T::Vec3T(const Vec3T<T>&)	function	foundation/math	vec3t-vec3t-const-vec3t-lt-t-gt-amp	foundation-math.md	engine/foundation/math/vector.h:112
+Vec3T::Narrow() const	function	foundation/math	vec3t-narrow-const	foundation-math.md	engine/foundation/math/vector.h:120
+Vec3T::operator[](usize)	function	foundation/math	vec3t-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:129
+Vec3T::operator[](usize) const	function	foundation/math	vec3t-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:141
+Vec3T::operator+(const Vec3T&) const	function	foundation/math	vec3t-operator-plus-const-vec3t-amp-const	foundation-math.md	engine/foundation/math/vector.h:152
+Vec3T::operator-(const Vec3T&) const	function	foundation/math	vec3t-operator-minus-const-vec3t-amp-const	foundation-math.md	engine/foundation/math/vector.h:154
+Vec3T::operator*(S) const	function	foundation/math	vec3t-operator-star-s-const	foundation-math.md	engine/foundation/math/vector.h:156
+Vec3T::Dot(const Vec3T&) const	function	foundation/math	vec3t-dot-const-vec3t-amp-const	foundation-math.md	engine/foundation/math/vector.h:159
+Vec3T::Cross(const Vec3T&) const	function	foundation/math	vec3t-cross-const-vec3t-amp-const	foundation-math.md	engine/foundation/math/vector.h:162
+Vec3T::LengthSquared() const	function	foundation/math	vec3t-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:165
+Vec3T::Length() const	function	foundation/math	vec3t-length-const	foundation-math.md	engine/foundation/math/vector.h:167
+Vec3T::Normalized() const	function	foundation/math	vec3t-normalized-const	foundation-math.md	engine/foundation/math/vector.h:172
+Vec3T::operator==(const Vec3T&) const	function	foundation/math	vec3t-operator-eq-eq-const-vec3t-amp-const	foundation-math.md	engine/foundation/math/vector.h:180
+Vec3T::operator!=(const Vec3T&) const	function	foundation/math	vec3t-operator-not-eq-const-vec3t-amp-const	foundation-math.md	engine/foundation/math/vector.h:182
+Vec4T	struct	foundation/math	vec4t	foundation-math.md	engine/foundation/math/vector.h:190
+Vec4T::x	variable	foundation/math	vec4t-x	foundation-math.md	engine/foundation/math/vector.h:193
+Vec4T::y	variable	foundation/math	vec4t-y	foundation-math.md	engine/foundation/math/vector.h:195
+Vec4T::z	variable	foundation/math	vec4t-z	foundation-math.md	engine/foundation/math/vector.h:197
+Vec4T::w	variable	foundation/math	vec4t-w	foundation-math.md	engine/foundation/math/vector.h:199
+Vec4T::Vec4T()	function	foundation/math	vec4t-vec4t	foundation-math.md	engine/foundation/math/vector.h:202
+Vec4T::Vec4T(S,S,S,S)	function	foundation/math	vec4t-vec4t-s-s-s-s	foundation-math.md	engine/foundation/math/vector.h:204
+Vec4T::Vec4T(const Vec3T<S>&,S)	function	foundation/math	vec4t-vec4t-const-vec3t-lt-s-gt-amp-s	foundation-math.md	engine/foundation/math/vector.h:206
+Vec4T::Vec4T(const Vec4T<T>&)	function	foundation/math	vec4t-vec4t-const-vec4t-lt-t-gt-amp	foundation-math.md	engine/foundation/math/vector.h:208
+Vec4T::Narrow() const	function	foundation/math	vec4t-narrow-const	foundation-math.md	engine/foundation/math/vector.h:216
+Vec4T::operator[](usize)	function	foundation/math	vec4t-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:225
+Vec4T::operator[](usize) const	function	foundation/math	vec4t-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:238
+Vec4T::operator+(const Vec4T&) const	function	foundation/math	vec4t-operator-plus-const-vec4t-amp-const	foundation-math.md	engine/foundation/math/vector.h:250
+Vec4T::operator-(const Vec4T&) const	function	foundation/math	vec4t-operator-minus-const-vec4t-amp-const	foundation-math.md	engine/foundation/math/vector.h:252
+Vec4T::operator*(S) const	function	foundation/math	vec4t-operator-star-s-const	foundation-math.md	engine/foundation/math/vector.h:254
+Vec4T::Dot(const Vec4T&) const	function	foundation/math	vec4t-dot-const-vec4t-amp-const	foundation-math.md	engine/foundation/math/vector.h:257
+Vec4T::LengthSquared() const	function	foundation/math	vec4t-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:260
+Vec4T::Length() const	function	foundation/math	vec4t-length-const	foundation-math.md	engine/foundation/math/vector.h:262
+Vec4T::Normalized() const	function	foundation/math	vec4t-normalized-const	foundation-math.md	engine/foundation/math/vector.h:267
+Vec4T::operator==(const Vec4T&) const	function	foundation/math	vec4t-operator-eq-eq-const-vec4t-amp-const	foundation-math.md	engine/foundation/math/vector.h:275
+Vec4T::operator!=(const Vec4T&) const	function	foundation/math	vec4t-operator-not-eq-const-vec4t-amp-const	foundation-math.md	engine/foundation/math/vector.h:277
+Vec2	alias	foundation/math	vec2	foundation-math.md	engine/foundation/math/vector.h:281
+Vec3	alias	foundation/math	vec3	foundation-math.md	engine/foundation/math/vector.h:284
+Vec4	alias	foundation/math	vec4	foundation-math.md	engine/foundation/math/vector.h:286
+Vec2d	alias	foundation/math	vec2d	foundation-math.md	engine/foundation/math/vector.h:288
+Vec3d	alias	foundation/math	vec3d	foundation-math.md	engine/foundation/math/vector.h:290
+Vec4d	alias	foundation/math	vec4d	foundation-math.md	engine/foundation/math/vector.h:292
 ENGINE_DEBUG_CHECKS	macro	foundation/log	engine-debug-checks	foundation-log.md	engine/foundation/log/assert.h:28
 ENGINE_SLOW_CHECKS	macro	foundation/log	engine-slow-checks	foundation-log.md	engine/foundation/log/assert.h:40
 WriteSinkFn	alias	foundation/log	writesinkfn	foundation-log.md	engine/foundation/log/assert.h:51

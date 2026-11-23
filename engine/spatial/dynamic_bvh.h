@@ -157,7 +157,7 @@ public:
     u32 ProxyCount() const { return proxy_count_; }
     /// Returns the root's height (0 for a single leaf and for an empty tree).
     u32 Height() const;
-    /// Returns the box of the whole tree (fat boxes), or [[Aabb::Empty]] when it is empty.
+    /// Returns the box of the whole tree (fat boxes), or [[AabbT::Empty]] when it is empty.
     Aabb Bounds() const;
     /// Returns the tree's SAH cost now (one pass over the nodes).
     f32 SahCost() const;
@@ -186,7 +186,7 @@ public:
     /// Visits the leaves a ray reaches, nearest child first, as [[spatial::StaticBvh::TraverseRay]]:
     /// `item_visit(ProxyId, const Item&, f32& max_t)` may lower `max_t` and returns false to stop.
     ///
-    /// - Param ray: the ray ([[Ray::Make]]).
+    /// - Param ray: the ray ([[RayT::Make]]).
     /// - Param max_t: the farthest parameter to consider.
     /// - Param item_visit: the item visitor.
     /// - Returns: what the traversal did.

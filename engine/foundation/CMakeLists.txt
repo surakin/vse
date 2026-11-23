@@ -135,6 +135,7 @@ set(FOUNDATION_BASE_SOURCES
   cstr/number.cpp
   int128.cpp
   math/geometry.cpp
+  math/placement.cpp
   string/utf8_codec.cpp
   string/grapheme.cpp
   string/generated/grapheme_break_table.cpp

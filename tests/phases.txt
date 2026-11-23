@@ -140,6 +140,7 @@ tests/foundation/transform_test.cpp             0
 tests/foundation/unique_ptr_test.cpp            0   # extended in Phase 5 Day 80b, still a foundation type
 tests/foundation/utf8_test.cpp                  0
 tests/foundation/vector_test.cpp                0
+tests/foundation/double_precision_math_test.cpp  0
 
 # --- Phase 1: Linux platform ---
 tests/foundation/gpu_driver_loading_test.cpp    1   # the platform's dlopen layer, not a Vulkan device

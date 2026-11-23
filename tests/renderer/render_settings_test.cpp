@@ -31,7 +31,7 @@ const char* const kLevelNames[] = {"off", "on"};
 TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[render_settings]")
 {
     const SettingsRegistry& r = SettingsRegistry::Builtin();
-    REQUIRE(r.Count() == 15);
+    REQUIRE(r.Count() == 18);
     struct Row
     {
         SettingId id;

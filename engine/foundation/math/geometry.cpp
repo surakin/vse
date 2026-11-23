@@ -17,59 +17,61 @@ Vec4 GeometryRow(const Mat4& m, u32 i)
     return Vec4(m.col[0][i], m.col[1][i], m.col[2][i], m.col[3][i]);
 }
 
-Plane GeometryPlane(const Vec4& v)
+// The plane of a row combination, normalized, in the scalar `S` (the matrix is single precision; its entries widen
+// exactly).
+template <class S> PlaneT<S> GeometryPlane(const Vec4& v)
 {
-    const Vec3 n(v.x, v.y, v.z);
-    const f32 len = n.Length();
-    ENGINE_ASSERT(len > 0.0f && IsFinite(len), "Frustum: the view-projection is degenerate (zero or not finite)");
-    Plane p;
-    p.normal = n * (1.0f / len);
-    p.d = v.w / len;
+    const Vec3T<S> n(static_cast<S>(v.x), static_cast<S>(v.y), static_cast<S>(v.z));
+    const S len = n.Length();
+    ENGINE_ASSERT(len > S(0) && IsFinite(len), "Frustum: the view-projection is degenerate (zero or not finite)");
+    PlaneT<S> p;
+    p.normal = n * (S(1) / len);
+    p.d = static_cast<S>(v.w) / len;
     return p;
 }
 
-f32 MinOf(f32 a, f32 b)
+template <class S> S MinOf(S a, S b)
 {
     return a < b ? a : b;
 }
-f32 MaxOf(f32 a, f32 b)
+template <class S> S MaxOf(S a, S b)
 {
     return a > b ? a : b;
 }
 
 }  // namespace
 
-Aabb Aabb::Empty()
+template <class S> AabbT<S> AabbT<S>::Empty()
 {
-    const f32 inf = Limits<f32>::Infinity();
-    return FromMinMax(Vec3(inf, inf, inf), Vec3(-inf, -inf, -inf));
+    const S inf = Limits<S>::Infinity();
+    return FromMinMax(Vec3T<S>(inf, inf, inf), Vec3T<S>(-inf, -inf, -inf));
 }
 
-Plane Plane::FromPointNormal(const Vec3& point, const Vec3& normal)
+template <class S> PlaneT<S> PlaneT<S>::FromPointNormal(const Vec3T<S>& point, const Vec3T<S>& normal)
 {
-    Plane p;
+    PlaneT<S> p;
     p.normal = normal.Normalized();
     p.d = -p.normal.Dot(point);
     return p;
 }
 
-Ray Ray::Make(const Vec3& origin, const Vec3& direction)
+template <class S> RayT<S> RayT<S>::Make(const Vec3T<S>& origin, const Vec3T<S>& direction)
 {
-    ENGINE_ASSERT(direction.x != 0.0f || direction.y != 0.0f || direction.z != 0.0f,
+    ENGINE_ASSERT(direction.x != S(0) || direction.y != S(0) || direction.z != S(0),
                   "Ray::Make: the direction is zero");
-    Ray ray;
+    RayT<S> ray;
     ray.origin = origin;
     ray.direction = direction;
     // IEEE division gives plus or minus infinity for a zero component, with the zero's sign; the slab test does not use
     // it for that axis.
     for (u32 k = 0; k < 3; ++k)
     {
-        ray.inverse_direction[k] = 1.0f / direction[k];
+        ray.inverse_direction[k] = S(1) / direction[k];
     }
     return ray;
 }
 
-Frustum Frustum::FromViewProjection(const Mat4& vp)
+template <class S> FrustumT<S> FrustumT<S>::FromViewProjection(const Mat4& vp)
 {
     // Gribb-Hartmann: with clip = vp * p, a point is inside when -w <= x <= w, -w <= y <= w and 0 <= z <= w (Vulkan
     // depth).
@@ -77,22 +79,33 @@ Frustum Frustum::FromViewProjection(const Mat4& vp)
     const Vec4 r1 = GeometryRow(vp, 1);
     const Vec4 r2 = GeometryRow(vp, 2);
     const Vec4 r3 = GeometryRow(vp, 3);
-    Frustum f;
-    f.planes[0] = GeometryPlane(r3 + r0);  // left:   w + x >= 0
-    f.planes[1] = GeometryPlane(r3 - r0);  // right:  w - x >= 0
-    f.planes[2] = GeometryPlane(r3 + r1);  // bottom: w + y >= 0
-    f.planes[3] = GeometryPlane(r3 - r1);  // top:    w - y >= 0
-    f.planes[4] = GeometryPlane(r2);       // near:   z >= 0
-    f.planes[5] = GeometryPlane(r3 - r2);  // far:    w - z >= 0
+    FrustumT<S> f;
+    f.planes[0] = GeometryPlane<S>(r3 + r0);  // left:   w + x >= 0
+    f.planes[1] = GeometryPlane<S>(r3 - r0);  // right:  w - x >= 0
+    f.planes[2] = GeometryPlane<S>(r3 + r1);  // bottom: w + y >= 0
+    f.planes[3] = GeometryPlane<S>(r3 - r1);  // top:    w - y >= 0
+    f.planes[4] = GeometryPlane<S>(r2);       // near:   z >= 0
+    f.planes[5] = GeometryPlane<S>(r3 - r2);  // far:    w - z >= 0
     return f;
 }
 
-Containment Frustum::TestSphere(const Sphere& s) const
+template <class S> FrustumT<S> FrustumT<S>::Translated(const Vec3T<S>& origin) const
+{
+    // A point p of the old space is p + origin in the new one: n . (q - origin) + d = n . q + (d - n . origin).
+    FrustumT<S> f = *this;
+    for (PlaneT<S>& plane : f.planes)
+    {
+        plane.d = plane.d - plane.normal.Dot(origin);
+    }
+    return f;
+}
+
+template <class S> Containment FrustumT<S>::TestSphere(const SphereT<S>& s) const
 {
     bool straddles = false;
-    for (const Plane& plane : planes)
+    for (const PlaneT<S>& plane : planes)
     {
-        const f32 distance = plane.Distance(s.center);
+        const S distance = plane.Distance(s.center);
         if (distance < -s.radius)
         {
             return Containment::Outside;
@@ -105,17 +118,17 @@ Containment Frustum::TestSphere(const Sphere& s) const
     return straddles ? Containment::Intersects : Containment::Inside;
 }
 
-Containment Frustum::TestAabb(const Aabb& box) const
+template <class S> Containment FrustumT<S>::TestAabb(const AabbT<S>& box) const
 {
-    const Vec3 center = box.Center();
-    const Vec3 half = box.HalfExtents();
+    const Vec3T<S> center = box.Center();
+    const Vec3T<S> half = box.HalfExtents();
     bool straddles = false;
-    for (const Plane& plane : planes)
+    for (const PlaneT<S>& plane : planes)
     {
         // The box's extent along the plane normal: the farthest corner is `reach` away from the center in each
         // direction.
-        const f32 reach = Abs(plane.normal.x) * half.x + Abs(plane.normal.y) * half.y + Abs(plane.normal.z) * half.z;
-        const f32 distance = plane.Distance(center);
+        const S reach = Abs(plane.normal.x) * half.x + Abs(plane.normal.y) * half.y + Abs(plane.normal.z) * half.z;
+        const S distance = plane.Distance(center);
         if (distance < -reach)
         {
             return Containment::Outside;
@@ -128,7 +141,7 @@ Containment Frustum::TestAabb(const Aabb& box) const
     return straddles ? Containment::Intersects : Containment::Inside;
 }
 
-bool Frustum::Visible(const Bounds& bounds) const
+template <class S> bool FrustumT<S>::Visible(const BoundsT<S>& bounds) const
 {
     switch (TestSphere(bounds.sphere))
     {
@@ -138,6 +151,15 @@ bool Frustum::Visible(const Bounds& bounds) const
     }
     return TestAabb(bounds.box) != Containment::Outside;
 }
+
+template struct AabbT<f32>;
+template struct AabbT<f64>;
+template struct PlaneT<f32>;
+template struct PlaneT<f64>;
+template struct RayT<f32>;
+template struct RayT<f64>;
+template struct FrustumT<f32>;
+template struct FrustumT<f64>;
 
 Aabb ComputeAabb(const void* points, u32 count, u32 stride_bytes)
 {
@@ -278,7 +300,7 @@ Bounds TransformBounds(const Bounds& local, const Mat4& m)
     return out;
 }
 
-Aabb Union(const Aabb& a, const Aabb& b)
+template <class S> AabbT<S> Union(const AabbT<S>& a, const AabbT<S>& b)
 {
     if (a.IsEmpty())
     {
@@ -288,22 +310,22 @@ Aabb Union(const Aabb& a, const Aabb& b)
     {
         return a;
     }
-    return Aabb::FromMinMax(Vec3(MinOf(a.min.x, b.min.x), MinOf(a.min.y, b.min.y), MinOf(a.min.z, b.min.z)),
-                            Vec3(MaxOf(a.max.x, b.max.x), MaxOf(a.max.y, b.max.y), MaxOf(a.max.z, b.max.z)));
+    return AabbT<S>::FromMinMax(Vec3T<S>(MinOf(a.min.x, b.min.x), MinOf(a.min.y, b.min.y), MinOf(a.min.z, b.min.z)),
+                                Vec3T<S>(MaxOf(a.max.x, b.max.x), MaxOf(a.max.y, b.max.y), MaxOf(a.max.z, b.max.z)));
 }
 
-Aabb Union(const Aabb& box, const Vec3& point)
+template <class S> AabbT<S> Union(const AabbT<S>& box, const Vec3T<S>& point)
 {
-    return Union(box, Aabb::FromMinMax(point, point));
+    return Union(box, AabbT<S>::FromMinMax(point, point));
 }
 
-Aabb Intersection(const Aabb& a, const Aabb& b)
+template <class S> AabbT<S> Intersection(const AabbT<S>& a, const AabbT<S>& b)
 {
-    return Aabb::FromMinMax(Vec3(MaxOf(a.min.x, b.min.x), MaxOf(a.min.y, b.min.y), MaxOf(a.min.z, b.min.z)),
-                            Vec3(MinOf(a.max.x, b.max.x), MinOf(a.max.y, b.max.y), MinOf(a.max.z, b.max.z)));
+    return AabbT<S>::FromMinMax(Vec3T<S>(MaxOf(a.min.x, b.min.x), MaxOf(a.min.y, b.min.y), MaxOf(a.min.z, b.min.z)),
+                                Vec3T<S>(MinOf(a.max.x, b.max.x), MinOf(a.max.y, b.max.y), MinOf(a.max.z, b.max.z)));
 }
 
-bool Contains(const Aabb& outer, const Aabb& inner)
+template <class S> bool Contains(const AabbT<S>& outer, const AabbT<S>& inner)
 {
     if (inner.IsEmpty())
     {
@@ -313,7 +335,7 @@ bool Contains(const Aabb& outer, const Aabb& inner)
            inner.max.x <= outer.max.x && inner.max.y <= outer.max.y && inner.max.z <= outer.max.z;
 }
 
-bool Overlaps(const Aabb& a, const Aabb& b)
+template <class S> bool Overlaps(const AabbT<S>& a, const AabbT<S>& b)
 {
     if (a.IsEmpty() || b.IsEmpty())
     {
@@ -323,7 +345,7 @@ bool Overlaps(const Aabb& a, const Aabb& b)
            b.min.z <= a.max.z;
 }
 
-bool Overlaps(const Aabb& box, const Sphere& sphere)
+template <class S> bool Overlaps(const AabbT<S>& box, const SphereT<S>& sphere)
 {
     if (box.IsEmpty())
     {
@@ -332,39 +354,39 @@ bool Overlaps(const Aabb& box, const Sphere& sphere)
     return Distance2(sphere.center, box) <= sphere.radius * sphere.radius;
 }
 
-bool Overlaps(const Sphere& a, const Sphere& b)
+template <class S> bool Overlaps(const SphereT<S>& a, const SphereT<S>& b)
 {
-    const f32 reach = a.radius + b.radius;
+    const S reach = a.radius + b.radius;
     return (a.center - b.center).LengthSquared() <= reach * reach;
 }
 
-f32 SurfaceArea(const Aabb& box)
+template <class S> S SurfaceArea(const AabbT<S>& box)
 {
     if (box.IsEmpty())
     {
-        return 0.0f;
+        return S(0);
     }
-    const Vec3 e = box.Extents();
-    return 2.0f * (e.x * e.y + e.y * e.z + e.z * e.x);
+    const Vec3T<S> e = box.Extents();
+    return S(2) * (e.x * e.y + e.y * e.z + e.z * e.x);
 }
 
-f32 Volume(const Aabb& box)
+template <class S> S Volume(const AabbT<S>& box)
 {
     if (box.IsEmpty())
     {
-        return 0.0f;
+        return S(0);
     }
-    const Vec3 e = box.Extents();
+    const Vec3T<S> e = box.Extents();
     return e.x * e.y * e.z;
 }
 
-f32 Distance2(const Vec3& point, const Aabb& box)
+template <class S> S Distance2(const Vec3T<S>& point, const AabbT<S>& box)
 {
-    f32 sum = 0.0f;
+    S sum = S(0);
     for (u32 k = 0; k < 3; ++k)
     {
-        const f32 v = point[k];
-        f32 gap = 0.0f;
+        const S v = point[k];
+        S gap = S(0);
         if (v < box.min[k])
         {
             gap = box.min[k] - v;
@@ -378,18 +400,18 @@ f32 Distance2(const Vec3& point, const Aabb& box)
     return sum;
 }
 
-bool Intersect(const Ray& ray, const Aabb& box, f32 max_t, f32* t)
+template <class S> bool Intersect(const RayT<S>& ray, const AabbT<S>& box, TypeIdentity<S> max_t, TypeIdentity<S>* t)
 {
-    if (box.IsEmpty() || max_t < 0.0f)
+    if (box.IsEmpty() || max_t < S(0))
     {
         return false;
     }
-    f32 enter = 0.0f;
-    f32 leave = max_t;
+    S enter = S(0);
+    S leave = max_t;
     for (u32 k = 0; k < 3; ++k)
     {
-        const f32 o = ray.origin[k];
-        if (ray.direction[k] == 0.0f || !IsFinite(ray.inverse_direction[k]))
+        const S o = ray.origin[k];
+        if (ray.direction[k] == S(0) || !IsFinite(ray.inverse_direction[k]))
         {  // (a subnormal direction has an infinite inverse: treated as parallel)
             // Parallel to this pair of faces: the ray is inside the slab for all t, or never (0 * infinity would be
             // NaN, so not computed).
@@ -399,12 +421,12 @@ bool Intersect(const Ray& ray, const Aabb& box, f32 max_t, f32* t)
             }
             continue;
         }
-        const f32 inv = ray.inverse_direction[k];
-        f32 near_t = (box.min[k] - o) * inv;
-        f32 far_t = (box.max[k] - o) * inv;
+        const S inv = ray.inverse_direction[k];
+        S near_t = (box.min[k] - o) * inv;
+        S far_t = (box.max[k] - o) * inv;
         if (near_t > far_t)
         {
-            const f32 swap = near_t;
+            const S swap = near_t;
             near_t = far_t;
             far_t = swap;
         }
@@ -422,54 +444,55 @@ bool Intersect(const Ray& ray, const Aabb& box, f32 max_t, f32* t)
     return true;
 }
 
-bool Intersect(const Ray& ray, const Sphere& sphere, f32 max_t, f32* t)
+template <class S>
+bool Intersect(const RayT<S>& ray, const SphereT<S>& sphere, TypeIdentity<S> max_t, TypeIdentity<S>* t)
 {
-    if (max_t < 0.0f)
+    if (max_t < S(0))
     {
         return false;
     }
-    const Vec3 m = ray.origin - sphere.center;
-    const f32 c = m.LengthSquared() - sphere.radius * sphere.radius;
-    if (c <= 0.0f)
+    const Vec3T<S> m = ray.origin - sphere.center;
+    const S c = m.LengthSquared() - sphere.radius * sphere.radius;
+    if (c <= S(0))
     {  // the ray starts inside (or on) the sphere
         if (t != nullptr)
         {
-            *t = 0.0f;
+            *t = S(0);
         }
         return true;
     }
-    const f32 b = m.Dot(ray.direction);
-    if (b > 0.0f)
+    const S b = m.Dot(ray.direction);
+    if (b > S(0))
     {
         return false;  // outside and pointing away
     }
-    const f32 a = ray.direction.LengthSquared();
-    const f32 discriminant = b * b - a * c;
-    if (discriminant < 0.0f)
+    const S a = ray.direction.LengthSquared();
+    const S discriminant = b * b - a * c;
+    if (discriminant < S(0))
     {
         return false;
     }
-    const f32 hit = (-b - Sqrt(discriminant)) / a;
+    const S hit = (-b - Sqrt(discriminant)) / a;
     if (hit > max_t)
     {
         return false;
     }
     if (t != nullptr)
     {
-        *t = hit < 0.0f ? 0.0f : hit;
+        *t = hit < S(0) ? S(0) : hit;
     }
     return true;
 }
 
-bool Intersect(const Ray& ray, const Plane& plane, f32 max_t, f32* t)
+template <class S> bool Intersect(const RayT<S>& ray, const PlaneT<S>& plane, TypeIdentity<S> max_t, TypeIdentity<S>* t)
 {
-    const f32 denominator = plane.normal.Dot(ray.direction);
-    if (denominator == 0.0f)
+    const S denominator = plane.normal.Dot(ray.direction);
+    if (denominator == S(0))
     {
         return false;
     }
-    const f32 hit = -plane.Distance(ray.origin) / denominator;
-    if (hit < 0.0f || hit > max_t)
+    const S hit = -plane.Distance(ray.origin) / denominator;
+    if (hit < S(0) || hit > max_t)
     {
         return false;
     }
@@ -479,5 +502,23 @@ bool Intersect(const Ray& ray, const Plane& plane, f32 max_t, f32* t)
     }
     return true;
 }
+
+#define VSE_GEOMETRY_INSTANTIATE(S)                                                                                    \
+    template AabbT<S> Union(const AabbT<S>&, const AabbT<S>&);                                                         \
+    template AabbT<S> Union(const AabbT<S>&, const Vec3T<S>&);                                                         \
+    template AabbT<S> Intersection(const AabbT<S>&, const AabbT<S>&);                                                  \
+    template bool Contains(const AabbT<S>&, const AabbT<S>&);                                                          \
+    template bool Overlaps(const AabbT<S>&, const AabbT<S>&);                                                          \
+    template bool Overlaps(const AabbT<S>&, const SphereT<S>&);                                                        \
+    template bool Overlaps(const SphereT<S>&, const SphereT<S>&);                                                      \
+    template S SurfaceArea(const AabbT<S>&);                                                                           \
+    template S Volume(const AabbT<S>&);                                                                                \
+    template S Distance2(const Vec3T<S>&, const AabbT<S>&);                                                            \
+    template bool Intersect(const RayT<S>&, const AabbT<S>&, TypeIdentity<S>, TypeIdentity<S>*);                       \
+    template bool Intersect(const RayT<S>&, const SphereT<S>&, TypeIdentity<S>, TypeIdentity<S>*);                     \
+    template bool Intersect(const RayT<S>&, const PlaneT<S>&, TypeIdentity<S>, TypeIdentity<S>*);
+VSE_GEOMETRY_INSTANTIATE(f32)
+VSE_GEOMETRY_INSTANTIATE(f64)
+#undef VSE_GEOMETRY_INSTANTIATE
 
 }  // namespace vse
