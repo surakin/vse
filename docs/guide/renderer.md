@@ -1142,6 +1142,20 @@ flavor runs them; see [the RHI guide](rhi.md#platform-notes).
 
 Culling through a bounding-volume hierarchy (`RenderScene::SetCullMode`): see [Spatial partitioning](spatial.md), "Culling for the renderer".
 
+## Large worlds
+
+The renderer works in single precision, so a world far from its origin would lose precision in every matrix. The scene sync therefore keeps a **render origin**
+in the [[scene::SceneLink]]: a world position that is (0, 0, 0) in the render scene. Objects, lights, terrains and the camera system's camera are written relative to
+it (`(position - origin)` computed in `f64`, then narrowed), so a scene 100,000 km from the world origin draws the same picture as one at it, and two objects 1 mm apart stay distinct.
+
+- Set `link.rebase_step` (for example 1024) and call [[scene::UpdateRenderOrigin]] once a frame, before the schedule runs, with the active camera's
+  `WorldTransform::position`. When the camera has drifted more than a step from the origin on any axis, the origin moves to the camera snapped to a multiple of the step and the
+  sync rewrites every object and light (the cost of one frame's transform pass). With `rebase_step` 0 (the default) the origin stays at zero and nothing changes.
+- Register the camera system before the sync system, so both use the same origin in a frame.
+- Precision is that of `f32` at the distance from the origin: objects within a few kilometres of the camera keep millimetres; at 100 km from it, about 8 mm.
+- Code that talks to the render scene directly (a hand-built `RenderScene`, the debug drawer) works in render-origin coordinates; [[scene::RelativeMatrix]] converts a
+  world transform.
+
 ## See also
 
 - [ECS: Rendering](ecs.md#rendering): entities mirrored into a `RenderScene` by `scene::MakeRenderSyncSystem` (`engine/scene`); the renderer demo's scene is built that way (`DemoScene` keeps its interface), and the renderer's own tests still fill a `RenderScene` directly.

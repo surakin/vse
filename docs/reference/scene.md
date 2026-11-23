@@ -551,6 +551,67 @@ renderer::RenderScene* scene;
 
 The render scene; null makes the sync do nothing (counted in `SceneSyncReport::no_scene`).
 
+### `origin` {#scene-scenelink-origin}
+
+`variable scene::SceneLink::origin` — defined in `engine/scene/render_sync.h`
+
+```cpp
+Vec3d origin;
+```
+
+The render origin: the world position that is (0, 0, 0) in the render scene. Everything the sync writes to the scene (objects, lights, terrains) and the camera system's camera is relative to it, narrowed to `f32`, so a world far from the world origin renders with the precision of a world near it. Zero until [`scene::UpdateRenderOrigin`](#scene-updaterenderorigin-scenelink-amp-const-vec3d-amp) moves it.
+
+### `rebase_step` {#scene-scenelink-rebase-step}
+
+`variable scene::SceneLink::rebase_step` — defined in `engine/scene/render_sync.h`
+
+```cpp
+f64 rebase_step;
+```
+
+How far the camera may drift from `origin` (on any axis) before [`scene::UpdateRenderOrigin`](#scene-updaterenderorigin-scenelink-amp-const-vec3d-amp) re-bases it, and the grid the new origin snaps to, in world units; 0 keeps the origin at zero (the default).
+
+### `generation` {#scene-scenelink-generation}
+
+`variable scene::SceneLink::generation` — defined in `engine/scene/render_sync.h`
+
+```cpp
+u64 generation;
+```
+
+Counts re-bases; the sync rewrites every object and light when it changes.
+
+## `UpdateRenderOrigin(SceneLink&,const Vec3d&)` {#scene-updaterenderorigin-scenelink-amp-const-vec3d-amp}
+
+`function scene::UpdateRenderOrigin` — defined in `engine/scene/render_sync.h`
+
+```cpp
+bool UpdateRenderOrigin(SceneLink& link, const Vec3d& camera);
+```
+
+Moves the render origin of `link` to the camera's position, snapped to a multiple of `link.rebase_step`, when the camera has drifted more than that step from it; call it once per frame, before the schedule runs, with the active camera's `WorldTransform::position`. Does nothing while `rebase_step` is 0.
+
+| Field | Value |
+|---|---|
+| Parameter `link` | the link of the world's sync systems. |
+| Parameter `camera` | the camera's exact world position. |
+| Returns | true when the origin moved (the next sync rewrites every object and light, and the scene's transforms change by the difference). |
+| Fails | never. |
+
+## `RelativeMatrix(const ecs::WorldTransform&,const Vec3d&)` {#scene-relativematrix-const-ecs-worldtransform-amp-const-vec3d-amp}
+
+`function scene::RelativeMatrix` — defined in `engine/scene/render_sync.h`
+
+```cpp
+Mat4 RelativeMatrix(const ecs::WorldTransform& w, const Vec3d& origin);
+```
+
+The world transform's matrix relative to `origin`: the rotation and scale of `w.matrix`, the translation `w.position - origin` computed in `f64` and then narrowed. With a zero origin it is `w.matrix` itself.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ## `SceneSyncReport` {#scene-scenesyncreport}
 
 `struct scene::SceneSyncReport` — defined in `engine/scene/render_sync.h`

@@ -112,6 +112,7 @@ template <class HiddenFilter> struct MeshQueries
 using LightCreate = Query<Read<LightSource>, Read<ecs::WorldTransform>, Without<RenderHandle>, Without<MeshRenderer>>;
 using LightEdited = Query<Changed<LightSource>, Read<LightSource>, Read<ecs::WorldTransform>, Read<RenderHandle>,
                           Without<MeshRenderer>>;
+using Resync = Query<Read<ecs::WorldTransform>, Read<RenderHandle>>;
 using TransformMoved = Query<Changed<ecs::WorldTransform>, Read<ecs::WorldTransform>, Read<RenderHandle>>;
 using SkinnedPalettes = Query<Read<animation::SkeletonInstance>, Read<RenderHandle>>;
 using MorphedObjects = Query<Read<animation::MorphWeights>, Read<RenderHandle>>;
@@ -129,7 +130,9 @@ public:
     {
         SceneSyncReport& report = context.Resource<SceneSyncReport>();
         ++report.frames;
-        renderer::RenderScene* scene = context.Resource<SceneLink>().scene;
+        const SceneLink& link = context.Resource<SceneLink>();
+        origin_ = link.origin;
+        renderer::RenderScene* scene = link.scene;
         if (scene == nullptr)
         {
             ++report.no_scene;
@@ -145,7 +148,7 @@ public:
             keep_.Resize(scene->ObjectCapacity());
         }
         ENGINE_ASSERT(scene_ == scene, "RenderSync: the linked RenderScene changed between frames");
-        Sync(context, *scene, report);
+        Sync(context, *scene, report, link.generation);
     }
 
 private:
@@ -171,6 +174,7 @@ private:
         light_edited_ = MakeUnique<LightEdited>(
             context.Query<Changed<LightSource>, Read<LightSource>, Read<ecs::WorldTransform>, Read<RenderHandle>,
                           Without<MeshRenderer>>());
+        resync_ = MakeUnique<Resync>(context.Query<Read<ecs::WorldTransform>, Read<RenderHandle>>());
         transform_moved_ = MakeUnique<TransformMoved>(
             context.Query<Changed<ecs::WorldTransform>, Read<ecs::WorldTransform>, Read<RenderHandle>>());
         skinned_ = MakeUnique<SkinnedPalettes>(context.Query<Read<animation::SkeletonInstance>, Read<RenderHandle>>());
@@ -435,7 +439,7 @@ private:
     {
         constexpr bool hidden = Queries::kHidden;
         q.edited->ForEach([&](Entity entity, const MeshRenderer& mr, const ecs::WorldTransform& w, RenderHandle& handle)
-                          { Refresh(scene, context, entity, handle, mr, w.matrix, hidden, report); });
+                          { Refresh(scene, context, entity, handle, mr, RelativeMatrix(w, origin_), hidden, report); });
         // A tag change moves the entity to another archetype, which the arrival stamp of its handle shows.
         q.moved->ForEach(
             [&](const MeshRenderer& mr, const RenderHandle& handle)
@@ -460,7 +464,7 @@ private:
             [&](Entity entity, const MeshRenderer& mr, const ecs::WorldTransform& w)
             {
                 RenderHandle handle;
-                AddObjects(scene, mr, w.matrix, hidden, report, &handle);
+                AddObjects(scene, mr, RelativeMatrix(w, origin_), hidden, report, &handle);
                 if (handle.object.IsValid())
                 {
                     ApplySkin(scene, handle, context.Peek<animation::SkeletonInstance>(entity), report);
@@ -471,7 +475,7 @@ private:
             });
     }
 
-    void Sync(ecs::SystemContext& context, renderer::RenderScene& scene, SceneSyncReport& report)
+    void Sync(ecs::SystemContext& context, renderer::RenderScene& scene, SceneSyncReport& report, u64 generation)
     {
         // 0. Objects made last frame for entities that were destroyed before their handle was applied.
         for (usize i = 0; i < pending_.Size(); ++i)
@@ -527,28 +531,34 @@ private:
         SyncMesh(context, scene, no_, report);
 
         // 4. Moved objects and lights, only where the matrix differs.
-        transform_moved_->ForEach(
-            [&](Entity entity, const ecs::WorldTransform& w, const RenderHandle& handle)
+        auto move_one = [&](Entity entity, const ecs::WorldTransform& w, const RenderHandle& handle)
+        {
+            const Mat4 relative = RelativeMatrix(w, origin_);
+            for (u32 i = 0; i < ObjectCountOf(handle); ++i)
             {
-                for (u32 i = 0; i < ObjectCountOf(handle); ++i)
+                const renderer::RenderObject* object = scene.FindObject(ObjectAt(handle, i));
+                if (object != nullptr && !SameMatrixBits(object->transform, relative))
                 {
-                    const renderer::RenderObject* object = scene.FindObject(ObjectAt(handle, i));
-                    if (object != nullptr && !SameMatrixBits(object->transform, w.matrix))
-                    {
-                        scene.SetTransform(ObjectAt(handle, i), w.matrix);
-                        ++report.transforms_set;
-                    }
+                    scene.SetTransform(ObjectAt(handle, i), relative);
+                    ++report.transforms_set;
                 }
-                if (handle.light.IsValid())
+            }
+            if (handle.light.IsValid())
+            {
+                if (const LightSource* source = context.Peek<LightSource>(entity))
                 {
-                    if (const LightSource* source = context.Peek<LightSource>(entity))
-                    {
-                        SetLightIfChanged(scene, handle.light, *source, w.matrix, report);
-                    }
+                    SetLightIfChanged(scene, handle.light, *source, relative, report);
                 }
-            });
+            }
+        };
+        transform_moved_->ForEach(move_one);
+        if (generation != seen_generation_)
+        {
+            resync_->ForEach(move_one);  // the render origin moved: every matrix is relative to another origin
+            seen_generation_ = generation;
+        }
         light_edited_->ForEach([&](const LightSource& source, const ecs::WorldTransform& w, const RenderHandle& handle)
-                               { SetLightIfChanged(scene, handle.light, source, w.matrix, report); });
+                               { SetLightIfChanged(scene, handle.light, source, RelativeMatrix(w, origin_), report); });
 
         // 4b. Joint palettes: an entity's palette may have been rebuilt at another address (the animation system fills
         // it in place, but a skeleton change or a first fill reallocates it).
@@ -566,7 +576,7 @@ private:
         light_create_->ForEach(
             [&](Entity entity, const LightSource& source, const ecs::WorldTransform& w)
             {
-                const renderer::Light light = MakeLight(source, w.matrix);
+                const renderer::Light light = MakeLight(source, RelativeMatrix(w, origin_));
                 if (!LightValid(light))
                 {
                     ++report.invalid;
@@ -594,6 +604,7 @@ private:
         light_create_->Finish();
         light_edited_->Finish();
         transform_moved_->Finish();
+        resync_->Finish();
         skinned_->Finish();
         object_orphans_->Finish();
         light_orphans_->Finish();
@@ -610,6 +621,7 @@ private:
     UniquePtr<LightCreate> light_create_;
     UniquePtr<LightEdited> light_edited_;
     UniquePtr<TransformMoved> transform_moved_;
+    UniquePtr<Resync> resync_;
     UniquePtr<SkinnedPalettes> skinned_;
     UniquePtr<MorphedObjects> morphed_;
     UniquePtr<UnmorphedObjects> unmorphed_;
@@ -619,6 +631,8 @@ private:
     Vector<renderer::GpuMeshPtr> keep_;
     renderer::RenderScene* scene_ = nullptr;
     u64 world_id_ = 0;
+    Vec3d origin_ = Vec3d(0, 0, 0);
+    u64 seen_generation_ = 0;
     u64 last_removal_seq_ = 0;
 };
 
@@ -629,6 +643,36 @@ Vec3 Axis(const Vec4& column)
 }
 
 }  // namespace
+
+Mat4 RelativeMatrix(const ecs::WorldTransform& w, const Vec3d& origin)
+{
+    if (origin.x == 0.0 && origin.y == 0.0 && origin.z == 0.0)
+    {
+        return w.matrix;
+    }
+    Mat4 m = w.matrix;
+    const Vec3 t = (w.position - origin).Narrow();
+    m.col[3] = Vec4(t.x, t.y, t.z, 1.0f);
+    return m;
+}
+
+bool UpdateRenderOrigin(SceneLink& link, const Vec3d& camera)
+{
+    const f64 step = link.rebase_step;
+    if (!(step > 0.0))
+    {
+        return false;
+    }
+    const Vec3d d = camera - link.origin;
+    if (Abs(d.x) <= step && Abs(d.y) <= step && Abs(d.z) <= step)
+    {
+        return false;
+    }
+    auto snap = [step](f64 v) { return Floor(v / step + 0.5) * step; };
+    link.origin = Vec3d(snap(camera.x), snap(camera.y), snap(camera.z));
+    ++link.generation;
+    return true;
+}
 
 ecs::SystemDesc MakeRenderSyncSystem(const char* name)
 {
@@ -654,8 +698,9 @@ ecs::SystemDesc MakeCameraSystem(const char* name)
                                        {
                                            return;
                                        }
-                                       out.camera.position = Vec3(world->matrix.col[3].x, world->matrix.col[3].y,
-                                                                  world->matrix.col[3].z);
+                                       const Mat4 placed = RelativeMatrix(*world,
+                                                                          context.ReadResource<SceneLink>().origin);
+                                       out.camera.position = Vec3(placed.col[3].x, placed.col[3].y, placed.col[3].z);
                                        out.camera.rotation.col[0] = Axis(world->matrix.col[0]);
                                        out.camera.rotation.col[1] = Axis(world->matrix.col[1]);
                                        out.camera.rotation.col[2] = Axis(world->matrix.col[2]);
@@ -665,7 +710,10 @@ ecs::SystemDesc MakeCameraSystem(const char* name)
                                        out.camera.far_plane = camera->far_plane;
                                        out.valid = true;
                                    }));
-    return Move(desc).Reads<Camera, ecs::WorldTransform>().ReadsResource<ActiveCamera>().WritesResource<CameraOutput>();
+    return Move(desc)
+        .Reads<Camera, ecs::WorldTransform>()
+        .ReadsResource<ActiveCamera, SceneLink>()
+        .WritesResource<CameraOutput>();
 }
 
 }  // namespace vse::scene

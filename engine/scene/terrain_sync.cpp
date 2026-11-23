@@ -78,7 +78,9 @@ public:
     void operator()(ecs::SystemContext& context)
     {
         SceneSyncReport& report = context.Resource<SceneSyncReport>();
-        renderer::RenderScene* scene = context.Resource<SceneLink>().scene;
+        const SceneLink& link = context.Resource<SceneLink>();
+        origin_ = link.origin;
+        renderer::RenderScene* scene = link.scene;
         if (scene == nullptr)
         {
             return;
@@ -158,7 +160,7 @@ private:
                     return;
                 }
                 renderer::TerrainObject want;
-                if (!Make(terrain, w, hidden, &want))
+                if (!Make(terrain, w, origin_, hidden, &want))
                 {
                     Drop(*scene, handle.id, report);
                     context.Commands().Remove<TerrainHandle>(entity);
@@ -177,7 +179,7 @@ private:
             [&](Entity entity, const Terrain& terrain, const ecs::WorldTransform& w)
             {
                 renderer::TerrainObject object;
-                if (!Make(terrain, w, hidden, &object))
+                if (!Make(terrain, w, origin_, hidden, &object))
                 {
                     ++report.invalid;
                     return;
@@ -196,7 +198,8 @@ private:
             });
     }
 
-    static bool Make(const Terrain& terrain, const ecs::WorldTransform& w, bool hidden, renderer::TerrainObject* out)
+    static bool Make(const Terrain& terrain, const ecs::WorldTransform& w, const Vec3d& origin, bool hidden,
+                     renderer::TerrainObject* out)
     {
         if (!terrain.source || !terrain.source->Valid() || !renderer::TerrainWorldValid(w.matrix))
         {
@@ -204,7 +207,7 @@ private:
         }
         out->source = terrain.source;
         out->material = terrain.material;
-        out->world = w.matrix;
+        out->world = RelativeMatrix(w, origin);
         out->flags = hidden ? renderer::ObjectFlags::kHidden : 0u;
         return true;
     }
@@ -222,6 +225,7 @@ private:
     TerrainQueries<Without<Hidden>> no_;
     UniquePtr<TerrainOrphans> orphans_;
     Vector<Pending> pending_;
+    Vec3d origin_ = Vec3d(0, 0, 0);
     u64 world_id_ = 0;
     u64 last_removal_seq_ = 0;
 };

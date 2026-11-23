@@ -541,3 +541,33 @@ TEST_CASE("Scene sync: a full render scene takes all of an entity's slot objects
     CHECK(rig.Report().refused_full >= 1);
     CHECK(rig.world.Get<RenderHandle>(e) == nullptr);
 }
+
+TEST_CASE("Scene sync: the render origin follows the camera and objects 1 mm apart stay distinct", "[scene][double]")
+{
+    Rig rig;
+    const Vec3d far(1.0e8, 0, 0);
+    ecs::LocalTransform a;
+    a.position = far;
+    ecs::LocalTransform b;
+    b.position = far + Vec3d(0.001, 0, 0);
+    scene::MeshRenderer mr;
+    mr.mesh = rig.cube;
+    const ecs::Entity first = rig.world.Create(a, ecs::WorldTransform{}, mr);
+    const ecs::Entity second = rig.world.Create(b, ecs::WorldTransform{}, mr);
+    rig.Frame();
+    rig.Frame();
+    // Without a render origin the matrices are single precision: the millimetre is gone.
+    CHECK(rig.ObjectOf(first)->transform.col[3].x == rig.ObjectOf(second)->transform.col[3].x);
+
+    SceneLink& link = rig.world.Resource<SceneLink>();
+    link.rebase_step = 1024.0;
+    CHECK(scene::UpdateRenderOrigin(link, far));
+    CHECK(link.generation == 1);
+    CHECK_FALSE(scene::UpdateRenderOrigin(link, far + Vec3d(500, 0, 0)));  // within one step
+    rig.Frame();
+    const f32 x0 = rig.ObjectOf(first)->transform.col[3].x;
+    const f32 x1 = rig.ObjectOf(second)->transform.col[3].x;
+    CHECK(x1 - x0 > 0.00099f);
+    CHECK(x1 - x0 < 0.00101f);
+    CHECK(static_cast<f64>(x0) == far.x - link.origin.x);
+}

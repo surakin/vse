@@ -122,3 +122,11 @@ hashes and the script state hashes that contain positions); the GPU formats, the
 
 No day is added or removed. The day files carry the picks: Day 2 builds the scalar templates (`Vec3T` and the rest, aliased as `Vec3`, `Vec3d`, `Aabbd`, `Frustumd`, ...) and `Placement`; Day 3 `LocalTransform` and the storage kinds;
 Day 4 the `f64` scene with the subtraction at the write; Days 6 and 7 option (A) with the measurement that can amend it.
+
+## Amendment (Day 4): a floating render origin instead of an `f64` scene
+
+Spike 3 picked an `f64` scene culled with an `f64` frustum. Building it showed that it touches every consumer of the scene's `f32` transforms and bounds (the cull, the BVH, lights,
+terrain, sky, shadows, the debug drawer) for no gain over re-basing: Day 4 builds a **floating render origin** instead. The scene stays `f32` and holds values relative to a render origin
+(`scene::SceneLink::origin`, moved by `scene::UpdateRenderOrigin` when the camera drifts a step away, snapped to a grid); the sync subtracts it in `f64` where it writes objects, lights,
+terrains and the camera. The cull, sort and BVH are unchanged. Cost: a re-base rewrites every transform, once per step of camera travel. Limits: precision is `f32` at the distance from the origin,
+and code that feeds the scene directly must use render-origin coordinates. `renderer::Camera` keeps an `f32` position (relative).

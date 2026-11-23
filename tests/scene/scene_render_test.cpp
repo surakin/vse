@@ -913,3 +913,134 @@ TEST_CASE("A spot light lights inside its cone as a point light does, and nothin
         device.Reset();
     }
 }
+
+// Double precision (maintenance series): a scene 100,000 km from the world origin renders like the same scene at it,
+// because the render origin follows the camera and everything reaches the GPU relative to it.
+TEST_CASE("A scene 100,000 km from the origin renders like the same scene at the origin",
+          "[scene][render][gpu][double]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DeviceCreateInfo info;
+        info.backend = backend;
+        info.validation = rhi::ValidationSetting::On;
+        info.pipeline_cache = false;
+        rhi::DevicePtr device = rhi::CreateDevice(info);
+        if (device.Get() == nullptr)
+        {
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        }
+        {
+            renderer_demo::FrameSetup setup;
+            setup.device = device.Get();
+            setup.max_objects = 64;
+            setup.max_lights = 8;
+            renderer_demo::DemoFrame frame;
+            REQUIRE(frame.Create(setup));
+            const renderer::MaterialId material = renderer::CreateGBufferMaterial(frame.Materials(), frame.Templates(),
+                                                                                  renderer::GBufferOptions{}, "red");
+            REQUIRE(frame.Materials()->SetVec4(material, "base_color", Vec4(0.8f, 0.1f, 0.1f, 1.0f)));
+            auto sphere = MakeShared<renderer::GpuMesh>();
+            renderer::MeshData round;
+            REQUIRE(renderer::MakeSphereMesh(0.7f, 16, 8, &round) == nullptr);
+            REQUIRE(sphere->Create(device.Get(), round, "sphere"));
+            {
+                device->BeginFrame();
+                rhi::CommandList* list = device->CreateCommandList();
+                REQUIRE(list != nullptr);
+                list->Begin();
+                sphere->RecordPrepare(list);
+                list->End();
+                rhi::CommandList* lists[] = {list};
+                REQUIRE(device->Submit(lists, 1) != 0);
+                device->EndFrame();
+                device->WaitIdle();
+                sphere->MarkReady();
+            }
+
+            // The same entities at `offset`, the camera among them; `step` turns the render origin on.
+            auto picture = [&](const Vec3d& offset, f64 step, Vector<u8>* pixels)
+            {
+                renderer::RenderSceneDesc desc;
+                desc.max_objects = 64;
+                desc.max_lights = 8;
+                renderer::RenderScene render_scene(desc);
+                ecs::World world;
+                SceneLink link;
+                link.scene = &render_scene;
+                link.rebase_step = step;
+                world.SetResource(ecs::TransformReport{});
+                world.SetResource(link);
+                world.SetResource(SceneSyncReport{});
+                world.SetResource(scene::CameraOutput{});
+                world.SetResource(scene::ActiveCamera{});
+                ecs::Schedule schedule;
+                schedule.Add(ecs::MakeTransformSystem("transforms"));
+                schedule.Add(scene::MakeCameraSystem("camera").InStage(ecs::kRender));
+                schedule.Add(MakeRenderSyncSystem("render_sync").InStage(ecs::kRender));
+                REQUIRE(schedule.Build().ok);
+                // Two spheres 1 mm apart in depth would not survive single precision at this distance.
+                const Vec3 spots[] = {Vec3(-1.0f, 0.0f, 0.0f), Vec3(1.0f, 0.5f, 0.0f), Vec3(0.0f, -1.0f, -1.0f)};
+                for (const Vec3& p : spots)
+                {
+                    ecs::LocalTransform local;
+                    local.position = offset + Vec3d(p);
+                    MeshRenderer mr;
+                    mr.mesh = sphere;
+                    mr.material = material.index;
+                    world.Create(local, ecs::WorldTransform{}, mr);
+                }
+                LightSource sun;
+                sun.type = renderer::LightType::Directional;
+                sun.direction = Vec3(0.3f, 0.8f, 0.5f).Normalized();
+                sun.intensity = 2.0f;
+                world.Create(ecs::LocalTransform{}, ecs::WorldTransform{}, sun);
+                LightSource ambient;
+                ambient.type = renderer::LightType::Ambient;
+                ambient.intensity = 0.2f;
+                world.Create(ecs::LocalTransform{}, ecs::WorldTransform{}, ambient);
+                ecs::LocalTransform eye = ecs::LookAt(Vec3(0, 1.5f, 6), Vec3(0, 0, 0), Vec3(0, 1, 0));
+                eye.position = offset + Vec3d(0, 1.5, 6);
+                scene::Camera lens;
+                lens.aspect = 1.0f;
+                lens.near_plane = 0.5f;
+                lens.far_plane = 50.0f;
+                world.Resource<scene::ActiveCamera>().entity = world.Create(eye, ecs::WorldTransform{}, lens);
+                schedule.Run(world, 0.016f);  // the transforms
+                SceneLink& live = world.Resource<SceneLink>();
+                scene::UpdateRenderOrigin(
+                    live, world.Get<ecs::WorldTransform>(world.Resource<scene::ActiveCamera>().entity)->position);
+                schedule.Run(world, 0.016f);
+                schedule.Run(world, 0.016f);
+                REQUIRE(render_scene.ObjectCount() == 3);
+                REQUIRE(world.Resource<scene::CameraOutput>().valid);
+                return Render(frame, device.Get(), render_scene, world.Resource<scene::CameraOutput>().camera, pixels);
+            };
+            Vector<u8> near_origin;
+            Vector<u8> far_away;
+            REQUIRE(picture(Vec3d(0, 0, 0), 0.0, &near_origin));
+            REQUIRE(picture(Vec3d(1.0e8, 2.0e7, -5.0e7), 1024.0, &far_away));
+            REQUIRE(near_origin.Size() == far_away.Size());
+            u32 differing = 0;
+            for (usize i = 0; i < near_origin.Size(); ++i)
+            {
+                const i32 d = static_cast<i32>(near_origin[i]) - static_cast<i32>(far_away[i]);
+                if (d > 3 || d < -3)
+                {
+                    ++differing;
+                }
+            }
+            CHECK(differing < near_origin.Size() / 200);
+            bool varied = false;
+            for (usize i = 4; i < near_origin.Size() && !varied; i += 4)
+            {
+                varied = MemCompare(&near_origin[i], &near_origin[0], 4) != 0;
+            }
+            CHECK(varied);
+            device->WaitIdle();
+            frame.Destroy();
+        }
+        device.Reset();
+    }
+}

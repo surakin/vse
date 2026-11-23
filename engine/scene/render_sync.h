@@ -4,9 +4,11 @@
 //! [[renderer::RenderScene]] and one that builds the camera.
 
 #include "ecs/schedule.h"
+#include "ecs/transform.h"
 #include "ecs/world.h"
 #include "renderer/render_scene.h"
 #include "scene/components.h"
+#include "math/vector.h"
 #include "types.h"
 
 namespace vse::scene
@@ -20,7 +22,34 @@ struct SceneLink
 {
     /// The render scene; null makes the sync do nothing (counted in `SceneSyncReport::no_scene`).
     renderer::RenderScene* scene = nullptr;
+    /// The render origin: the world position that is (0, 0, 0) in the render scene. Everything the sync writes to the
+    /// scene (objects, lights, terrains) and the camera system's camera is relative to it, narrowed to `f32`, so a
+    /// world far from the world origin renders with the precision of a world near it. Zero until
+    /// [[scene::UpdateRenderOrigin]] moves it.
+    Vec3d origin = Vec3d(0, 0, 0);
+    /// How far the camera may drift from `origin` (on any axis) before [[scene::UpdateRenderOrigin]] re-bases it, and
+    /// the grid the new origin snaps to, in world units; 0 keeps the origin at zero (the default).
+    f64 rebase_step = 0.0;
+    /// Counts re-bases; the sync rewrites every object and light when it changes.
+    u64 generation = 0;
 };
+
+/// Moves the render origin of `link` to the camera's position, snapped to a multiple of `link.rebase_step`, when the
+/// camera has drifted more than that step from it; call it once per frame, before the schedule runs, with the active
+/// camera's `WorldTransform::position`. Does nothing while `rebase_step` is 0.
+///
+/// - Param link: the link of the world's sync systems.
+/// - Param camera: the camera's exact world position.
+/// - Returns: true when the origin moved (the next sync rewrites every object and light, and the scene's
+///   transforms change by the difference).
+/// - Fails: never.
+bool UpdateRenderOrigin(SceneLink& link, const Vec3d& camera);
+
+/// The world transform's matrix relative to `origin`: the rotation and scale of `w.matrix`, the translation
+/// `w.position - origin` computed in `f64` and then narrowed. With a zero origin it is `w.matrix` itself.
+///
+/// - Fails: never.
+Mat4 RelativeMatrix(const ecs::WorldTransform& w, const Vec3d& origin);
 
 /// What the sync did, accumulated over its frames (a resource the caller sets with `SetResource(SceneSyncReport{})`).
 ///
