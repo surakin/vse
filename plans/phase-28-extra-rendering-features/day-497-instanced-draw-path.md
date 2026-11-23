@@ -24,6 +24,8 @@ Draw the visible instances with one draw per run.
 
 ## Notes
 
+- Day 494 left one measurement for this day: the vertex shader's cost of rebuilding the world and normal matrices from the 40-byte record, against a `Mat4x3` record, on the real device; record both and keep the cheaper behind the `InstanceSet` interface.
+
 - Written 2026-11-23 with the phase plan; the user's decisions are in `plans/phase-28-extra-rendering-features.md` ("Decisions").
 
 ## Post-implementation code review

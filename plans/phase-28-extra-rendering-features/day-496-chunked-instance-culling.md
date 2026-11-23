@@ -23,6 +23,8 @@ Cull a million instances cheaply: whole chunks first, instances inside a boundar
 
 ## Notes
 
+- Large worlds (Day 494 spec): the cull and the compaction take a render origin (`f64` `Vec3`, zero for now) and write `f32` records relative to it; a test with a set 10,000 km away and the origin at the camera checks records equal a reference computed in `f64`.
+
 - Written 2026-11-23 with the phase plan; the user's decisions are in `plans/phase-28-extra-rendering-features.md` ("Decisions").
 
 ## Post-implementation code review

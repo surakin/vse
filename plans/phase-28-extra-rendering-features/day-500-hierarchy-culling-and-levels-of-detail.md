@@ -22,6 +22,8 @@ Cull whole subtrees and pick a mesh by distance.
 
 ## Notes
 
+- Large worlds (Day 494 spec): the cull takes the render origin as the instance culler does.
+
 - Written 2026-11-23 with the phase plan; the user's decisions are in `plans/phase-28-extra-rendering-features.md` ("Decisions").
 
 ## Post-implementation code review

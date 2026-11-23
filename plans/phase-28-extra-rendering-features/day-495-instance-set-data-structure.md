@@ -23,6 +23,8 @@ The data structure behind instanced meshes: many transforms, chunked, one owner.
 
 ## Notes
 
+- Large worlds (Day 494 spec, the user's decision): each chunk stores an `f64` origin and its instances `f32` offsets from it; the public API takes `f32` positions and converts at the boundary; a test places a set 10,000 km from the origin and checks the offsets and bounds are exact. The record and the chunk size are the spec's: 40 bytes, 256.
+
 - Written 2026-11-23 with the phase plan; the user's decisions are in `plans/phase-28-extra-rendering-features.md` ("Decisions").
 
 ## Post-implementation code review

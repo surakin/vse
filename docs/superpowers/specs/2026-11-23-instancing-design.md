@@ -50,9 +50,7 @@ record is 17% smaller, keeps rotation and scale separate (so the normal matrix i
 and a custom value ride beside it in a second array. The vertex shader rebuilds the world and normal matrices from the record; its GPU cost is a
 few multiplies a vertex and is **measured on the real device in the draw-path day (Day 497) against a `Mat4x3` record before that day is
 closed**: the spike measured the CPU side only, and the number to beat is the CPU cost above. A set whose measurement says the vertex cost
-matters switches the layout behind the same `InstanceSet` interface. Large worlds: positions are absolute `f32`, so the world is limited to
-+-100 km (7.8 mm) and documented as such; keeping chunk-local offsets would not help a renderer that is not camera-relative (the record is
-compacted into the frame's buffer in world space), and a camera-relative renderer is a separate feature, not part of this phase.
+matters switches the layout behind the same `InstanceSet` interface. Large worlds (the user, 2026-11-23: the engine will need double-precision positions like Unreal's Large World Coordinates, a later engine-wide change): the CPU structures are built for it now, and the GPU record stays `f32`. A chunk stores an `f64` origin and its instances store `f32` offsets from it (exact within a chunk, no extra bytes per instance); a tree root stores an `f64` position and its children `f32` offsets from their parent. Culling and compaction take a per-frame **render origin** (an `f64` `Vec3`, the camera position once the renderer is camera-relative; zero until then): a chunk's visible instances are written as `f32` records relative to it (`chunk origin - render origin` is computed in `f64`, then added to the local offset in `f32`), so precision is that of the offset, not of the distance from the world origin. The world limit of today's renderer (`f32` positions, 7.8 mm at 100 km) is the engine's, not this feature's; the engine-wide change (math types, physics, the camera, the C API) is recorded in KNOWN-ISSUES.md. Until it lands, the sets' public positions are `f32` `Vec3` converted to `f64` at the boundary, and the render origin is zero.
 
 ## Spike 3: chunking (1,000,000 instances in 4 km by 4 km by 40 m, a 600 m view)
 
@@ -91,12 +89,12 @@ about 160 bytes on the CPU, never uploaded whole: the visible nodes' world trans
 
 ## The data structures
 
-- `renderer::InstanceSet`: instances in chunks of up to 256 in Morton order; each chunk has a box and a range; ids are generation-checked
+- `renderer::InstanceSet`: instances in chunks of up to 256 in Morton order; each chunk has an `f64` origin, a box (in offsets from the origin) and a range; ids are generation-checked
   handles into an id map; optional second array of a `Vec4` tint and a `u32` custom value; at most 2^24 instances (the index fits a `f32`
   exactly if a shader needs it); edits are `Add`, `Remove` (swap with the chunk's last), `SetTransform` (refits, or moves between chunks when the
   box would grow past a threshold), `Rebuild`.
 - `renderer::InstanceCuller` (Day 496): frustum culling by chunk (reject, accept whole, test instances), on the job scheduler by chunk ranges
-  with a fixed merge in chunk order; the output is a compacted list of instance records ready to upload.
+  with a fixed merge in chunk order; it takes the render origin (`f64`, zero until the renderer is camera-relative); the output is a compacted list of `f32` instance records relative to it, ready to upload.
 - A draw path (Day 497): one draw per (set, mesh, material) with the compacted records in a second per-frame storage buffer; a vertex shader
   permutation reads the record instead of the object buffer.
 - `renderer::InstanceTree` and `InstanceTreeBuilder` (Days 499-500): the packed hierarchy, with subtree culling and levels of detail by node
@@ -114,4 +112,4 @@ the same compacted buffer plus an indirect draw argument). It becomes a day only
 
 No change of scope. Choices the day files should read: Day 495 uses 256-instance chunks, a 40-byte record and a Morton key (the day file says
 "the picked size"); Day 497 measures the vertex-rebuild cost on the real device against `Mat4x3` before it is closed; Day 499 uses the
-depth-first array with `subtree_size` and a parent index; the world limit of +-100 km is stated in the guide.
+depth-first array with `subtree_size` and a parent index; chunk origins and tree roots are `f64` with `f32` offsets, and the cull and compaction take a render origin (Days 495, 496, 499, 500).

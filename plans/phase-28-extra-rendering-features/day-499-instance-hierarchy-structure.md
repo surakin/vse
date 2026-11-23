@@ -23,6 +23,8 @@ A forest of trees with branches, a city of buildings with parts: a tree of insta
 
 ## Notes
 
+- Large worlds (Day 494 spec): a tree root stores an `f64` position and every other node an `f32` offset from its parent; world transforms compose in `f64` at the root only; subtree bounds are offsets from the root's origin.
+
 - Written 2026-11-23 with the phase plan; the user's decisions are in `plans/phase-28-extra-rendering-features.md` ("Decisions").
 
 ## Post-implementation code review
