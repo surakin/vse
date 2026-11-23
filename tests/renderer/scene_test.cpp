@@ -11,6 +11,7 @@
 #include "backend_fixture.h"
 
 #include "renderer/frame_data.h"
+#include "renderer/instance_set.h"
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
 #include "cstr/mem_ops.h"
@@ -299,4 +300,47 @@ TEST_CASE("Creating and destroying 1000 meshes on a GPU leaks nothing", "[render
         device->WaitIdle();
         device.Reset();
     }
+}
+
+TEST_CASE("Instanced meshes are generational, bounded by the scene's capacity, and refuse bad values",
+          "[renderer][scene][instancing]")
+{
+    NullFixture f;
+    MeshData data;
+    REQUIRE(MakeSphereMesh(1.0f, 12, 6, &data) == nullptr);
+    GpuMesh mesh;
+    REQUIRE(mesh.Create(f.device.Get(), data, "sphere"));
+    InstanceSetDesc sd;
+    InstanceSetPtr set = InstanceSet::Create(sd);
+    REQUIRE(set.Get() != nullptr);
+
+    RenderScene scene(RenderSceneDesc{4, 4, 2, 2});
+    InstancedObject o;
+    o.set = set.Get();
+    o.mesh = &mesh;
+    const InstancedId a = scene.AddInstanced(o);
+    const InstancedId b = scene.AddInstanced(o);
+    REQUIRE(a.IsValid());
+    REQUIRE(b.IsValid());
+    CHECK(a != b);
+    CHECK_FALSE(scene.AddInstanced(o).IsValid());  // the scene holds two
+    CHECK(scene.InstancedCount() == 2);
+    CHECK(scene.FindInstanced(a) != nullptr);
+
+    scene.RemoveInstanced(a);
+    CHECK(scene.FindInstanced(a) == nullptr);  // stale
+    CHECK(scene.InstancedCount() == 1);
+    CHECK_FALSE(scene.InstancedSlotAlive(a.index));
+    const InstancedId c = scene.AddInstanced(o);  // reuses the slot with a new generation
+    REQUIRE(c.IsValid());
+    CHECK(c.index == a.index);
+    CHECK(c.generation != a.generation);
+    CHECK(scene.FindInstanced(a) == nullptr);
+
+    InstancedObject moved = o;
+    moved.position = Vec3(1, 2, 3);
+    moved.scale = 2.0f;
+    scene.SetInstanced(c, moved);
+    CHECK(scene.InstancedAt(c.index).position.y == 2.0f);
+    CHECK(scene.FindInstanced(InstancedId{}) == nullptr);
 }

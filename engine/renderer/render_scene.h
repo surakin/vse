@@ -10,6 +10,7 @@
 #include "math/vector.h"
 #include "renderer/bounds.h"
 #include "renderer/frustum.h"
+#include "renderer/instance_set.h"
 #include "renderer/mesh.h"
 #include "renderer/terrain_material.h"
 #include "renderer/terrain_source.h"
@@ -206,6 +207,48 @@ struct TerrainObject
     u32 flags = 0;                  ///< `ObjectFlags` bits; `kHidden` skips the terrain.
 };
 
+/// A generation-checked reference to an instanced mesh in a [[renderer::RenderScene]]; see [[renderer::ObjectId]].
+///
+/// - Thread-safety: thread-safe plain value.
+struct InstancedId
+{
+    /// The slot in the scene.
+    u32 index = 0;
+    /// The slot's generation when the id was made; 0 means invalid.
+    u32 generation = 0;
+
+    /// Returns whether this is not the invalid (all-zero) id.
+    /// - Fails: never.
+    constexpr bool IsValid() const { return generation != 0; }
+    /// Returns whether both ids name the same instanced mesh.
+    constexpr bool operator==(const InstancedId& o) const { return index == o.index && generation == o.generation; }
+    /// Returns whether the ids differ.
+    constexpr bool operator!=(const InstancedId& o) const { return !(*this == o); }
+};
+
+/// An instanced mesh in a scene: one mesh and material drawn at every instance of a set.
+///
+/// The set's own transform is a place, a unit rotation and a uniform scale (`position`, `rotation`, `scale`); the
+/// instances are in the set's space, so moving the entity that owns the set moves them all without touching the set.
+/// Each frame the visible instances are culled, composed with that transform and written to the frame's instance
+/// buffer, and drawn in one draw.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `set`, `mesh` are borrowed and must outlive the object (and not be edited while a frame is being
+///   prepared).
+struct InstancedObject
+{
+    const InstanceSet* set = nullptr;  ///< The instances; must not be null.
+    const GpuMesh* mesh = nullptr;     ///< The geometry (a rigid mesh without vertex colors); must not be null.
+    u32 material = 0;                  ///< A material made with `GBufferOptions::instanced`.
+    Vec3 position = Vec3(0, 0, 0);     ///< Where the set's origin is, in scene space.
+    Quaternion rotation;               ///< The set's rotation; a unit quaternion.
+    f32 scale = 1.0f;                  ///< The set's uniform scale; above 0.
+    f32 max_distance = 0.0f;           ///< Instances farther than this (in scene space) are not drawn; 0 for no limit.
+    f32 min_size_ratio = 0.0f;  ///< Instances smaller than this fraction of their distance are not drawn; 0 for none.
+    u32 flags = 0;              ///< `ObjectFlags` bits; `kHidden` skips the set.
+};
+
 /// The most lights a scene or a [[renderer::FrameResources]] can hold: 16384.
 ///
 /// A light is 48 bytes in the light buffer, so that is 768 KiB per frame slot. Asking for more aborts; a frame with
@@ -224,6 +267,8 @@ struct RenderSceneDesc
     u32 max_lights = 64;
     /// Capacity for terrains; 0 for a scene with none.
     u32 max_terrains = 8;
+    /// Capacity for instanced meshes; 0 for a scene with none.
+    u32 max_instanced = 64;
 };
 
 /// A fixed-capacity list of objects and lights.
@@ -411,6 +456,44 @@ public:
     /// - Aborts: `slot` is out of range or dead.
     const TerrainObject& TerrainAt(u32 slot) const;
 
+    /// Adds an instanced mesh.
+    ///
+    /// - Param object: the instanced mesh; its set and mesh must not be null and its scale must be above 0.
+    /// - Returns: its id, or the invalid id if the scene holds `max_instanced` already.
+    /// - Fails: reported through the return value.
+    /// - Aborts: the set or mesh is null, or the scale or rotation is not finite and valid.
+    /// - Ownership: borrows the set and the mesh.
+    InstancedId AddInstanced(const InstancedObject& object);
+
+    /// Removes an instanced mesh; its id becomes stale.
+    ///
+    /// - Param id: a live instanced mesh.
+    /// - Aborts: `id` is invalid or stale.
+    void RemoveInstanced(InstancedId id);
+
+    /// Replaces an instanced mesh (a moved set, a new material); the id stays.
+    ///
+    /// - Param id: a live instanced mesh.
+    /// - Param object: the new values, checked as for [[renderer::RenderScene::AddInstanced]].
+    /// - Aborts: `id` is invalid or stale, or `object` is invalid.
+    void SetInstanced(InstancedId id, const InstancedObject& object);
+
+    /// Looks an instanced mesh up.
+    ///
+    /// - Returns: the instanced mesh, or null if `id` is invalid or stale.
+    /// - Ownership: borrowed from the scene; valid until it is removed or replaced.
+    const InstancedObject* FindInstanced(InstancedId id) const;
+    /// Returns the number of live instanced meshes.
+    u32 InstancedCount() const { return instanced_count_; }
+    /// Returns the number of instanced slots ever used.
+    u32 InstancedSlotCount() const { return instanced_slots_used_; }
+    /// Returns whether an instanced slot is live.
+    /// - Aborts: `slot` is not below [[renderer::RenderScene::InstancedSlotCount]].
+    bool InstancedSlotAlive(u32 slot) const;
+    /// Returns the instanced mesh in a live slot.
+    /// - Aborts: `slot` is out of range or dead.
+    const InstancedObject& InstancedAt(u32 slot) const;
+
     /// Finds the objects that may be visible: live, not hidden, and not culled by the frustum.
     ///
     /// - Param frustum: the view volume, in world space.
@@ -462,6 +545,13 @@ private:
         u32 next_free = 0;
         bool alive = false;
     };
+    struct InstancedSlot
+    {
+        InstancedObject object;
+        u32 generation = 1;
+        u32 next_free = 0;
+        bool alive = false;
+    };
     static constexpr u32 kNoSlot = 0xffffffffu;
     struct CullIndex;
     void IndexObject(u32 slot);
@@ -478,6 +568,11 @@ private:
     u32 terrain_count_ = 0;
     u32 terrain_slots_used_ = 0;
     u32 free_terrain_ = kNoSlot;
+    Vector<InstancedSlot> instanced_;
+    u32 instanced_capacity_ = 0;
+    u32 instanced_count_ = 0;
+    u32 instanced_slots_used_ = 0;
+    u32 free_instanced_ = kNoSlot;
     u32 object_capacity_ = 0;
     u32 light_capacity_ = 0;
     u32 object_count_ = 0;

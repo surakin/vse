@@ -1045,6 +1045,100 @@ inline constexpr u32 kMaxJointMatrices;
 
 The most joint matrices a palette holds: the offset travels in a `f32` of the object data, exact up to 2^24.
 
+## `GpuInstance` {#renderer-gpuinstance}
+
+`struct renderer::GpuInstance` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+struct GpuInstance { ... }
+```
+
+One instance of an instanced mesh as the vertex shader reads it (std430, 64 bytes, every member 4 bytes): the position of the instance in the space of the frame's view-projection, a unit rotation, a scale, a tint (sRGB-encoded like a vertex color) and a custom value. Written by the G-buffer pass from the visible records of an [`renderer::InstanceSet`](#renderer-instanceset), with the set's own transform composed in.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `position` {#renderer-gpuinstance-position}
+
+`variable renderer::GpuInstance::position` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+f32 position[3];
+```
+
+Position.
+
+### `rotation` {#renderer-gpuinstance-rotation}
+
+`variable renderer::GpuInstance::rotation` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+f32 rotation[4];
+```
+
+Unit quaternion `(x, y, z, w)`.
+
+### `scale` {#renderer-gpuinstance-scale}
+
+`variable renderer::GpuInstance::scale` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+f32 scale[3];
+```
+
+Scale on each axis, above 0.
+
+### `tint` {#renderer-gpuinstance-tint}
+
+`variable renderer::GpuInstance::tint` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+f32 tint[4];
+```
+
+Colour multiplier.
+
+### `custom` {#renderer-gpuinstance-custom}
+
+`variable renderer::GpuInstance::custom` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 custom;
+```
+
+The set's custom value; the standard material ignores it.
+
+### `pad` {#renderer-gpuinstance-pad}
+
+`variable renderer::GpuInstance::pad` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 pad;
+```
+
+Zero.
+
+## `kNoInstances` {#renderer-knoinstances}
+
+`variable renderer::kNoInstances` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+inline constexpr u32 kNoInstances;
+```
+
+The `WriteInstances` result for a buffer that did not have the room.
+
+## `kDefaultFrameInstances` {#renderer-kdefaultframeinstances}
+
+`variable renderer::kDefaultFrameInstances` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+inline constexpr u32 kDefaultFrameInstances;
+```
+
+The default room of a frame's instance buffer, in instances (16 MiB a frame).
+
 ## `MakeFrameData(const Camera&,u32,u32,f32,f32,u64)` {#renderer-makeframedata-const-camera-amp-u32-u32-f32-f32-u64}
 
 `function renderer::MakeFrameData` — defined in `engine/renderer/frame_data.h`
@@ -1250,12 +1344,12 @@ static constexpr u32 kSlots;
 
 The number of rotating regions; the largest frames in flight a device allows.
 
-### `FrameResources(rhi::Device*,u32,u32,u32)` {#renderer-frameresources-frameresources-rhi-device-star-u32-u32-u32}
+### `FrameResources(rhi::Device*,u32,u32,u32,u32)` {#renderer-frameresources-frameresources-rhi-device-star-u32-u32-u32-u32}
 
 `constructor renderer::FrameResources::FrameResources` — defined in `engine/renderer/frame_data.h`
 
 ```cpp
-FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64, u32 max_joint_matrices = 1024);
+FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64, u32 max_joint_matrices = 1024, u32 max_instances = kDefaultFrameInstances);
 ```
 
 Creates the buffers.
@@ -1447,6 +1541,62 @@ Appends one skinned instance's joint matrices to this frame's palette.
 | Returns | the index of the first matrix (the offset to give [`renderer::FrameResources::WriteObjects`](#renderer-frameresources-writeobjects-const-renderscene-amp-const-u32-star-u32-const-u32-star)), or [`renderer::kNoJoints`](#renderer-knojoints) when the palette does not have `count` matrices left (nothing is written). |
 | Aborts | `BeginFrame` was not called, or `matrices` is null. |
 | Thread-safety | thread-compatible; call from the thread that prepares the frame. |
+
+### `WriteInstances(const GpuInstance*,u32)` {#renderer-frameresources-writeinstances-const-gpuinstance-star-u32}
+
+`method renderer::FrameResources::WriteInstances` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 WriteInstances(const GpuInstance* instances, u32 count);
+```
+
+Appends instances to this frame's instance buffer.
+
+| Field | Value |
+|---|---|
+| Parameter `instances` | `count` instances, copied. |
+| Parameter `count` | from 1 to the remaining room. |
+| Returns | the index of the first instance (the first instance of the draw), or [`renderer::kNoInstances`](#renderer-knoinstances) when the buffer does not have `count` left (nothing is written). |
+| Aborts | `BeginFrame` was not called, or `instances` is null. |
+| Thread-safety | thread-compatible; call from the thread that prepares the frame. |
+
+### `InstanceRegion()` {#renderer-frameresources-instanceregion-const}
+
+`method renderer::FrameResources::InstanceRegion` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+BufferRegion InstanceRegion() const;
+```
+
+Returns the region of the instance buffer for this frame: `MaxInstances()` instances.
+
+### `MaxInstances()` {#renderer-frameresources-maxinstances-const}
+
+`method renderer::FrameResources::MaxInstances` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 MaxInstances() const;
+```
+
+Returns the instance buffer's room in instances.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `InstancesWritten()` {#renderer-frameresources-instanceswritten-const}
+
+`method renderer::FrameResources::InstancesWritten` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 InstancesWritten() const;
+```
+
+Returns the instances written so far this frame.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `JointRegion()` {#renderer-frameresources-jointregion-const}
 
@@ -2084,6 +2234,16 @@ bool skinned;
 
 Skin the mesh's vertices with the joint palette: for meshes with a skin stream, and only for them (a rigid mesh with a skinned material, or the reverse, is rejected with a message naming both).
 
+### `instanced` {#renderer-gbufferoptions-instanced}
+
+`variable renderer::GBufferOptions::instanced` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+bool instanced;
+```
+
+Draw the mesh at every visible instance of an [`renderer::InstancedObject`](#renderer-instancedobject): the instance's tint multiplies the albedo (as a vertex color does), and the transform comes from the instance. Not with `skinned` or `vertex_color`, and the mesh must be a rigid standard-layout mesh.
+
 ## `GBufferTemplates` {#renderer-gbuffertemplates}
 
 `struct renderer::GBufferTemplates` — defined in `engine/renderer/gbuffer.h`
@@ -2137,6 +2297,16 @@ TemplateId skinned_colored;
 ```
 
 The template for skinned meshes of the color layout.
+
+### `instanced` {#renderer-gbuffertemplates-instanced}
+
+`variable renderer::GBufferTemplates::instanced` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+TemplateId instanced;
+```
+
+The template for instanced meshes of the standard layout (invalid when its shader bytecode is missing; instanced meshes then do not draw).
 
 ## `CreateGBufferTemplates(MaterialSystem*)` {#renderer-creategbuffertemplates-materialsystem-star}
 
@@ -2369,6 +2539,76 @@ Non-zero morph weights left out this frame.
 
 An object with more than [`renderer::kMaxActiveMorphTargets`](#renderer-kmaxactivemorphtargets) keeps the largest; when the frame's morph budget is full, the object draws its base shape and all its weights count.
 
+### `instanced_sets` {#renderer-gbufferstats-instanced-sets}
+
+`variable renderer::GBufferStats::instanced_sets` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instanced_sets;
+```
+
+Instanced meshes drawn this frame (each is one draw when any of its instances is visible).
+
+### `instances_visible` {#renderer-gbufferstats-instances-visible}
+
+`variable renderer::GBufferStats::instances_visible` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instances_visible;
+```
+
+Instances written to the frame's instance buffer.
+
+### `instances_dropped` {#renderer-gbufferstats-instances-dropped}
+
+`variable renderer::GBufferStats::instances_dropped` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instances_dropped;
+```
+
+Visible instances left out because the frame's instance buffer was full ([`renderer::kDefaultFrameInstances`](#renderer-kdefaultframeinstances) unless the frame resources were made with another size).
+
+### `instance_chunks_tested` {#renderer-gbufferstats-instance-chunks-tested}
+
+`variable renderer::GBufferStats::instance_chunks_tested` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instance_chunks_tested;
+```
+
+Chunks of instance sets whose box was tested.
+
+### `instance_chunks_skipped` {#renderer-gbufferstats-instance-chunks-skipped}
+
+`variable renderer::GBufferStats::instance_chunks_skipped` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instance_chunks_skipped;
+```
+
+Chunks rejected whole.
+
+### `instance_chunks_accepted` {#renderer-gbufferstats-instance-chunks-accepted}
+
+`variable renderer::GBufferStats::instance_chunks_accepted` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instance_chunks_accepted;
+```
+
+Chunks drawn whole without a per-instance test.
+
+### `instances_tested` {#renderer-gbufferstats-instances-tested}
+
+`variable renderer::GBufferStats::instances_tested` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instances_tested;
+```
+
+Instances tested one by one.
+
 ## `GBufferPass` {#renderer-gbufferpass}
 
 `class renderer::GBufferPass` — defined in `engine/renderer/gbuffer.h`
@@ -2487,6 +2727,37 @@ For tools and tests, for example `CopySrc` to read a layer back. The default is 
 |---|---|
 | Parameter `usage` | flags to add to the four textures. |
 | Fails | never. |
+
+### `SetViewPosition(const Vec3&)` {#renderer-gbufferpass-setviewposition-const-vec3-amp}
+
+`method renderer::GBufferPass::SetViewPosition` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+void SetViewPosition(const Vec3& position);
+```
+
+Sets where the camera is, in scene space; instanced meshes use it for their distance limits. Call before `Prepare`; the default is the origin.
+
+| Field | Value |
+|---|---|
+| Parameter `position` | the camera's position. |
+| Fails | never. |
+
+### `SetScheduler(jobs::Scheduler*)` {#renderer-gbufferpass-setscheduler-jobs-scheduler-star}
+
+`method renderer::GBufferPass::SetScheduler` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+void SetScheduler(jobs::Scheduler* scheduler);
+```
+
+Sets the scheduler that culls the chunks of large instance sets in parallel; null (the default) culls on the calling thread. It must be called from the main thread (participant 0) outside any job, like `jobs::ParallelForBlocking`, or be left null.
+
+| Field | Value |
+|---|---|
+| Parameter `scheduler` | the scheduler, or null. |
+| Fails | never. |
+| Ownership | borrowed until the next call. |
 
 ### `LastError()` {#renderer-gbufferpass-lasterror-const}
 
@@ -5078,6 +5349,16 @@ bool skinned;
 
 True for a template whose vertex shader skins: it reads the skin stream (vertex binding 1, locations [`renderer::kSkinJointsLocation`](#renderer-kskinjointslocation) and [`renderer::kSkinWeightsLocation`](#renderer-kskinweightslocation)) and the joint palette in the bind group at set [`renderer::MaterialSystem::kJointSet`](#renderer-materialsystem-kjointset). Its pipelines are built only for skinned mesh layouts, and a rigid template only for rigid ones: [`renderer::MaterialSystem::GetPipeline`](#renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool) reports the mismatch.
 
+### `instanced` {#renderer-materialtemplatedesc-instanced}
+
+`variable renderer::MaterialTemplateDesc::instanced` — defined in `engine/renderer/material.h`
+
+```cpp
+bool instanced;
+```
+
+True for a template whose vertex shader draws instances: it reads its instance records from the bind group at set [`renderer::MaterialSystem::kInstanceSet`](#renderer-materialsystem-kinstanceset) (made with [`renderer::MaterialSystem::InstanceBindGroup`](#renderer-materialsystem-instancebindgroup-const-bufferregion-amp)) in place of the object buffer. Its pipelines are built only for rigid mesh layouts.
+
 ## `PipelineTarget` {#renderer-pipelinetarget}
 
 `struct renderer::PipelineTarget` — defined in `engine/renderer/material.h`
@@ -5625,6 +5906,33 @@ static constexpr u32 kJointSet;
 
 The bind group set of the joint palette in skinned pipelines.
 
+### `kInstanceSet` {#renderer-materialsystem-kinstanceset}
+
+`variable renderer::MaterialSystem::kInstanceSet` — defined in `engine/renderer/material.h`
+
+```cpp
+static constexpr u32 kInstanceSet;
+```
+
+The bind group set of the instance records in instanced pipelines (the same slot as the joint palette: a template is never both).
+
+### `InstanceBindGroup(const BufferRegion&)` {#renderer-materialsystem-instancebindgroup-const-bufferregion-amp}
+
+`method renderer::MaterialSystem::InstanceBindGroup` — defined in `engine/renderer/material.h`
+
+```cpp
+rhi::BindGroupHandle InstanceBindGroup(const BufferRegion& region);
+```
+
+Returns the bind group of a frame's instance records (set [`renderer::MaterialSystem::kInstanceSet`](#renderer-materialsystem-kinstanceset), one read-only storage buffer of [`renderer::GpuInstance`](#renderer-gpuinstance)), created on first use and cached by region.
+
+| Field | Value |
+|---|---|
+| Parameter `region` | the region of the frame's instance buffer. |
+| Returns | the group, or an invalid handle when the device cannot create it (logged). |
+| Thread-safety | thread-compatible; call from one thread (the one preparing the frame). |
+| Ownership | as for [`renderer::MaterialSystem::FrameBindGroup`](#renderer-materialsystem-framebindgroup-const-bufferregion-amp). |
+
 ### `kMorphPushBytes` {#renderer-materialsystem-kmorphpushbytes}
 
 `variable renderer::MaterialSystem::kMorphPushBytes` — defined in `engine/renderer/material.h`
@@ -5696,6 +6004,21 @@ Returns whether the material's vertex shader reads the vertex attribute at `loca
 | Parameter `location` | a vertex input location. |
 | Aborts | `id` is invalid or stale. |
 | Thread-safety | thread-compatible; concurrent calls are fine while nothing creates or destroys materials. |
+
+### `IsInstanced(MaterialId)` {#renderer-materialsystem-isinstanced-materialid-const}
+
+`method renderer::MaterialSystem::IsInstanced` — defined in `engine/renderer/material.h`
+
+```cpp
+bool IsInstanced(MaterialId id) const;
+```
+
+Returns whether the material's template draws instances ([`renderer::MaterialTemplateDesc::instanced`](#renderer-materialtemplatedesc-instanced)).
+
+| Field | Value |
+|---|---|
+| Parameter `id` | a live material. |
+| Aborts | `id` is invalid or stale. |
 
 ### `SetFloat(MaterialId,const char*,f32)` {#renderer-materialsystem-setfloat-materialid-const-char-star-f32}
 
@@ -9857,6 +10180,181 @@ u32 flags;
 
 `ObjectFlags` bits; `kHidden` skips the terrain.
 
+## `InstancedId` {#renderer-instancedid}
+
+`struct renderer::InstancedId` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+struct InstancedId { ... }
+```
+
+A generation-checked reference to an instanced mesh in a [`renderer::RenderScene`](#renderer-renderscene); see [`renderer::ObjectId`](#renderer-objectid).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe plain value. |
+
+### `index` {#renderer-instancedid-index}
+
+`variable renderer::InstancedId::index` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 index;
+```
+
+The slot in the scene.
+
+### `generation` {#renderer-instancedid-generation}
+
+`variable renderer::InstancedId::generation` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 generation;
+```
+
+The slot's generation when the id was made; 0 means invalid.
+
+### `IsValid()` {#renderer-instancedid-isvalid-const}
+
+`method renderer::InstancedId::IsValid` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+constexpr bool IsValid() const;
+```
+
+Returns whether this is not the invalid (all-zero) id.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `operator==(const InstancedId&)` {#renderer-instancedid-operator-eq-eq-const-instancedid-amp-const}
+
+`operator renderer::InstancedId::operator==` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+constexpr bool operator==(const InstancedId& o) const;
+```
+
+Returns whether both ids name the same instanced mesh.
+
+### `operator!=(const InstancedId&)` {#renderer-instancedid-operator-not-eq-const-instancedid-amp-const}
+
+`operator renderer::InstancedId::operator!=` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+constexpr bool operator!=(const InstancedId& o) const;
+```
+
+Returns whether the ids differ.
+
+## `InstancedObject` {#renderer-instancedobject}
+
+`struct renderer::InstancedObject` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+struct InstancedObject { ... }
+```
+
+An instanced mesh in a scene: one mesh and material drawn at every instance of a set.
+
+The set's own transform is a place, a unit rotation and a uniform scale (`position`, `rotation`, `scale`); the instances are in the set's space, so moving the entity that owns the set moves them all without touching the set. Each frame the visible instances are culled, composed with that transform and written to the frame's instance buffer, and drawn in one draw.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | `set`, `mesh` are borrowed and must outlive the object (and not be edited while a frame is being prepared). |
+
+### `set` {#renderer-instancedobject-set}
+
+`variable renderer::InstancedObject::set` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+const InstanceSet* set;
+```
+
+The instances; must not be null.
+
+### `mesh` {#renderer-instancedobject-mesh}
+
+`variable renderer::InstancedObject::mesh` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+const GpuMesh* mesh;
+```
+
+The geometry (a rigid mesh without vertex colors); must not be null.
+
+### `material` {#renderer-instancedobject-material}
+
+`variable renderer::InstancedObject::material` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 material;
+```
+
+A material made with `GBufferOptions::instanced`.
+
+### `position` {#renderer-instancedobject-position}
+
+`variable renderer::InstancedObject::position` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+Vec3 position;
+```
+
+Where the set's origin is, in scene space.
+
+### `rotation` {#renderer-instancedobject-rotation}
+
+`variable renderer::InstancedObject::rotation` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+Quaternion rotation;
+```
+
+The set's rotation; a unit quaternion.
+
+### `scale` {#renderer-instancedobject-scale}
+
+`variable renderer::InstancedObject::scale` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+f32 scale;
+```
+
+The set's uniform scale; above 0.
+
+### `max_distance` {#renderer-instancedobject-max-distance}
+
+`variable renderer::InstancedObject::max_distance` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+f32 max_distance;
+```
+
+Instances farther than this (in scene space) are not drawn; 0 for no limit.
+
+### `min_size_ratio` {#renderer-instancedobject-min-size-ratio}
+
+`variable renderer::InstancedObject::min_size_ratio` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+f32 min_size_ratio;
+```
+
+Instances smaller than this fraction of their distance are not drawn; 0 for none.
+
+### `flags` {#renderer-instancedobject-flags}
+
+`variable renderer::InstancedObject::flags` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 flags;
+```
+
+`ObjectFlags` bits; `kHidden` skips the set.
+
 ## `kMaxLights` {#renderer-kmaxlights}
 
 `variable renderer::kMaxLights` — defined in `engine/renderer/render_scene.h`
@@ -9912,6 +10410,16 @@ u32 max_terrains;
 ```
 
 Capacity for terrains; 0 for a scene with none.
+
+### `max_instanced` {#renderer-renderscenedesc-max-instanced}
+
+`variable renderer::RenderSceneDesc::max_instanced` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 max_instanced;
+```
+
+Capacity for instanced meshes; 0 for a scene with none.
 
 ## `RenderScene` {#renderer-renderscene}
 
@@ -10389,6 +10897,118 @@ const TerrainObject& TerrainAt(u32 slot) const;
 ```
 
 Returns the terrain in a live slot.
+
+| Field | Value |
+|---|---|
+| Aborts | `slot` is out of range or dead. |
+
+### `AddInstanced(const InstancedObject&)` {#renderer-renderscene-addinstanced-const-instancedobject-amp}
+
+`method renderer::RenderScene::AddInstanced` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+InstancedId AddInstanced(const InstancedObject& object);
+```
+
+Adds an instanced mesh.
+
+| Field | Value |
+|---|---|
+| Parameter `object` | the instanced mesh; its set and mesh must not be null and its scale must be above 0. |
+| Returns | its id, or the invalid id if the scene holds `max_instanced` already. |
+| Fails | reported through the return value. |
+| Aborts | the set or mesh is null, or the scale or rotation is not finite and valid. |
+| Ownership | borrows the set and the mesh. |
+
+### `RemoveInstanced(InstancedId)` {#renderer-renderscene-removeinstanced-instancedid}
+
+`method renderer::RenderScene::RemoveInstanced` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+void RemoveInstanced(InstancedId id);
+```
+
+Removes an instanced mesh; its id becomes stale.
+
+| Field | Value |
+|---|---|
+| Parameter `id` | a live instanced mesh. |
+| Aborts | `id` is invalid or stale. |
+
+### `SetInstanced(InstancedId,const InstancedObject&)` {#renderer-renderscene-setinstanced-instancedid-const-instancedobject-amp}
+
+`method renderer::RenderScene::SetInstanced` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+void SetInstanced(InstancedId id, const InstancedObject& object);
+```
+
+Replaces an instanced mesh (a moved set, a new material); the id stays.
+
+| Field | Value |
+|---|---|
+| Parameter `id` | a live instanced mesh. |
+| Parameter `object` | the new values, checked as for [`renderer::RenderScene::AddInstanced`](#renderer-renderscene-addinstanced-const-instancedobject-amp). |
+| Aborts | `id` is invalid or stale, or `object` is invalid. |
+
+### `FindInstanced(InstancedId)` {#renderer-renderscene-findinstanced-instancedid-const}
+
+`method renderer::RenderScene::FindInstanced` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+const InstancedObject* FindInstanced(InstancedId id) const;
+```
+
+Looks an instanced mesh up.
+
+| Field | Value |
+|---|---|
+| Returns | the instanced mesh, or null if `id` is invalid or stale. |
+| Ownership | borrowed from the scene; valid until it is removed or replaced. |
+
+### `InstancedCount()` {#renderer-renderscene-instancedcount-const}
+
+`method renderer::RenderScene::InstancedCount` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 InstancedCount() const;
+```
+
+Returns the number of live instanced meshes.
+
+### `InstancedSlotCount()` {#renderer-renderscene-instancedslotcount-const}
+
+`method renderer::RenderScene::InstancedSlotCount` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 InstancedSlotCount() const;
+```
+
+Returns the number of instanced slots ever used.
+
+### `InstancedSlotAlive(u32)` {#renderer-renderscene-instancedslotalive-u32-const}
+
+`method renderer::RenderScene::InstancedSlotAlive` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+bool InstancedSlotAlive(u32 slot) const;
+```
+
+Returns whether an instanced slot is live.
+
+| Field | Value |
+|---|---|
+| Aborts | `slot` is not below [`renderer::RenderScene::InstancedSlotCount`](#renderer-renderscene-instancedslotcount-const). |
+
+### `InstancedAt(u32)` {#renderer-renderscene-instancedat-u32-const}
+
+`method renderer::RenderScene::InstancedAt` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+const InstancedObject& InstancedAt(u32 slot) const;
+```
+
+Returns the instanced mesh in a live slot.
 
 | Field | Value |
 |---|---|

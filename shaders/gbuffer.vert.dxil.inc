@@ -1933,6 +1933,12 @@ inline constexpr u8 kGbufferVertPerm3Dxil[kGbufferVertPerm3DxilByteCount] = {
 // The FNV-1a hash of the SPIR-V this DXIL was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferVertPerm3DxilSpirvFnv = 0xd8faf9b3f0dbd4a9ull;
 
+// INSTANCED (key 4): not minted. This machine has no dxc; the Windows PC mints it (Phase 28 Day 502). Until then the
+// module has no DXIL and a Direct3D 12 device cannot build a pipeline for it (the pass refuses instanced objects there).
+inline constexpr const u8* kGbufferVertPerm4Dxil = nullptr;
+inline constexpr usize kGbufferVertPerm4DxilByteCount = 0;
+inline constexpr u64 kGbufferVertPerm4DxilSpirvFnv = 0;
+
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kGbufferVertShader = {"gbuffer.vert", rhi::SpirvBlob(kGbufferVertSpv, kGbufferVertSpvWordCount), rhi::DxilBlob(kGbufferVertDxil, kGbufferVertDxilByteCount), rhi::MetalLibBlob(kGbufferVertMetallib, kGbufferVertMetallibByteCount, kGbufferVertMetallibEntry, &kGbufferVertMetallibSlots)};
 

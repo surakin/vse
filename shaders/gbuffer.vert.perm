@@ -3,3 +3,5 @@ key -
 key VERTEX_COLOR
 key SKINNED
 key VERTEX_COLOR SKINNED
+# The instanced mesh (Phase 28 Day 497): the rigid mesh drawn from the instance records of set 3.
+key INSTANCED

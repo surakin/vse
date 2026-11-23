@@ -24,7 +24,15 @@
 //   set 2, binding 0: storage buffer of ObjectData (renderer::ObjectData, 128 bytes each)
 //   set 3, binding 0: storage buffer of JointMatrix, 48 bytes each (only with SKINNED)
 
-// permutation-options: VERTEX_COLOR SKINNED
+// Option INSTANCED (Phase 28 Day 497) draws an instanced mesh: the instance index (the draw's first instance plus the
+// instance within it) selects a record of set 3's storage buffer (renderer::GpuInstance, 64 bytes) in place of the object
+// buffer: a position, a unit quaternion and a scale (already in the space of the frame's view-projection, the set's own
+// transform composed in by the CPU), a tint and a custom value. The world matrix is rebuilt here:
+//   world = rotate(q, scale * position) + position_of_instance;  normal = rotate(q, normal / scale)
+// The tint (sRGB-encoded like a vertex color, so the fragment shader's VERTEX_COLOR permutation multiplies the albedo by it)
+// leaves through location 3. INSTANCED excludes SKINNED and VERTEX_COLOR (the tint takes the color slot).
+//
+// permutation-options: VERTEX_COLOR SKINNED INSTANCED
 
 #include "target_common.slang"
 
@@ -45,6 +53,25 @@ struct ObjectData {
 
 [[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame ENGINE_REGISTER(b0, space0);
 [[vk::binding(0, 2)]] StructuredBuffer<ObjectData> objects ENGINE_REGISTER(t0, space2);
+
+#ifdef INSTANCED
+// One instance, as renderer::GpuInstance lays it out: 16 words, every member 4 bytes so the stride is 64 on every API.
+struct GpuInstance {
+    float px; float py; float pz;
+    float qx; float qy; float qz; float qw;
+    float sx; float sy; float sz;
+    float tr; float tg; float tb; float ta;
+    uint custom;
+    uint pad;
+};
+
+[[vk::binding(0, 3)]] StructuredBuffer<GpuInstance> instances ENGINE_REGISTER(t0, space3);
+
+float3 RotateByQuaternion(float4 q, float3 v) {
+    float3 u = q.xyz;
+    return v + 2.0 * cross(u, cross(u, v) + q.w * v);
+}
+#endif
 
 #ifdef SKINNED
 // One joint matrix: the three rows of a 3x4 row-major matrix (renderer::kJointMatrixBytes).
@@ -80,7 +107,7 @@ struct VertexOutput {
     [[vk::location(0)]] float3 normal : NORMAL;
     [[vk::location(1)]] float2 uv : TEXCOORD0;
     [[vk::location(2)]] float4 tangent : TANGENT;
-#ifdef VERTEX_COLOR
+#if defined(VERTEX_COLOR) || defined(INSTANCED)
     [[vk::location(3)]] float4 color : COLOR0;
 #endif
     float4 position : SV_Position;
@@ -88,8 +115,20 @@ struct VertexOutput {
 
 [shader("vertex")]
 VertexOutput main(VertexInput input) {
-    ObjectData object = objects[input.instance];
     VertexOutput output;
+#ifdef INSTANCED
+    GpuInstance inst = instances[input.instance];
+    float4 q = float4(inst.qx, inst.qy, inst.qz, inst.qw);
+    float3 scale = float3(inst.sx, inst.sy, inst.sz);
+    float3 world_position = RotateByQuaternion(q, input.position * scale) + float3(inst.px, inst.py, inst.pz);
+    output.position = ENGINE_CLIP(mul(frame.view_projection, float4(world_position, 1.0)));
+    output.normal = RotateByQuaternion(q, input.normal / scale);
+    output.uv = input.uv;
+    output.tangent = float4(RotateByQuaternion(q, input.tangent.xyz * scale), input.tangent.w);
+    output.color = float4(inst.tr, inst.tg, inst.tb, inst.ta);
+    return output;
+#else
+    ObjectData object = objects[input.instance];
     float3 position = input.position;
     float3 normal = input.normal;
     float3 tangent = input.tangent.xyz;
@@ -119,4 +158,5 @@ VertexOutput main(VertexInput input) {
     output.color = input.color;
 #endif
     return output;
+#endif
 }

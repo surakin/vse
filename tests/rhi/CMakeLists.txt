@@ -44,6 +44,7 @@ set(RHI_TEST_SOURCES
   sky_gpu_test.cpp
   terrain_gpu_test.cpp
   skinning_gpu_test.cpp  # Phase 22 Day 322
+  instanced_gpu_test.cpp  # Phase 28 Day 497
   bc_gpu_test.cpp  # Phase 22 Days 324-325: the GPU decode of the BC formats against the asset decoder
   renderer_demo_gpu_test.cpp
   ui_demo_gpu_test.cpp

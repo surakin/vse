@@ -56,11 +56,13 @@ FrameData MakeFrameData(const Camera& camera, u32 width, u32 height, f32 time_se
     return data;
 }
 
-FrameResources::FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights, u32 max_joint_matrices)
-    : device_(device), max_lights_(max_lights), max_objects_(max_objects), max_joints_(max_joint_matrices)
+FrameResources::FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights, u32 max_joint_matrices,
+                               u32 max_instances)
+    : device_(device), max_lights_(max_lights), max_objects_(max_objects), max_joints_(max_joint_matrices),
+      max_instances_(max_instances)
 {
     ENGINE_ASSERT(device != nullptr && max_objects > 0 && max_lights > 0 && max_lights <= kMaxLights &&
-                      max_joint_matrices > 0 && max_joint_matrices <= kMaxJointMatrices,
+                      max_joint_matrices > 0 && max_joint_matrices <= kMaxJointMatrices && max_instances > 0,
                   "FrameResources: need a device, at least one object, one to kMaxLights lights and a joint palette");
     Build();
 }
@@ -80,6 +82,9 @@ void FrameResources::Build()
     joint_stride_ = AlignUp(static_cast<u64>(max_joints_) * kJointMatrixBytes,
                             SliceAlignment(caps.min_storage_buffer_offset_alignment, kJointMatrixBytes));
 
+    instance_stride_ = AlignUp(static_cast<u64>(max_instances_) * sizeof(GpuInstance),
+                               SliceAlignment(caps.min_storage_buffer_offset_alignment, sizeof(GpuInstance)));
+
     rhi::BufferDesc bd;
     bd.location = rhi::MemoryLocation::CpuToGpu;
     bd.size = frame_stride_ * kSlots;
@@ -96,14 +101,18 @@ void FrameResources::Build()
     bd.size = joint_stride_ * kSlots;
     bd.debug_name = "joint palette";
     joint_buffer_ = device->CreateBuffer(bd);
+    bd.size = instance_stride_ * kSlots;
+    bd.debug_name = "instance records";
+    instance_buffer_ = device->CreateBuffer(bd);
 
     if (frame_buffer_.IsValid() && object_buffer_.IsValid() && light_buffer_.IsValid() && joint_buffer_.IsValid() &&
-        staged_.TryResize(max_lights) && point_scratch_.TryReserve(max_lights))
+        instance_buffer_.IsValid() && staged_.TryResize(max_lights) && point_scratch_.TryReserve(max_lights))
     {
         frame_mapped_ = static_cast<byte*>(device->MapBuffer(frame_buffer_));
         object_mapped_ = static_cast<byte*>(device->MapBuffer(object_buffer_));
         light_mapped_ = static_cast<byte*>(device->MapBuffer(light_buffer_));
         joint_mapped_ = static_cast<byte*>(device->MapBuffer(joint_buffer_));
+        instance_mapped_ = static_cast<byte*>(device->MapBuffer(instance_buffer_));
     }
     if (!Valid())
     {
@@ -124,6 +133,16 @@ void FrameResources::Build()
         {
             device->UnmapBuffer(joint_buffer_);
         }
+        if (instance_mapped_ != nullptr)
+        {
+            device->UnmapBuffer(instance_buffer_);
+        }
+        if (instance_buffer_.IsValid())
+        {
+            device->DestroyBuffer(instance_buffer_);
+        }
+        instance_buffer_ = {};
+        instance_mapped_ = nullptr;
         frame_mapped_ = nullptr;
         object_mapped_ = nullptr;
         light_mapped_ = nullptr;
@@ -183,6 +202,14 @@ void FrameResources::Release()
     {
         device_->DestroyBuffer(joint_buffer_);
     }
+    if (instance_mapped_ != nullptr)
+    {
+        device_->UnmapBuffer(instance_buffer_);
+    }
+    if (instance_buffer_.IsValid())
+    {
+        device_->DestroyBuffer(instance_buffer_);
+    }
     if (frame_buffer_.IsValid())
     {
         device_->DestroyBuffer(frame_buffer_);
@@ -200,11 +227,14 @@ void FrameResources::Release()
     light_mapped_ = nullptr;
     joint_mapped_ = nullptr;
     joint_buffer_ = {};
+    instance_mapped_ = nullptr;
+    instance_buffer_ = {};
     frame_buffer_ = {};
     object_buffer_ = {};
     light_buffer_ = {};
     begun_ = false;
     joints_written_ = 0;
+    instances_written_ = 0;
     objects_written_ = 0;
     lights_written_ = 0;
 }
@@ -224,6 +254,7 @@ void FrameResources::BeginFrame(u64 frame_index)
     objects_written_ = 0;
     lights_written_ = 0;
     joints_written_ = 0;
+    instances_written_ = 0;
 }
 
 void FrameResources::WriteFrameData(const FrameData& data)
@@ -267,6 +298,27 @@ u32 FrameResources::WriteJoints(const f32* matrices, u32 count)
             static_cast<usize>(count) * kJointMatrixBytes);
     joints_written_ += count;
     return offset;
+}
+
+u32 FrameResources::WriteInstances(const GpuInstance* instances, u32 count)
+{
+    ENGINE_ASSERT(begun_ && instances != nullptr, "FrameResources::WriteInstances: BeginFrame was not called or null");
+    if (count == 0 || count > max_instances_ - instances_written_)
+    {
+        return kNoInstances;
+    }
+    const u32 offset = instances_written_;
+    MemCopy(instance_mapped_ + instance_stride_ * slot_ + static_cast<usize>(offset) * sizeof(GpuInstance), instances,
+            static_cast<usize>(count) * sizeof(GpuInstance));
+    instances_written_ += count;
+    return offset;
+}
+
+BufferRegion FrameResources::InstanceRegion() const
+{
+    ENGINE_ASSERT(begun_, "FrameResources::InstanceRegion: BeginFrame was not called");
+    return BufferRegion{instance_buffer_, instance_stride_ * slot_,
+                        static_cast<u64>(max_instances_) * sizeof(GpuInstance)};
 }
 
 LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameData& view)
@@ -400,6 +452,11 @@ void FrameResources::Flush()
     {
         device_->FlushMappedBuffer(joint_buffer_, joint_stride_ * slot_,
                                    static_cast<u64>(joints_written_) * kJointMatrixBytes);
+    }
+    if (instances_written_ > 0)
+    {
+        device_->FlushMappedBuffer(instance_buffer_, instance_stride_ * slot_,
+                                   static_cast<u64>(instances_written_) * sizeof(GpuInstance));
     }
     if (objects_written_ > 0)
     {

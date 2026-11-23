@@ -139,6 +139,11 @@ struct MaterialTemplateDesc
     /// group at set [[renderer::MaterialSystem::kJointSet]]. Its pipelines are built only for skinned mesh layouts, and
     /// a rigid template only for rigid ones: [[renderer::MaterialSystem::GetPipeline]] reports the mismatch.
     bool skinned = false;
+    /// True for a template whose vertex shader draws instances: it reads its instance records from the bind group at
+    /// set
+    /// [[renderer::MaterialSystem::kInstanceSet]] (made with [[renderer::MaterialSystem::InstanceBindGroup]]) in place
+    /// of the object buffer. Its pipelines are built only for rigid mesh layouts.
+    bool instanced = false;
 };
 
 /// What a pipeline renders into; part of the pipeline cache key.
@@ -420,6 +425,17 @@ public:
     rhi::BindGroupHandle JointBindGroup(const BufferRegion& region);
     /// The bind group set of the joint palette in skinned pipelines.
     static constexpr u32 kJointSet = 3;
+    /// The bind group set of the instance records in instanced pipelines (the same slot as the joint palette: a
+    /// template is never both).
+    static constexpr u32 kInstanceSet = 3;
+    /// Returns the bind group of a frame's instance records (set [[renderer::MaterialSystem::kInstanceSet]], one
+    /// read-only storage buffer of [[renderer::GpuInstance]]), created on first use and cached by region.
+    ///
+    /// - Param region: the region of the frame's instance buffer.
+    /// - Returns: the group, or an invalid handle when the device cannot create it (logged).
+    /// - Ownership: as for [[renderer::MaterialSystem::FrameBindGroup]].
+    /// - Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
+    rhi::BindGroupHandle InstanceBindGroup(const BufferRegion& region);
     /// The size of the morph pass's push constants (shaders/morph.comp).
     static constexpr u32 kMorphPushBytes = 128;
     /// Returns the device the system's objects live on now (it changes with a device reset); for passes that make
@@ -447,6 +463,11 @@ public:
     /// - Aborts: `id` is invalid or stale.
     /// - Thread-safety: thread-compatible; concurrent calls are fine while nothing creates or destroys materials.
     bool ReadsVertexInput(MaterialId id, u32 location) const;
+    /// Returns whether the material's template draws instances ([[renderer::MaterialTemplateDesc::instanced]]).
+    ///
+    /// - Param id: a live material.
+    /// - Aborts: `id` is invalid or stale.
+    bool IsInstanced(MaterialId id) const;
 
     /// Sets a scalar float member of the parameter block.
     ///
@@ -756,6 +777,7 @@ private:
     rhi::BindGroupLayoutHandle frame_layout_;
     rhi::BindGroupLayoutHandle object_layout_;
     rhi::BindGroupLayoutHandle joint_layout_;
+    rhi::BindGroupLayoutHandle instance_layout_;
     rhi::TextureHandle defaults_[3];
     rhi::SamplerHandle default_sampler_;
     rhi::BufferHandle object_index_stream_;  // only on a device with DeviceCaps::object_index_stream
@@ -778,12 +800,14 @@ private:
     CachedGroup frame_groups_[kMaxCachedGroups];
     CachedGroup object_groups_[kMaxCachedGroups];
     CachedGroup joint_groups_[kMaxCachedGroups];
+    CachedGroup instance_groups_[kMaxCachedGroups];
     rhi::BindGroupLayoutHandle morph_layout_;
     rhi::ShaderHandle morph_shader_;
     rhi::PipelineHandle morph_pipeline_;
     u32 frame_group_count_ = 0;
     u32 object_group_count_ = 0;
     u32 joint_group_count_ = 0;
+    u32 instance_group_count_ = 0;
 };
 
 }  // namespace vse::renderer

@@ -23,6 +23,7 @@
 #include "renderer/camera.h"
 #include "renderer/frame_data.h"
 #include "renderer/frustum.h"
+#include "renderer/instance_cull.h"
 #include "renderer/material.h"
 #include "renderer/render_graph.h"
 #include "renderer/render_scene.h"
@@ -202,6 +203,10 @@ struct GBufferOptions
     /// Skin the mesh's vertices with the joint palette: for meshes with a skin stream, and only for them (a rigid
     /// mesh with a skinned material, or the reverse, is rejected with a message naming both).
     bool skinned = false;
+    /// Draw the mesh at every visible instance of an [[renderer::InstancedObject]]: the instance's tint multiplies the
+    /// albedo (as a vertex color does), and the transform comes from the instance. Not with `skinned` or
+    /// `vertex_color`, and the mesh must be a rigid standard-layout mesh.
+    bool instanced = false;
 };
 
 /// The two material templates of the G-buffer shaders: for meshes without and with per-vertex colors.
@@ -217,6 +222,9 @@ struct GBufferTemplates
     TemplateId skinned;
     /// The template for skinned meshes of the color layout.
     TemplateId skinned_colored;
+    /// The template for instanced meshes of the standard layout (invalid when its shader bytecode is missing; instanced
+    /// meshes then do not draw).
+    TemplateId instanced;
 };
 
 /// Creates the G-buffer material templates.
@@ -315,6 +323,21 @@ struct GBufferStats
     /// An object with more than [[renderer::kMaxActiveMorphTargets]] keeps the largest; when the frame's morph budget
     /// is full, the object draws its base shape and all its weights count.
     u32 morph_targets_dropped = 0;
+    /// Instanced meshes drawn this frame (each is one draw when any of its instances is visible).
+    u32 instanced_sets = 0;
+    /// Instances written to the frame's instance buffer.
+    u32 instances_visible = 0;
+    /// Visible instances left out because the frame's instance buffer was full ([[renderer::kDefaultFrameInstances]]
+    /// unless the frame resources were made with another size).
+    u32 instances_dropped = 0;
+    /// Chunks of instance sets whose box was tested.
+    u32 instance_chunks_tested = 0;
+    /// Chunks rejected whole.
+    u32 instance_chunks_skipped = 0;
+    /// Chunks drawn whole without a per-instance test.
+    u32 instance_chunks_accepted = 0;
+    /// Instances tested one by one.
+    u32 instances_tested = 0;
 };
 
 /// Draws the scene's visible objects into the G-buffer.
@@ -374,6 +397,22 @@ public:
     /// - Fails: never.
     void SetExtraTargetUsage(rhi::TextureUsage usage) { extra_usage_ = usage; }
 
+    /// Sets where the camera is, in scene space; instanced meshes use it for their distance limits. Call before
+    /// `Prepare`; the default is the origin.
+    ///
+    /// - Param position: the camera's position.
+    /// - Fails: never.
+    void SetViewPosition(const Vec3& position) { view_position_ = position; }
+
+    /// Sets the scheduler that culls the chunks of large instance sets in parallel; null (the default) culls on the
+    /// calling thread. It must be called from the main thread (participant 0) outside any job, like
+    /// `jobs::ParallelForBlocking`, or be left null.
+    ///
+    /// - Param scheduler: the scheduler, or null.
+    /// - Fails: never.
+    /// - Ownership: borrowed until the next call.
+    void SetScheduler(jobs::Scheduler* scheduler) { scheduler_ = scheduler; }
+
     /// Returns the first error of the last `Prepare`, or an empty string.
     /// - Fails: never.
     /// - Ownership: the string belongs to the pass and stays valid until the next `Prepare` or the pass's destruction.
@@ -394,6 +433,7 @@ private:
         u32 first_index = 0;  // the index range drawn (0, 0: every index)
         u32 index_count = 0;
         bool skinned = false;
+        bool instanced = false;       // the instances come from the frame's instance buffer (set 3)
         u32 morph_job = kNoMorphJob;  // the morph pass's output this draw reads, or none
     };
     // One object's morph work: the mesh, the weights it was given (to share the work between the slots of one
@@ -407,6 +447,7 @@ private:
     };
     static constexpr u32 kNoMorphJob = 0xFFFFFFFFu;
     static void Record(const PassExecuteContext& context, void* user);
+    void PrepareInstanced(const RenderScene& scene, const Frustum& frustum, const PipelineTarget& target);
     static void RecordMorph(const PassExecuteContext& context, void* user);
     void Reject(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
@@ -432,6 +473,10 @@ private:
     Vector<DrawOrder> order_scratch_;  // the merge buffer, reserved at construction
     rhi::BindGroupHandle frame_group_;
     rhi::BindGroupHandle object_group_;
+    rhi::BindGroupHandle instance_group_;  // the frame's instance buffer (set 3), bound for instanced draws only
+    Vec3 view_position_ = Vec3(0, 0, 0);
+    jobs::Scheduler* scheduler_ = nullptr;
+    InstanceCullResult cull_result_;         // reused by every instanced set
     rhi::BindGroupHandle joint_group_;       // the frame's joint palette (set 3), bound for skinned draws only
     Vector<MorphJob> morph_jobs_;            // this frame's morphed objects (glTF coverage Day 7)
     u64 morph_bytes_ = 0;                    // the size of the frame's morph buffer

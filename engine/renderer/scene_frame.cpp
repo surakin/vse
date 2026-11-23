@@ -398,6 +398,7 @@ bool SceneFrame::Build(const FrameContext& context, void* user)
     const FrameData data = MakeFrameData(*context.camera, scene_width, scene_height, self->time_, self->delta_,
                                          context.frame_index);
     self->frame_->WriteFrameData(data);
+    self->gbuffer_->SetViewPosition(context.camera->position);
     self->gbuffer_ok_ = self->gbuffer_->Prepare(*context.scene,
                                                 Frustum::FromViewProjection(context.camera->ViewProjection()));
     if (!self->gbuffer_ok_)

@@ -74,7 +74,7 @@ static_assert(sizeof(shaders::kPermuteTestFragModules) / sizeof(shaders::kPermut
               "permute_test.frag has another module count: update this list");
 static_assert(sizeof(shaders::kMaterialTestFragModules) / sizeof(shaders::kMaterialTestFragModules[0]) == 2,
               "material_test.frag has another module count: update this list");
-static_assert(sizeof(shaders::kGbufferVertModules) / sizeof(shaders::kGbufferVertModules[0]) == 4,
+static_assert(sizeof(shaders::kGbufferVertModules) / sizeof(shaders::kGbufferVertModules[0]) == 5,
               "gbuffer.vert has another module count: update this list");
 static_assert(sizeof(shaders::kGbufferFragModules) / sizeof(shaders::kGbufferFragModules[0]) == 8,
               "gbuffer.frag has another module count: update this list");
@@ -175,6 +175,10 @@ const MintedLibrary kLibraries[] = {
      shaders::kGbufferVertModules[3].word_count, shaders::kGbufferVertModules[3].metallib,
      shaders::kGbufferVertModules[3].metallib_size, shaders::kGbufferVertModules[3].metallib_entry,
      shaders::kGbufferVertPerm3MetallibSpirvFnv},
+    {"gbuffer.vert module 4", rhi::ShaderStage::Vertex, shaders::kGbufferVertModules[4].words,
+     shaders::kGbufferVertModules[4].word_count, shaders::kGbufferVertModules[4].metallib,
+     shaders::kGbufferVertModules[4].metallib_size, shaders::kGbufferVertModules[4].metallib_entry,
+     shaders::kGbufferVertPerm4MetallibSpirvFnv},  // INSTANCED
     {"gbuffer.frag", rhi::ShaderStage::Fragment, shaders::kGbufferFragSpv, shaders::kGbufferFragSpvWordCount,
      shaders::kGbufferFragMetallib, shaders::kGbufferFragMetallibByteCount, shaders::kGbufferFragMetallibEntry,
      shaders::kGbufferFragMetallibSpirvFnv},

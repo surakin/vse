@@ -44,3 +44,14 @@ The frustum and the camera are in the space whose origin is `render_origin`, a w
 Edits never repack chunks: a chunk emptied by removals is reused, but one left with a few instances stays, and an instance moved far from every other starts a chunk of its own. Each chunk reserves room for 256 records, so call `Rebuild` after heavy editing of a scattered set to pack them again.
 
 A record is 40 bytes; with the id table entry and the back reference a set costs about 60 bytes an instance without data and 80 with (`MemoryBytes()` reports the reserved bytes). Moving an instance within its chunk refits at most 256 records.
+
+## Drawing a set
+
+An `InstancedObject` (`renderer/render_scene.h`) puts a set in a `RenderScene`: the set, one mesh, one material and the set's own transform (a position, a rotation and a uniform scale; the instances are in the set's space, so moving it moves them all). `AddInstanced`, `SetInstanced`, `RemoveInstanced` and `FindInstanced` work like the object ones, with generation-checked `InstancedId`s, and `RenderSceneDesc::max_instanced` is the capacity. The set and the mesh are borrowed: they must outlive the object and must not be edited while a frame is being prepared.
+
+The material comes from `CreateGBufferMaterial` with `GBufferOptions::instanced`: it uses the `gbuffer_instanced` template, whose vertex shader (the `INSTANCED` permutation of `gbuffer.vert`) reads its instance from a storage buffer by the instance index and builds the position, the normal and the tangent from the instance's position, rotation and scale. The instance's tint multiplies the albedo exactly as a vertex colour does (sRGB-encoded); the custom value is passed to the shader but the standard material ignores it. The mesh must be rigid, in the standard layout, without vertex colours or morph targets; an instanced material cannot be skinned or use vertex colours either. Scales are always above 0, so a mirrored instance (and with it a winding flip) cannot occur.
+
+`GBufferPass::Prepare` culls each set in the set's own space (the frustum planes and the camera are carried into it), composes every visible instance with the set's transform and writes it to the frame's instance buffer (`FrameResources::WriteInstances`, `kDefaultFrameInstances` = 262,144 instances a frame). A set is one draw with one pipeline bind; `GBufferPass::SetViewPosition` gives the camera for the distance limits (`InstancedObject::max_distance`, `min_size_ratio`), which `SceneFrame` sets for you. Instances that do not fit in the frame's buffer are not drawn and counted in `GBufferStats::instances_dropped`; the other counters (`instanced_sets`, `instances_visible`, the chunk counters) report what the cull did. A set with nothing visible adds no draw.
+
+Instanced meshes are drawn on Vulkan; a Direct3D 12 device refuses them with a message until the Direct3D 12 shaders are minted, and a macOS device until the Metal ones are.
+

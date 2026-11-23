@@ -7,6 +7,7 @@
 #include "renderer/camera.h"
 #include "renderer/frame_data.h"
 #include "renderer/gbuffer.h"
+#include "renderer/instance_set.h"
 #include "renderer/material.h"
 #include "renderer/mesh.h"
 #include "renderer/render_scene.h"
@@ -557,4 +558,73 @@ TEST_CASE("Index ranges are checked by the mesh data", "[renderer][gbuffer][rang
     CHECK(d.CopyGeometry().range_count == 2);
     CHECK(d.SetRanges(nullptr, 0) == nullptr);
     CHECK(d.RangeCount() == 0);
+}
+
+TEST_CASE("Instanced objects draw as one draw per set and name what they cannot draw",
+          "[renderer][gbuffer][instancing]")
+{
+    Rig rig;
+    REQUIRE(rig.templates.instanced.IsValid());
+    MeshData data;
+    REQUIRE(MakeSphereMesh(1.0f, 8, 4, &data) == nullptr);
+    GpuMesh mesh;
+    REQUIRE(mesh.Create(rig.device.Get(), data, "sphere"));
+    rig.MakeReady(&mesh);
+    InstanceSetDesc sd;
+    sd.has_data = true;
+    InstanceSetPtr set = InstanceSet::Create(sd);
+    REQUIRE(set.Get() != nullptr);
+    for (u32 i = 0; i < 50; ++i)
+    {
+        InstanceTransform t;
+        t.position = Vec3d(static_cast<f64>(i) * 0.2 - 5.0, 0.0, 0.0);
+        REQUIRE(set->Add(t, nullptr, nullptr) == InstanceStatus::Ok);
+    }
+    GBufferOptions io;
+    io.instanced = true;
+    const MaterialId instanced = CreateGBufferMaterial(rig.sys, rig.templates, io, "instanced");
+    const MaterialId plain = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "plain");
+    REQUIRE(instanced.IsValid());
+    REQUIRE(plain.IsValid());
+    CHECK(rig.sys->IsInstanced(instanced));
+    CHECK_FALSE(rig.sys->IsInstanced(plain));
+
+    GBufferOptions bad;
+    bad.instanced = true;
+    bad.skinned = true;
+    CHECK_FALSE(CreateGBufferMaterial(rig.sys, rig.templates, bad, "bad").IsValid());
+
+    InstancedObject o;
+    o.set = set.Get();
+    o.mesh = &mesh;
+    o.material = instanced.index;
+    {
+        RenderScene scene(RenderSceneDesc{4, 4, 1, 4});
+        scene.AddInstanced(o);
+        rig.BeginFrame(1);
+        GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
+        CHECK(pass.Prepare(scene, WideFrustum()));
+        const GBufferStats s = pass.Stats();
+        CHECK(s.instanced_sets == 1);
+        CHECK(s.draws == 1);
+        CHECK(s.instances_visible == 50);
+        CHECK(s.instances_dropped == 0);
+        CHECK(rig.frame->InstancesWritten() == 50);
+        rig.frame->Flush();
+        rig.device->EndFrame();
+    }
+    {
+        // A material that is not instanced is named in the error and nothing is drawn.
+        InstancedObject wrong = o;
+        wrong.material = plain.index;
+        RenderScene scene(RenderSceneDesc{4, 4, 1, 4});
+        scene.AddInstanced(wrong);
+        rig.BeginFrame(2);
+        GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
+        CHECK_FALSE(pass.Prepare(scene, WideFrustum()));
+        CHECK(StringView(pass.LastError()).Contains("GBufferOptions::instanced"));
+        CHECK(pass.Stats().draws == 0);
+        rig.frame->Flush();
+        rig.device->EndFrame();
+    }
 }

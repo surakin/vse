@@ -219,12 +219,13 @@ constexpr TemplateParamDefault kGBufferParamDefaults[10] = {
     {"albedo_uv", {1, 1, 0, 0}},           {"albedo_uv_outside", {0, 0, 0, 0}}, {"occlusion_strength", {1, 0, 0, 0}},
     {"emissive_from_albedo", {0, 0, 0, 0}}};
 
-const GBufferTemplateInfo kGBufferTemplateInfos[4] = {
+const GBufferTemplateInfo kGBufferTemplateInfos[5] = {
     {"gbuffer", false, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults, 10},
     {"gbuffer_color", false, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults, 10},
     {"gbuffer_skinned", true, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults, 10},
     {"gbuffer_skinned_color", true, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults,
      10},
+    {"gbuffer_instanced", false, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 5, kGBufferParamDefaults, 10},
 };
 
 }  // namespace
@@ -255,11 +256,12 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
                                         {"metallic_roughness_tex", DefaultTexture::White},
                                         {"occlusion_tex", DefaultTexture::White},
                                         {"emissive_tex", DefaultTexture::White}};
-    TemplateId ids[4];  // plain, colored, skinned, skinned_colored
-    for (u32 variant = 0; variant < 4; ++variant)
+    TemplateId ids[5];  // plain, colored, skinned, skinned_colored, instanced
+    for (u32 variant = 0; variant < 5; ++variant)
     {
-        const bool colored = (variant & 1) != 0;
-        const bool skinned = (variant & 2) != 0;
+        const bool instanced = variant == 4;
+        const bool colored = !instanced && (variant & 1) != 0;
+        const bool skinned = !instanced && (variant & 2) != 0;
         PermutationKey vkey;
         ReflectionError error;
         const char* names[2];
@@ -271,6 +273,10 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
         if (skinned)
         {
             names[name_count++] = "SKINNED";
+        }
+        if (instanced)
+        {
+            names[name_count++] = "INSTANCED";
         }
         const PermutationModule* vertex = nullptr;
         if (!MakePermutationKey(shaders::kGbufferVertPermutations, name_count != 0 ? names : nullptr, name_count, &vkey,
@@ -290,8 +296,8 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
         if (vertex != nullptr)
         {
             MaterialTemplateDesc d;
-            static const char* const kNames[4] = {"gbuffer", "gbuffer_color", "gbuffer_skinned",
-                                                  "gbuffer_skinned_color"};
+            static const char* const kNames[5] = {"gbuffer", "gbuffer_color", "gbuffer_skinned",
+                                                  "gbuffer_skinned_color", "gbuffer_instanced"};
             d.name = kNames[variant];
             d.vertex = *vertex;
             d.fragment_permutations = &shaders::kGbufferFragPermutations;
@@ -302,7 +308,14 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
             d.texture_defaults = defaults;
             d.texture_default_count = 5;
             d.skinned = skinned;
+            d.instanced = instanced;
             id = materials->CreateTemplate(d);
+        }
+        if (!id.IsValid() && instanced)
+        {
+            RenderLog(LogVerbosity::Warn, "G-buffer: the instanced template could not be created; instanced meshes "
+                                          "will not draw");
+            continue;
         }
         if (!id.IsValid() && skinned)
         {
@@ -330,6 +343,7 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
     out.colored = ids[1];
     out.skinned = ids[2];
     out.skinned_colored = ids[3];
+    out.instanced = ids[4];
     return out;
 }
 
@@ -337,8 +351,15 @@ MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplat
                                  const GBufferOptions& options, const char* name)
 {
     ENGINE_ASSERT(materials != nullptr, "CreateGBufferMaterial: materials is null");
-    const TemplateId tmpl = options.skinned ? (options.vertex_color ? templates.skinned_colored : templates.skinned)
-                                            : (options.vertex_color ? templates.colored : templates.plain);
+    if (options.instanced && (options.skinned || options.vertex_color))
+    {
+        RenderLog(LogVerbosity::Error, "G-buffer: an instanced material takes its colour from the instance's tint; "
+                                       "it cannot also be skinned or use vertex colors");
+        return MaterialId{};
+    }
+    const TemplateId tmpl = options.instanced ? templates.instanced
+                            : options.skinned ? (options.vertex_color ? templates.skinned_colored : templates.skinned)
+                                              : (options.vertex_color ? templates.colored : templates.plain);
     if (!tmpl.IsValid())
     {
         RenderLog(LogVerbosity::Error, "G-buffer: the %s%s template is invalid", options.skinned ? "skinned " : "",
@@ -355,7 +376,7 @@ MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplat
     {
         names[count++] = "ALPHA_TEST";
     }
-    if (options.vertex_color)
+    if (options.vertex_color || options.instanced)
     {
         names[count++] = "VERTEX_COLOR";
     }
@@ -481,7 +502,8 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
     // The per-frame groups are cached by the material system; creating them is rare.
     frame_group_ = materials_->FrameBindGroup(frame_->FrameRegion());
     object_group_ = materials_->ObjectBindGroup(frame_->ObjectRegion());
-    joint_group_ = rhi::BindGroupHandle{};  // made on the first skinned object of the frame
+    joint_group_ = rhi::BindGroupHandle{};     // made on the first skinned object of the frame
+    instance_group_ = rhi::BindGroupHandle{};  // made on the first instanced object of the frame
     morph_jobs_.Clear();
     morph_bytes_ = 0;
     morph_buffer_ = GraphResource{};
@@ -821,9 +843,219 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         last_pipeline = d.pipeline;
         last_group = d.material_group;
     }
+    PrepareInstanced(scene, frustum, target);
     stats_.drawn_objects = entry_count;
     stats_.draws = draw_count_;
     return stats_.rejected == 0;
+}
+
+void GBufferPass::PrepareInstanced(const RenderScene& scene, const Frustum& frustum, const PipelineTarget& target)
+{
+    const u32 cap = frame_->MaxObjects();
+    rhi::PipelineHandle last_pipeline;
+    rhi::BindGroupHandle last_group;
+    if (draw_count_ > 0)
+    {
+        last_pipeline = draws_[draw_count_ - 1].pipeline;
+        last_group = draws_[draw_count_ - 1].material_group;
+    }
+    for (u32 slot = 0; slot < scene.InstancedSlotCount(); ++slot)
+    {
+        if (!scene.InstancedSlotAlive(slot))
+        {
+            continue;
+        }
+        const InstancedObject& obj = scene.InstancedAt(slot);
+        if ((obj.flags & ObjectFlags::kHidden) != 0 || obj.set->Count() == 0)
+        {
+            continue;
+        }
+        const GpuMesh* mesh = obj.mesh;
+        if (!mesh->Valid() || !mesh->Ready())
+        {
+            Reject("G-buffer: the mesh of the instanced object in slot %u is missing or not prepared", slot);
+            continue;
+        }
+        if (mesh->Skinned() || HasColor(mesh->Layout()) || mesh->MorphTargetCount() != 0)
+        {
+            Reject("G-buffer: the instanced object in slot %u has a skinned, morphed or vertex-colored mesh", slot);
+            continue;
+        }
+        const MaterialId material = materials_->MaterialAtIndex(obj.material);
+        if (!material.IsValid() || !materials_->IsInstanced(material))
+        {
+            Reject("G-buffer: the instanced object in slot %u needs a material made with GBufferOptions::instanced",
+                   slot);
+            continue;
+        }
+        if (object_index_stream_.IsValid())
+        {
+            Reject("G-buffer: instanced meshes are not drawn on this backend yet (slot %u)", slot);
+            continue;
+        }
+        const PipelineLookup pipeline = materials_->GetPipeline(material, target, mesh->Layout(), mesh->Topology(),
+                                                                mesh->HasPrimitiveRestart());
+        if (!pipeline.pipeline.IsValid() || draw_count_ >= cap)
+        {
+            Reject("G-buffer: no pipeline or draw could be made for the instanced object in slot %u", slot);
+            continue;
+        }
+        if (!instance_group_.IsValid())
+        {
+            instance_group_ = materials_->InstanceBindGroup(frame_->InstanceRegion());
+            if (!instance_group_.IsValid())
+            {
+                Reject("G-buffer: the instance bind group could not be created");
+                continue;
+            }
+        }
+        // Cull in the set's own space: the planes and the camera are carried into it, so the records are read as
+        // stored.
+        const Quaternion inverse = obj.rotation.Conjugate();
+        const f32 inverse_scale = 1.0f / obj.scale;
+        InstanceCullParams params;
+        for (u32 i = 0; i < 6; ++i)
+        {
+            const Plane& p = frustum.planes[i];
+            params.frustum.planes[i].normal = inverse.RotateVector(p.normal);
+            params.frustum.planes[i].d = (p.normal.Dot(obj.position) + p.d) * inverse_scale;
+        }
+        params.render_origin = Vec3d(0, 0, 0);
+        params.camera_position = inverse.RotateVector(view_position_ - obj.position) * inverse_scale;
+        params.mesh_radius = mesh->GetBounds().sphere.radius;
+        params.max_distance = obj.max_distance * inverse_scale;
+        params.min_size_ratio = obj.min_size_ratio;
+        CullInstances(*obj.set, params, scheduler_, &cull_result_);
+        const InstanceCullStats& cs = cull_result_.stats;
+        stats_.instance_chunks_tested += cs.chunks_tested;
+        stats_.instance_chunks_skipped += cs.chunks_skipped;
+        stats_.instance_chunks_accepted += cs.chunks_accepted;
+        stats_.instances_tested += cs.instances_tested;
+        if (cs.instances_emitted == 0)
+        {
+            continue;
+        }
+        // Compose each visible instance with the set's transform and write it: one contiguous range, one draw.
+        constexpr u32 kBatch = 256;
+        GpuInstance batch[kBatch];
+        u32 filled = 0;
+        u32 first = kNoInstances;
+        u32 written = 0;
+        bool full = false;
+        // The frame's buffer takes this many more; the rest of the visible instances is counted as dropped.
+        const u32 room = frame_->MaxInstances() - frame_->InstancesWritten();
+        const u32 limit = cs.instances_emitted < room ? cs.instances_emitted : room;
+        u32 produced = 0;
+        for (const InstanceRun& run : cull_result_.runs)
+        {
+            const InstanceChunkInfo info = obj.set->Chunk(run.chunk);
+            const Span<const InstanceRecord> records = obj.set->Records(run.chunk);
+            const Span<const InstanceExtra> extras = obj.set->Extras(run.chunk);
+            for (u32 k = 0; k < run.count && produced < limit; ++k)
+            {
+                ++produced;
+                const InstanceRecord& r = records[run.first + k];
+                const Vec3d local = info.origin + Vec3d(r.position);
+                const Vec3 world = obj.position +
+                                   obj.rotation.RotateVector(Vec3(static_cast<f32>(local.x), static_cast<f32>(local.y),
+                                                                  static_cast<f32>(local.z)) *
+                                                             obj.scale);
+                const Quaternion q = obj.rotation * r.rotation;
+                GpuInstance& g = batch[filled++];
+                g.position[0] = world.x;
+                g.position[1] = world.y;
+                g.position[2] = world.z;
+                g.rotation[0] = q.x;
+                g.rotation[1] = q.y;
+                g.rotation[2] = q.z;
+                g.rotation[3] = q.w;
+                g.scale[0] = r.scale.x * obj.scale;
+                g.scale[1] = r.scale.y * obj.scale;
+                g.scale[2] = r.scale.z * obj.scale;
+                if (extras.Size() != 0)
+                {
+                    const InstanceExtra& e = extras[run.first + k];
+                    g.tint[0] = e.tint.x;
+                    g.tint[1] = e.tint.y;
+                    g.tint[2] = e.tint.z;
+                    g.tint[3] = e.tint.w;
+                    g.custom = e.custom;
+                }
+                else
+                {
+                    g.tint[0] = g.tint[1] = g.tint[2] = g.tint[3] = 1.0f;
+                    g.custom = 0;
+                }
+                g.pad = 0;
+                if (filled == kBatch)
+                {
+                    const u32 at = frame_->WriteInstances(batch, filled);
+                    if (at == kNoInstances)
+                    {
+                        full = true;
+                        break;
+                    }
+                    first = first == kNoInstances ? at : first;
+                    written += filled;
+                    filled = 0;
+                }
+            }
+            if (full || produced == limit)
+            {
+                break;
+            }
+        }
+        if (!full && filled != 0)
+        {
+            const u32 at = frame_->WriteInstances(batch, filled);
+            if (at == kNoInstances)
+            {
+                full = true;
+            }
+            else
+            {
+                first = first == kNoInstances ? at : first;
+                written += filled;
+            }
+        }
+        stats_.instances_visible += written;
+        if (written < cs.instances_emitted)
+        {
+            stats_.instances_dropped += cs.instances_emitted - written;
+        }
+        if (written == 0)
+        {
+            continue;
+        }
+        Draw& d = draws_[draw_count_++];
+        d.pipeline = pipeline.pipeline;
+        d.material_group = materials_->MaterialBindGroup(material);
+        d.mesh = mesh;
+        d.first_instance = first;
+        d.instance_count = written;
+        d.first_index = 0;
+        d.index_count = 0;
+        d.skinned = false;
+        d.instanced = true;
+        d.morph_job = kNoMorphJob;
+        if (!(d.pipeline == last_pipeline))
+        {
+            ++stats_.pipeline_binds;
+        }
+        if (!(d.material_group == last_group))
+        {
+            ++stats_.material_binds;
+        }
+        last_pipeline = d.pipeline;
+        last_group = d.material_group;
+        ++stats_.instanced_sets;
+    }
+    if (stats_.instances_dropped > 0)
+    {
+        RenderLog(LogVerbosity::Warn,
+                  "G-buffer: the instance buffer is full (%u instances): %u instances were not drawn",
+                  frame_->MaxInstances(), stats_.instances_dropped);
+    }
 }
 
 GBufferTargets GBufferPass::AddToGraph(RenderGraph* graph, u32 width, u32 height)
@@ -964,8 +1196,13 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user)
             {
                 list->SetBindGroup(MaterialSystem::kJointSet, self->joint_group_);
             }
+            if (d.instanced)
+            {
+                list->SetBindGroup(MaterialSystem::kInstanceSet, self->instance_group_);
+            }
         }
-        if (self->object_index_stream_.IsValid() && index_slot != MaterialSystem::ObjectIndexSlotFor(d.skinned))
+        if (!d.instanced && self->object_index_stream_.IsValid() &&
+            index_slot != MaterialSystem::ObjectIndexSlotFor(d.skinned))
         {
             // Draw i is issued with first_instance = i; Direct3D 12 fetches this instance-rate stream at that index.
             // It follows the mesh's streams, so a skinned mesh (two streams) has it one slot later.

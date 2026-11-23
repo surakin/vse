@@ -57,6 +57,27 @@ inline constexpr u32 kNoJoints = 0xffffffffu;
 /// The most joint matrices a palette holds: the offset travels in a `f32` of the object data, exact up to 2^24.
 inline constexpr u32 kMaxJointMatrices = 1u << 24;
 
+/// One instance of an instanced mesh as the vertex shader reads it (std430, 64 bytes, every member 4 bytes): the
+/// position of the instance in the space of the frame's view-projection, a unit rotation, a scale, a tint (sRGB-encoded
+/// like a vertex color) and a custom value. Written by the G-buffer pass from the visible records of an
+/// [[renderer::InstanceSet]], with the set's own transform composed in.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct GpuInstance
+{
+    f32 position[3];  ///< Position.
+    f32 rotation[4];  ///< Unit quaternion `(x, y, z, w)`.
+    f32 scale[3];     ///< Scale on each axis, above 0.
+    f32 tint[4];      ///< Colour multiplier.
+    u32 custom;       ///< The set's custom value; the standard material ignores it.
+    u32 pad;          ///< Zero.
+};
+static_assert(sizeof(GpuInstance) == 64, "GpuInstance is 16 words");
+/// The `WriteInstances` result for a buffer that did not have the room.
+inline constexpr u32 kNoInstances = 0xffffffffu;
+/// The default room of a frame's instance buffer, in instances (16 MiB a frame).
+inline constexpr u32 kDefaultFrameInstances = 1u << 18;
+
 /// Fills a [[renderer::FrameData]].
 ///
 /// - Param camera: the camera; its projection parameters must be valid.
@@ -145,7 +166,8 @@ public:
     /// - Ownership: check [[renderer::FrameResources::Valid]].
     /// - Aborts: `device` is null, `max_objects` is 0, `max_lights` is 0 or above [[renderer::kMaxLights]], or
     ///   `max_joint_matrices` is 0 or above [[renderer::kMaxJointMatrices]].
-    FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64, u32 max_joint_matrices = 1024);
+    FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64, u32 max_joint_matrices = 1024,
+                   u32 max_instances = kDefaultFrameInstances);
     /// Unmaps and destroys the buffers.
     ~FrameResources() override;
     FrameResources(const FrameResources&) = delete;
@@ -178,7 +200,7 @@ public:
     bool Valid() const
     {
         return frame_mapped_ != nullptr && object_mapped_ != nullptr && light_mapped_ != nullptr &&
-               joint_mapped_ != nullptr;
+               joint_mapped_ != nullptr && instance_mapped_ != nullptr;
     }
 
     /// Selects the region for this frame: `frame_index % kSlots`.
@@ -212,6 +234,24 @@ public:
     /// - Aborts: `BeginFrame` was not called, or `matrices` is null.
     /// - Thread-safety: thread-compatible; call from the thread that prepares the frame.
     u32 WriteJoints(const f32* matrices, u32 count);
+
+    /// Appends instances to this frame's instance buffer.
+    ///
+    /// - Param instances: `count` instances, copied.
+    /// - Param count: from 1 to the remaining room.
+    /// - Returns: the index of the first instance (the first instance of the draw), or [[renderer::kNoInstances]] when
+    ///   the buffer does not have `count` left (nothing is written).
+    /// - Aborts: `BeginFrame` was not called, or `instances` is null.
+    /// - Thread-safety: thread-compatible; call from the thread that prepares the frame.
+    u32 WriteInstances(const GpuInstance* instances, u32 count);
+    /// Returns the region of the instance buffer for this frame: `MaxInstances()` instances.
+    BufferRegion InstanceRegion() const;
+    /// Returns the instance buffer's room in instances.
+    /// - Fails: never.
+    u32 MaxInstances() const { return max_instances_; }
+    /// Returns the instances written so far this frame.
+    /// - Fails: never.
+    u32 InstancesWritten() const { return instances_written_; }
 
     /// Returns the region of the joint palette buffer for this frame: `MaxJointMatrices()` matrices.
     BufferRegion JointRegion() const;
@@ -297,6 +337,11 @@ private:
     u64 joint_stride_ = 0;
     u32 max_joints_ = 0;
     u32 joints_written_ = 0;
+    rhi::BufferHandle instance_buffer_;
+    byte* instance_mapped_ = nullptr;
+    u64 instance_stride_ = 0;
+    u32 max_instances_ = 0;
+    u32 instances_written_ = 0;
     u32 slot_ = 0;
     bool begun_ = false;
     u32 objects_written_ = 0;

@@ -52,6 +52,8 @@ RenderScene::RenderScene(const RenderSceneDesc& desc)
     lights_.Resize(light_capacity_);
     terrain_capacity_ = desc.max_terrains;
     terrains_.Resize(terrain_capacity_);
+    instanced_capacity_ = desc.max_instanced;
+    instanced_.Resize(instanced_capacity_);
 }
 
 struct RenderScene::CullIndex
@@ -495,6 +497,85 @@ const TerrainObject& RenderScene::TerrainAt(u32 slot) const
 {
     ENGINE_ASSERT(slot < terrain_slots_used_ && terrains_[slot].alive, "TerrainAt: slot out of range or dead");
     return terrains_[slot].terrain;
+}
+
+namespace
+{
+void CheckInstanced(const InstancedObject& o)
+{
+    ENGINE_ASSERT(o.set != nullptr && o.mesh != nullptr, "instanced: the set or the mesh is null");
+    ENGINE_ASSERT(IsFinite(o.scale) && o.scale > 0.0f && IsFinite(o.position.x) && IsFinite(o.position.y) &&
+                      IsFinite(o.position.z),
+                  "instanced: the position or the scale is not valid");
+    ENGINE_ASSERT(IsFinite(o.rotation.x) && IsFinite(o.rotation.y) && IsFinite(o.rotation.z) &&
+                      IsFinite(o.rotation.w) && o.rotation.LengthSquared() > 0.5f && o.rotation.LengthSquared() < 1.5f,
+                  "instanced: the rotation is not a unit quaternion");
+}
+}  // namespace
+
+InstancedId RenderScene::AddInstanced(const InstancedObject& object)
+{
+    CheckInstanced(object);
+    u32 slot;
+    if (free_instanced_ != kNoSlot)
+    {
+        slot = free_instanced_;
+        free_instanced_ = instanced_[slot].next_free;
+    }
+    else if (instanced_slots_used_ < instanced_capacity_)
+    {
+        slot = instanced_slots_used_++;
+    }
+    else
+    {
+        return InstancedId{};
+    }
+    InstancedSlot& s = instanced_[slot];
+    s.alive = true;
+    s.object = object;
+    ++instanced_count_;
+    return InstancedId{slot, s.generation};
+}
+
+void RenderScene::RemoveInstanced(InstancedId id)
+{
+    ENGINE_ASSERT(FindInstanced(id) != nullptr, "RemoveInstanced: the id is invalid or stale");
+    InstancedSlot& s = instanced_[id.index];
+    s.alive = false;
+    s.object = InstancedObject();
+    s.generation = NextGeneration(s.generation);
+    s.next_free = free_instanced_;
+    free_instanced_ = id.index;
+    --instanced_count_;
+}
+
+void RenderScene::SetInstanced(InstancedId id, const InstancedObject& object)
+{
+    ENGINE_ASSERT(FindInstanced(id) != nullptr, "SetInstanced: the id is invalid or stale");
+    CheckInstanced(object);
+    instanced_[id.index].object = object;
+}
+
+const InstancedObject* RenderScene::FindInstanced(InstancedId id) const
+{
+    if (!id.IsValid() || id.index >= instanced_slots_used_)
+    {
+        return nullptr;
+    }
+    const InstancedSlot& s = instanced_[id.index];
+    return s.alive && s.generation == id.generation ? &s.object : nullptr;
+}
+
+bool RenderScene::InstancedSlotAlive(u32 slot) const
+{
+    ENGINE_ASSERT(slot < instanced_slots_used_, "InstancedSlotAlive: slot out of range");
+    return instanced_[slot].alive;
+}
+
+const InstancedObject& RenderScene::InstancedAt(u32 slot) const
+{
+    ENGINE_ASSERT(slot < instanced_slots_used_ && instanced_[slot].alive, "InstancedAt: slot out of range or dead");
+    return instanced_[slot].object;
 }
 
 }  // namespace vse::renderer

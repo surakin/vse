@@ -90,7 +90,8 @@ void SetMessage(ReflectionError* e, const char* fmt, const char* a, const char* 
 // The renderer's descriptor-set convention: set 0 one uniform buffer at binding 0, set 2 one storage buffer at binding
 // 0, set 1 the material (uniform block, sampled textures, samplers), nothing else. A skinned template's vertex shader
 // also has set 3: one read-only storage buffer at binding 0, the joint palette.
-bool CheckConvention(const ShaderReflection& r, const char* what, ReflectionError* error, bool joint_set = false)
+bool CheckConvention(const ShaderReflection& r, const char* what, ReflectionError* error,
+                     bool joint_set = false)  // or the instance set
 {
     for (u32 i = 0; i < r.binding_count; ++i)
     {
@@ -360,6 +361,16 @@ bool MaterialSystem::CreateDefaults()
     jl.debug_name = "joint layout";
     joint_layout_ = device_->CreateBindGroupLayout(jl);
 
+    rhi::BindingDesc instance_binding;
+    instance_binding.binding = 0;
+    instance_binding.type = rhi::BindingType::ReadOnlyStorageBuffer;
+    instance_binding.stride = sizeof(GpuInstance);  // StructuredBuffer<GpuInstance> instances (gbuffer.vert, INSTANCED)
+    instance_binding.stages = rhi::ShaderStage::AllGraphics;
+    rhi::BindGroupLayoutDesc il;
+    il.entries = rhi::Span<rhi::BindingDesc>(&instance_binding, 1);
+    il.debug_name = "instance layout";
+    instance_layout_ = device_->CreateBindGroupLayout(il);
+
     // The morph pass (glTF coverage Day 7): binding 0 the mesh's base vertices and deltas (read), binding 1 the frame's
     // morphed vertices (written); 128 bytes of push constants (shaders/morph.comp).
     rhi::BindingDesc morph_bindings[2];
@@ -399,7 +410,7 @@ bool MaterialSystem::CreateDefaults()
     const byte pixels[3][4] = {{255, 255, 255, 255}, {0, 0, 0, 255}, {128, 128, 255, 255}};
     const char* names[3] = {"default white", "default black", "default flat normal"};
     bool ok = frame_layout_.IsValid() && object_layout_.IsValid() && joint_layout_.IsValid() &&
-              default_sampler_.IsValid();
+              instance_layout_.IsValid() && default_sampler_.IsValid();
     for (u32 i = 0; i < 3 && ok; ++i)
     {
         rhi::TextureDesc td;
@@ -524,6 +535,11 @@ void MaterialSystem::DestroyDefaults()
         device_->DestroyBindGroupLayout(joint_layout_);
     }
     joint_layout_ = {};
+    if (instance_layout_.IsValid())
+    {
+        device_->DestroyBindGroupLayout(instance_layout_);
+    }
+    instance_layout_ = {};
     if (morph_pipeline_.IsValid())
     {
         device_->DestroyPipeline(morph_pipeline_);
@@ -663,9 +679,14 @@ void MaterialSystem::Release()
     {
         device_->DestroyBindGroup(joint_groups_[i].group);
     }
+    for (u32 i = 0; i < instance_group_count_; ++i)
+    {
+        device_->DestroyBindGroup(instance_groups_[i].group);
+    }
     frame_group_count_ = 0;
     object_group_count_ = 0;
     joint_group_count_ = 0;
+    instance_group_count_ = 0;
     DestroyDefaults();
     released_ = true;
 }
@@ -861,7 +882,7 @@ TemplateId MaterialSystem::CreateTemplate(const MaterialTemplateDesc& desc)
             name);
         return TemplateId{};
     }
-    if (!CheckConvention(t.vertex_reflection, "vertex shader", &error, desc.skinned))
+    if (!CheckConvention(t.vertex_reflection, "vertex shader", &error, desc.skinned || desc.instanced))
     {
         RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s' not created: %s", name, error.message);
         return TemplateId{};
@@ -1275,6 +1296,11 @@ rhi::BindGroupHandle MaterialSystem::JointBindGroup(const BufferRegion& region)
     return CachedBindGroup(joint_groups_, &joint_group_count_, joint_layout_, region);
 }
 
+rhi::BindGroupHandle MaterialSystem::InstanceBindGroup(const BufferRegion& region)
+{
+    return CachedBindGroup(instance_groups_, &instance_group_count_, instance_layout_, region);
+}
+
 MaterialId MaterialSystem::MaterialAtIndex(u32 index) const
 {
     if (index >= desc_.max_materials || !materials_[index].alive)
@@ -1296,6 +1322,11 @@ bool MaterialSystem::ReadsVertexInput(MaterialId id, u32 location) const
         }
     }
     return false;
+}
+
+bool MaterialSystem::IsInstanced(MaterialId id) const
+{
+    return templates_[Get(id).template_index].desc.instanced;
 }
 
 MaterialId MaterialSystem::CreateMaterial(TemplateId tmpl, PermutationKey key, const char* name)
@@ -1877,6 +1908,11 @@ rhi::PipelineHandle MaterialSystem::MakePipeline(TemplateSlot& t, const Variant&
         pd.bind_group_layouts[kJointSet] = joint_layout_;
         pd.bind_group_layout_count = 4;
     }
+    if (t.desc.instanced)
+    {
+        pd.bind_group_layouts[kInstanceSet] = instance_layout_;
+        pd.bind_group_layout_count = 4;
+    }
     pd.debug_name = tname;
     const rhi::PipelineHandle pipeline = device_->CreateGraphicsPipeline(pd);
     if (!pipeline.IsValid())
@@ -1993,6 +2029,14 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
                       i);
             return PipelineLookup{};
         }
+    }
+    if (t.desc.instanced && vertex_layout.skin_stride != 0)
+    {
+        RenderLog(
+            LogVerbosity::Error,
+            "MaterialSystem: pipeline for '%s': an instanced template draws rigid meshes only; the mesh is skinned",
+            tname);
+        return PipelineLookup{};
     }
     if ((vertex_layout.skin_stride != 0) != t.desc.skinned)
     {
