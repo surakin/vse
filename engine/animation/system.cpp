@@ -163,9 +163,9 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                     counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
                     continue;
                 }
-                if (skeleton != nullptr && p.clip == 0 && !rotations.Empty() && skeleton->JointCount() != 0 &&
-                    skeleton->JointCount() <= kMaxPoseJoints)
-                {  // no clip: the bind pose with the host's rotations
+                if (skeleton != nullptr && (p.clip == 0 || clip == nullptr) && !rotations.Empty() &&
+                    skeleton->JointCount() != 0 && skeleton->JointCount() <= kMaxPoseJoints)
+                {  // no clip, or not loaded yet: the bind pose with the host's rotations
                     WriteBindPalette(*skeleton, rotations[i], &inst);
                     counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
                     continue;

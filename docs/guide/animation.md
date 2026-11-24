@@ -38,7 +38,7 @@ takes (the same layout as the skeleton's inverse bind section: nothing is conver
 
 `AnimationPlayer` (clip id, time, speed, weight, playing, looping) and `SkeletonInstance` (skeleton id and the palette the
 system fills) are ECS components; `RootMotion` is filled when present; `RegisterAnimationComponents` registers them with
-the storage registry so levels save the ids and the play state (ids 40 to 42). `AnimationSystem::Update(&world,
+the storage registry so levels save the ids and the play state (ids 40 to 44). `AnimationSystem::Update(&world,
 scheduler, dt)` advances and samples every entity with a player and an instance in parallel over the chunks, then
 publishes the events into the world's `AnimationEvents` resource (when it exists) in entity order. Each entity's result
 depends only on its own components, so the palettes are the same at one worker or eight.

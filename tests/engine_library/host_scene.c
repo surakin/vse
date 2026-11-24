@@ -1303,7 +1303,7 @@ int main(void)
             float y = 0.0f;
             uint64_t still;
             const float bad_length[4] = {0.0f, 0.0f, 0.5f, 0.5f};
-            const float not_finite[4] = {0.0f, 0.0f, 0.0f, (float)(1e30 * 1e30)};
+            const float not_finite[4] = {0.0f, 0.0f, 0.0f, INFINITY};
             CHECK_STATUS(g_api->animation_set_joint_rotation(world, hero, 1, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
             CHECK_STATUS(g_api->animation_set_joint_rotation(world, hero, 1, bad_length),
                          ENGINE_ERROR_INVALID_ARGUMENT);

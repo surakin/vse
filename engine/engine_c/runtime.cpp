@@ -456,6 +456,21 @@ void AnimateWorld(WorldObject& object, ResourceHost* resources, f32 dt)
     }
     animation::AnimationSystem animator(&resources->Animation());
     animator.Update(&object.world, nullptr, dt);
+    // A joint rotation list the host emptied is dropped (the update above has just redrawn its entity without it).
+    Vector<ecs::Entity> emptied;
+    auto rotations = object.world.Query<ecs::Read<animation::JointRotations>>();
+    rotations.ForEach(
+        [&](ecs::Entity entity, const animation::JointRotations& list)
+        {
+            if (list.list.Empty())
+            {
+                emptied.Push(entity);
+            }
+        });
+    for (usize i = 0; i < emptied.Size(); ++i)
+    {
+        object.world.Remove<animation::JointRotations>(emptied[i]);
+    }
     // A skeleton with no clip yet is drawn in its bind pose.
     Vector<ecs::Entity> bare;
     auto query = object.world.Query<ecs::Read<animation::SkeletonInstance>>();
@@ -1294,6 +1309,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 }
                 animation::SkeletonInstance instance;
                 instance.skeleton = in->skeleton;
+                if (have != nullptr)
+                {  // the host's joint rotations name joints of the old skeleton
+                    object.world.Remove<animation::JointRotations>(entity);
+                }
                 return SetOrAdd(object.world, entity, Move(instance));
             }
             if (kind == ENGINE_COMPONENT_LABEL)
