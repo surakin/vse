@@ -492,6 +492,7 @@ test:engine_other_crt                           23   # a host built with another
 tests/engine_library/status_map_test.cpp        23   # the engine's result types map onto the C statuses (Day 346)
 tests/engine_library/height_map_pins_test.cpp 23   # a replaced height map keeps one earlier pin
 tests/engine_library/environment_usable_test.cpp 23   # the rules of a stored environment
+tests/engine_library/script_slots_test.cpp       27   # mesh.set_slot, clear_slot, has_slot and host textures by name (maintenance, 2026-11-24)
 tests/engine_library/level_spawn_test.cpp       23   # level_spawn refuses a level whose light is not valid, the world untouched (maintenance, 2026-11-20)
 tests/engine_library/surface_wayland_test.cpp    23   # the engine renders into a Wayland surface the host owns: golden frame read back, resize, hidden surface, rebind (Day 352)
 tests/engine_library/surface_input_test.cpp      23   # forwarded pointer, key, text and touch events drive a UI button and text field on a host surface; cursor, clipboard, text-input and focus requests go back to the host callbacks (Day 353)

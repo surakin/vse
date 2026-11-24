@@ -199,11 +199,15 @@ Outcome Dispatch(void* user, Span<const Value> args, Vector<Value>* results)
     }
     if (bound->entry->dynamic != nullptr)
     {
-        if (args.Size() != bound->entry->info.arity)
+        // A parameter list that ends in `...` takes any number of further arguments (a binding added at run time).
+        const StringView params = bound->entry->info.params.View();
+        const bool variadic = params.Length() >= 3 && params.Substring(params.Length() - 3) == StringView("...");
+        const usize least = variadic ? bound->entry->info.arity - 1 : bound->entry->info.arity;
+        if (variadic ? args.Size() < least : args.Size() != bound->entry->info.arity)
         {
             StringBuilder<HeapAllocator> sb(HeapAllocator::Default());
             sb.Append(bound->entry->info.full_name.View()).Append(StringView(": expected "));
-            sb.AppendInt(bound->entry->info.arity).Append(StringView(" arguments, got "));
+            sb.Append(StringView(variadic ? "at least " : "")).AppendInt(least).Append(StringView(" arguments, got "));
             sb.AppendInt(static_cast<i64>(args.Size()));
             return Outcome(Status::RuntimeError, sb.View());
         }

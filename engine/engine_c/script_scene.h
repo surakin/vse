@@ -31,6 +31,10 @@ enum SceneCommandKind : u16
     kCommandTreeSetLocal = 136,     ///< `tree.set_local`: sets a node's local transform.
     kCommandSkyCubeSet = 137,       ///< `environment.set_sky_cube`: names the texture resource of a cube sky.
     kCommandJointRotation = 138,    ///< `animation.set_joint_rotation`: a rotation the host adds to a joint.
+    kCommandMeshSlot = 139,         ///< `mesh.set_slot` and `mesh.clear_slot`: an override of a mesh slot's material.
+    kCommandClipPlay = 140,         ///< `animation.play`: starts a clip.
+    kCommandClipSpeed = 141,        ///< `animation.set_speed`: changes the speed of the clip playing.
+    kCommandClipStop = 142,         ///< `animation.stop`: pauses the clip playing.
 };
 
 /// What the scene bindings need: its address goes in `MergeServices::extensions[script::kServiceScene]`.
@@ -61,7 +65,8 @@ struct SceneNames
 };
 
 /// Registers `environment.set`, `light.set`, `light.create`, `instances.add`, `instances.set`, `instances.remove`,
-/// `tree.set_local`, `skeleton.find_joint` and `animation.set_joint_rotation`.
+/// `tree.set_local`, `skeleton.find_joint`, `animation.set_joint_rotation`, `animation.clip`, `animation.play`,
+/// `animation.set_speed`, `animation.stop`, `animation.time`, `mesh.set_slot`, `mesh.clear_slot` and `mesh.has_slot`.
 /// - Returns: false when a name is already taken.
 bool RegisterSceneBindings(script::BindingRegistry* registry);
 

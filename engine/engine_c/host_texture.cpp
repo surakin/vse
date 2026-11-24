@@ -21,10 +21,11 @@ constexpr usize kMaxTextures = 1u << 12;
 
 }  // namespace
 
-HostTexture::HostTexture(u32 width, u32 height, bool srgb, StringView, const HostTextureLimits& limits,
+HostTexture::HostTexture(u32 width, u32 height, bool srgb, StringView name, const HostTextureLimits& limits,
                          TextureCounters* counters)
     : width_(width), height_(height), srgb_(srgb), limits_(limits), counters_(counters)
 {
+    name_.Append(name);
 }
 
 bool HostTexture::HasPixels() const
@@ -260,6 +261,28 @@ engine_status TextureHost::Create(const engine_texture_info* given, engine_handl
     slots_[slot].object = static_cast<HostTexturePtr&&>(texture);
     *out = MakeObjectHandle(kKindTexture, slots_[slot].generation, slot);
     return ENGINE_OK;
+}
+
+bool TextureHost::FindByName(StringView name, engine_handle* out)
+{
+    if (name.Length() == 0)
+    {
+        return false;
+    }
+    LockGuard<Mutex> lock(mutex_);
+    bool found = false;
+    u32 best = 0;
+    for (usize i = 0; i < slots_.Size(); ++i)
+    {
+        if (slots_[i].object.Get() != nullptr && slots_[i].object->Name() == name &&
+            (!found || slots_[i].generation > best))
+        {
+            found = true;
+            best = slots_[i].generation;
+            *out = MakeObjectHandle(kKindTexture, slots_[i].generation, i);
+        }
+    }
+    return found;
 }
 
 HostTexturePtr TextureHost::Find(engine_handle handle)

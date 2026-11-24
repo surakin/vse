@@ -117,6 +117,13 @@ public:
     /// - Returns: ENGINE_OK, NOT_FOUND (not mounted, or the skeleton not loaded), TYPE_MISMATCH (not a clip) or
     ///   INVALID_ARGUMENT (another skeleton's, or joint tracks for an entity without a skeleton), with the text set.
     engine_status PinClip(u64 id, u64 skeleton_id, bool* has_weights = nullptr);
+
+    /// Finds the clip resource that the path `name` names (as `resource_resolve` reads a path; a name without a
+    /// leading `/` is tried as given and then with one): the first mount in priority order that has the path wins.
+    ///
+    /// - Param id: receives the clip's resource id.
+    /// - Returns: false when no mount has the path or what it names is not a clip.
+    bool FindClipByName(StringView name, u64* id);
     /// Loads the mesh collider `id` and keeps it loaded until the host is destroyed.
     ///
     /// - Param view: receives the view (valid while the host lives).

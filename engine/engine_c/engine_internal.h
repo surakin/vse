@@ -15,6 +15,13 @@ class Runtime;
 /// - Fails: never.
 void SetLastError(const char* format, ...) ENGINE_PRINTF_FORMAT(1, 2);
 
+/// The failure text of the calling thread (`SetLastError`'s newest), for a binding that turns a C refusal into a
+/// script error.
+///
+/// - Thread-safety: thread-safe; reads the calling thread's own text.
+/// - Fails: never.
+const char* LastErrorText();
+
 /// Keeps `StatusName(status): what` as the calling thread's failure text.
 ///
 /// - Returns: `status`.

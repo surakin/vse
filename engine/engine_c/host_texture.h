@@ -90,6 +90,9 @@ public:
     bool CopyIfNewer(u64* seen, u32* width, u32* height, u8* dst, usize dst_capacity, usize dst_pitch,
                      bool want_bgra = false);
 
+    /// The name the host gave the texture (`engine_texture_info.name`; empty when none).
+    StringView Name() const { return name_.View(); }
+
     /// Copies the newest pixels, tightly packed, as R, G, B, A.
     ///
     /// - Returns: false when there are no pixels yet.
@@ -107,6 +110,7 @@ private:
     bool bgra_ = false;     // the kept bytes are B, G, R, A
     bool consumed_ = true;  // some device uploaded the newest pixels (an update over unread pixels is a replace)
     u64 version_ = 0;
+    String<HeapAllocator> name_{HeapAllocator::Default()};
 };
 
 using HostTexturePtr = SharedPtr<HostTexture>;
@@ -137,6 +141,10 @@ public:
     engine_status ReadPixels(engine_handle texture, engine_buffer* out, u32* width, u32* height);
     /// The texture a handle names, for a surface (null for a handle that is stale or not a texture's).
     HostTexturePtr Find(engine_handle texture);
+    /// The newest live texture whose name is `name` (a non-empty name), as a handle.
+    ///
+    /// - Returns: false when no texture has that name.
+    bool FindByName(StringView name, engine_handle* out);
 
 private:
     struct Slot

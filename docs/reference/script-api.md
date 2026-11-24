@@ -102,6 +102,32 @@ Thread rule: **world-write**. Id: `0x1c05bec5`.
 
 Fades the music out (nil: half a second) and stops it.
 
+## bytes
+
+### `bytes.pack`
+
+`(format, ...) -> values`
+
+Thread rule: **pure**. Id: `0x4613dda7`.
+
+Returns a byte blob of the values after `format` (the letters of `bytes.unpack`), little-endian; the number of values must be the number of items, an integer must fit its letter, a `c<n>` string must be exactly n bytes and an `s1` string at most 255.
+
+### `bytes.size`
+
+`(StringView format) -> Value`
+
+Thread rule: **pure**. Id: `0x237c845f`.
+
+Returns the number of bytes `format` takes, or nil when it has an `s1` item (its size is in the data).
+
+### `bytes.unpack`
+
+`(data, format, ...) -> values`
+
+Thread rule: **pure**. Id: `0x9b224018`.
+
+Reads values from `data` (a byte blob or a string) as `format` says, little-endian, from `offset` (the optional third argument, 0-based; 0 by default), and returns them followed by the offset after the last one. Format letters: `B` `H` `I` unsigned 8, 16, 32 bits; `b` `h` `i` signed; `f` and `d` 32 and 64-bit floats (a NaN, an infinity and -0 come back as they were); `c<n>` n bytes as a string; `s1` a length byte and that many bytes as a string; spaces are ignored. Reading up to the exact end is fine; one byte past it is an error that names the offset and the letter.
+
 ## character
 
 ### `character.create`

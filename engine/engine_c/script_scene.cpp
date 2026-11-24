@@ -1221,6 +1221,541 @@ bool ApplyJointRotation(MergeContext& context, ecs::Entity target, Span<const u8
     return context.World()->Add(target, Move(fresh)) == ecs::Status::Ok;
 }
 
+// ---- clips
+
+struct ClipPlayPayload
+{
+    u64 clip;
+    u32 flags;
+    f32 speed;
+    f32 start_time;
+    f32 fade_seconds;
+};
+
+struct ClipSpeedPayload
+{
+    f32 speed;
+};
+
+ResourceHost* ResourcesOf(const SceneScriptServices* services)
+{
+    return services->runtime == nullptr ? nullptr : services->runtime->ResourcesIfCreated();
+}
+
+Value AnimationClip(StringView name)
+{
+    PartitionContext* context = SceneContext();
+    const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
+    if (services == nullptr)
+    {
+        return Value();
+    }
+    ResourceHost* resources = ResourcesOf(services);
+    u64 id = 0;
+    if (resources == nullptr || !resources->FindClipByName(name, &id))
+    {
+        return Value();
+    }
+    return Value::FromInt(static_cast<i64>(id));
+}
+
+bool ClipParamNumber(const Value& params, const char* key, f32* out)
+{
+    const Value* v = params.Find(StringView(key));
+    if (v == nullptr || v->IsNil())
+    {
+        return true;
+    }
+    if (!v->IsNumber() || !(v->ToDouble() >= 0.0 && v->ToDouble() <= 3.4028234663852886e38))
+    {
+        SceneRaise(StringView("animation.play: `"), StringView(key),
+                   StringView("` must be a finite number, at least 0"));
+        return false;
+    }
+    *out = static_cast<f32>(v->ToDouble());
+    return true;
+}
+
+void AnimationPlay(ecs::Entity e, i64 clip, Value params)
+{
+    PartitionContext* context = SceneContext();
+    const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
+    if (services == nullptr)
+    {
+        return;
+    }
+    ResourceHost* resources = ResourcesOf(services);
+    if (resources == nullptr)
+    {
+        script::RaiseScriptError("animation.play: this world has no engine runtime to read clips from");
+        return;
+    }
+    if (clip <= 0)
+    {
+        script::RaiseScriptError("animation.play: `clip` is the id `animation.clip` returned");
+        return;
+    }
+    ClipPlayPayload p{};
+    p.clip = static_cast<u64>(clip);
+    p.flags = ENGINE_PLAY_LOOP;
+    if (!params.IsNil())
+    {
+        if (params.Kind() != ValueKind::Map)
+        {
+            script::RaiseScriptError("animation.play: `params` is a table or nil");
+            return;
+        }
+        static const char* const kAllowed[] = {"speed", "start_time", "fade_seconds", "loop", nullptr};
+        if (!SceneKnownKeys(params, StringView("animation.play params"), kAllowed))
+        {
+            return;
+        }
+        if (!ClipParamNumber(params, "speed", &p.speed) || !ClipParamNumber(params, "start_time", &p.start_time) ||
+            !ClipParamNumber(params, "fade_seconds", &p.fade_seconds))
+        {
+            return;
+        }
+        if (const Value* loop = params.Find(StringView("loop")))
+        {
+            if (loop->Kind() != ValueKind::Bool)
+            {
+                script::RaiseScriptError("animation.play: `loop` is true or false");
+                return;
+            }
+            p.flags = loop->AsBool() ? ENGINE_PLAY_LOOP : 0u;
+        }
+    }
+    // The C call's refusals (a clip that is not mounted, one made for another skeleton) are errors here, as of the
+    // tick start.
+    const animation::SkeletonInstance* instance = e.IsPlaceholder()
+                                                      ? nullptr
+                                                      : context->world->Get<animation::SkeletonInstance>(e);
+    if (resources->PinClip(p.clip, instance != nullptr ? instance->skeleton : 0) != ENGINE_OK)
+    {
+        SceneRaise(StringView("animation.play: "), StringView(LastErrorText()));
+        return;
+    }
+    SceneRecord(context, kCommandClipPlay, e, &p, sizeof(p));
+}
+
+bool ApplyClipPlay(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    ClipPlayPayload p;
+    if (payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    const script::MergeServices* merge = static_cast<const script::MergeServices*>(context.User());
+    const SceneScriptServices* services = merge != nullptr ? static_cast<const SceneScriptServices*>(
+                                                                 merge->extensions[script::kServiceScene])
+                                                           : nullptr;
+    ResourceHost* resources = services != nullptr ? ResourcesOf(services) : nullptr;
+    if (resources == nullptr)
+    {
+        return false;
+    }
+    if (animation::AnimationPlayer* have = context.World()->Get<animation::AnimationPlayer>(target))
+    {
+        if (have->clip == p.clip && !have->finished)
+        {  // the same clip again: it goes on from where it is (a stopped one resumes), at the speed asked for
+            have->playing = true;
+            have->looping = (p.flags & ENGINE_PLAY_LOOP) != 0;
+            have->speed = p.speed == 0.0f ? 1.0f : p.speed;
+            return true;
+        }
+    }
+    engine_play_params play = {};
+    play.struct_size = sizeof(engine_play_params);
+    play.flags = p.flags;
+    play.speed = p.speed;
+    play.start_time = p.start_time;
+    play.fade_seconds = p.fade_seconds;
+    return ApplyAnimationPlayInWorld(*context.World(), target, resources, p.clip, play) == ENGINE_OK;
+}
+
+const animation::AnimationPlayer* PlayerOf(PartitionContext* context, ecs::Entity e)
+{
+    return e.IsPlaceholder() ? nullptr : context->world->Get<animation::AnimationPlayer>(e);
+}
+
+void AnimationSetSpeed(ecs::Entity e, f64 speed)
+{
+    PartitionContext* context = SceneContext();
+    if (context == nullptr || SceneServicesOf(context) == nullptr)
+    {
+        return;
+    }
+    if (!(speed >= 0.0 && speed <= 3.4028234663852886e38))
+    {
+        script::RaiseScriptError("animation.set_speed: `speed` must be a finite number, at least 0");
+        return;
+    }
+    if (PlayerOf(context, e) == nullptr)
+    {
+        script::RaiseScriptError("animation.set_speed: no animation was started on the entity");
+        return;
+    }
+    ClipSpeedPayload p{static_cast<f32>(speed)};
+    SceneRecord(context, kCommandClipSpeed, e, &p, sizeof(p));
+}
+
+bool ApplyClipSpeed(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    ClipSpeedPayload p;
+    animation::AnimationPlayer* player = context.World()->Get<animation::AnimationPlayer>(target);
+    if (player == nullptr || payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    player->speed = p.speed;
+    return true;
+}
+
+void AnimationStop(ecs::Entity e)
+{
+    PartitionContext* context = SceneContext();
+    if (context == nullptr || SceneServicesOf(context) == nullptr)
+    {
+        return;
+    }
+    if (PlayerOf(context, e) == nullptr)
+    {
+        script::RaiseScriptError("animation.stop: no animation was started on the entity");
+        return;
+    }
+    SceneRecord(context, kCommandClipStop, e, nullptr, 0);
+}
+
+bool ApplyClipStop(MergeContext& context, ecs::Entity target, Span<const u8>)
+{
+    animation::AnimationPlayer* player = context.World()->Get<animation::AnimationPlayer>(target);
+    if (player == nullptr)
+    {
+        return false;
+    }
+    player->playing = false;
+    return true;
+}
+
+Value AnimationTime(ecs::Entity e)
+{
+    PartitionContext* context = SceneContext();
+    if (context == nullptr || SceneServicesOf(context) == nullptr)
+    {
+        return Value();
+    }
+    const animation::AnimationPlayer* player = PlayerOf(context, e);
+    return player == nullptr ? Value() : Value::FromFloat(static_cast<f64>(player->time));
+}
+
+// ---- material slots of a mesh
+
+constexpr u32 kSlotOpSet = 1;
+constexpr u32 kSlotOpClear = 2;
+
+struct MeshSlotPayload
+{
+    u32 op;
+    u32 kind;  // ENGINE_SLOT_*
+    f32 value[4];
+    u64 texture_resource;
+    u64 host_texture;
+    char mesh_slot[64];
+    char field[24];
+};
+
+void SlotCopyName(char* out, usize capacity, StringView name)
+{
+    MemSet(out, 0, capacity);
+    MemCopy(out, name.Data(), name.Length());
+}
+
+StringView SlotName(const char* text, usize capacity)
+{
+    usize n = 0;
+    while (n < capacity && text[n] != 0)
+    {
+        ++n;
+    }
+    return StringView(text, n);
+}
+
+// Finds the mesh slot `name` of the entity's mesh as of the tick start; raises for what `what` could not do.
+// - Returns: 1 found (`*index`), 0 not found (no mesh, or no slot of that name; nothing raised).
+bool FindEntityMeshSlot(const SceneScriptServices* services, const ecs::World& world, ecs::Entity e, StringView name,
+                        u32* index)
+{
+    ResourceHost* resources = ResourcesOf(services);
+    const MeshReference* reference = e.IsPlaceholder() ? nullptr : world.Get<MeshReference>(e);
+    if (resources == nullptr || reference == nullptr || reference->mesh == 0 || name.Length() == 0 ||
+        name.Length() > 63)
+    {
+        return false;
+    }
+    return resources->FindMeshSlot(reference->mesh, name, index) == ENGINE_OK;
+}
+
+Value MeshHasSlot(ecs::Entity e, StringView slot)
+{
+    PartitionContext* context = SceneContext();
+    const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
+    if (services == nullptr)
+    {
+        return Value();
+    }
+    u32 index = 0;
+    return Value::FromBool(FindEntityMeshSlot(services, *context->world, e, slot, &index));
+}
+
+// A number of a script as a float, or false when it is not a number or beyond the float range (the cast of such a
+// value is undefined, so it is checked in double first; `*beyond` says which).
+bool SlotFloat(const Value& v, f32* out, bool* beyond)
+{
+    if (!v.IsNumber())
+    {
+        return false;
+    }
+    const f64 d = v.ToDouble();
+    if (!(d >= -3.4028234663852886e38 && d <= 3.4028234663852886e38))
+    {
+        *beyond = true;
+        return false;
+    }
+    *out = static_cast<f32>(d);
+    return true;
+}
+
+bool SlotNumbers(const Value& v, usize want_min, usize want_max, f32 out[4], u32* count, bool* beyond)
+{
+    *count = 0;
+    if (v.Kind() == ValueKind::Vec4)
+    {
+        const Vec4 c = v.AsVec4();
+        out[0] = c.x, out[1] = c.y, out[2] = c.z, out[3] = c.w;
+        *count = 4;
+        return true;
+    }
+    if (v.Kind() == ValueKind::Vec3)
+    {
+        const Vec3 c = v.AsVec3();
+        out[0] = c.x, out[1] = c.y, out[2] = c.z, out[3] = 1.0f;
+        *count = 3;
+        return true;
+    }
+    if (v.Kind() == ValueKind::Array)
+    {
+        if (v.Size() < want_min || v.Size() > want_max)
+        {
+            return false;
+        }
+        for (usize i = 0; i < v.Size(); ++i)
+        {
+            if (!SlotFloat(v.At(i), &out[i], beyond))
+            {
+                return false;
+            }
+        }
+        *count = static_cast<u32>(v.Size());
+        return true;
+    }
+    if (v.Kind() == ValueKind::Map)
+    {
+        static const char* const kRgba[4] = {"r", "g", "b", "a"};
+        for (u32 i = 0; i < 4; ++i)
+        {
+            const Value* c = v.Find(StringView(kRgba[i]));
+            if (c == nullptr)
+            {
+                if (i < 3)
+                {
+                    return false;
+                }
+                out[3] = 1.0f;
+                break;
+            }
+            if (!SlotFloat(*c, &out[i], beyond))
+            {
+                return false;
+            }
+            *count = i + 1;
+        }
+        return true;
+    }
+    return false;
+}
+
+void MeshSetSlot(ecs::Entity e, StringView slot, StringView field, Value value)
+{
+    PartitionContext* context = SceneContext();
+    const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
+    if (services == nullptr)
+    {
+        return;
+    }
+    if (services->runtime == nullptr)
+    {
+        script::RaiseScriptError("mesh.set_slot: this world has no engine runtime");
+        return;
+    }
+    const u32 expected = SlotOverrideKind(field);
+    if (expected == 0 || field.Length() >= sizeof(MeshSlotPayload::field))
+    {
+        SceneRaise(StringView("invalid_argument: mesh.set_slot: the material has no field `"), field, StringView("`"));
+        return;
+    }
+    u32 mesh_slot = 0;
+    if (!FindEntityMeshSlot(services, *context->world, e, slot, &mesh_slot))
+    {
+        SceneRaise(StringView("not_found: mesh.set_slot: the entity has no mesh slot `"), slot,
+                   StringView("` (field `"), field, StringView("`)"));
+        return;
+    }
+    MeshSlotPayload p{};
+    p.op = kSlotOpSet;
+    p.kind = expected;
+    bool shaped = false;
+    bool beyond = false;
+    f32 numbers[4] = {};
+    u32 count = 0;
+    if (expected == ENGINE_SLOT_FLOAT)
+    {
+        shaped = SlotFloat(value, &numbers[0], &beyond);
+        count = 1;
+    }
+    else if (expected == ENGINE_SLOT_COLOR)
+    {
+        shaped = SlotNumbers(value, 3, 4, numbers, &count, &beyond) && count >= 3;
+        if (shaped)
+        {
+            numbers[3] = count == 4 ? numbers[3] : 1.0f;  // alpha left out is 1
+            count = 4;
+        }
+    }
+    else if (expected == ENGINE_SLOT_VEC4)
+    {
+        shaped = SlotNumbers(value, 4, 4, numbers, &count, &beyond) && value.Kind() != ValueKind::Vec3 && count == 4;
+    }
+    else if (value.Kind() == ValueKind::Text)
+    {
+        engine_handle handle{};
+        if (!services->runtime->textures.FindByName(value.Text(), &handle))
+        {
+            SceneRaise(StringView("not_found: mesh.set_slot: no host texture is named `"), value.Text(),
+                       StringView("` (field `"), field, StringView("`)"));
+            return;
+        }
+        shaped = true;
+        p.kind = ENGINE_SLOT_HOST_TEXTURE;
+        p.host_texture = handle.value;
+    }
+    else if (value.Kind() == ValueKind::Int && value.AsInt() > 0)
+    {
+        shaped = true;
+        p.texture_resource = static_cast<u64>(value.AsInt());
+    }
+    if (beyond)
+    {
+        SceneRaise(StringView("invalid_argument: mesh.set_slot: the value of `"), field, StringView("` is not finite"));
+        return;
+    }
+    if (!shaped)
+    {
+        SceneRaise(StringView("type_mismatch: mesh.set_slot: the field `"), field, StringView("` of slot `"), slot,
+                   StringView(expected == ENGINE_SLOT_FLOAT ? "` takes a number"
+                              : expected == ENGINE_SLOT_TEXTURE
+                                  ? "` takes a texture name (a string) or a texture resource id"
+                              : expected == ENGINE_SLOT_VEC4 ? "` takes a vec4"
+                                                             : "` takes a colour (a vec4, "
+                                                               "a vec3 or {r, g, b, a})"));
+        return;
+    }
+    for (u32 i = 0; i < count; ++i)
+    {
+        if (!(numbers[i] >= -3.4028234663852886e38f && numbers[i] <= 3.4028234663852886e38f))
+        {
+            SceneRaise(StringView("invalid_argument: mesh.set_slot: the value of `"), field,
+                       StringView("` is not finite"));
+            return;
+        }
+        p.value[i] = numbers[i];
+    }
+    SlotCopyName(p.mesh_slot, sizeof(p.mesh_slot), slot);
+    SlotCopyName(p.field, sizeof(p.field), field);
+    SceneRecord(context, kCommandMeshSlot, e, &p, sizeof(p));
+}
+
+void MeshClearSlot(ecs::Entity e, StringView slot, StringView field)
+{
+    PartitionContext* context = SceneContext();
+    const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
+    if (services == nullptr)
+    {
+        return;
+    }
+    if (SlotOverrideKind(field) == 0 || field.Length() >= sizeof(MeshSlotPayload::field))
+    {
+        SceneRaise(StringView("invalid_argument: mesh.clear_slot: the material has no field `"), field,
+                   StringView("`"));
+        return;
+    }
+    u32 mesh_slot = 0;
+    if (!FindEntityMeshSlot(services, *context->world, e, slot, &mesh_slot))
+    {
+        SceneRaise(StringView("not_found: mesh.clear_slot: the entity has no mesh slot `"), slot,
+                   StringView("` (field `"), field, StringView("`)"));
+        return;
+    }
+    MeshSlotPayload p{};
+    p.op = kSlotOpClear;
+    SlotCopyName(p.mesh_slot, sizeof(p.mesh_slot), slot);
+    SlotCopyName(p.field, sizeof(p.field), field);
+    SceneRecord(context, kCommandMeshSlot, e, &p, sizeof(p));
+}
+
+bool ApplyMeshSlot(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    MeshSlotPayload p;
+    if (payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    const script::MergeServices* merge = static_cast<const script::MergeServices*>(context.User());
+    const SceneScriptServices* services = merge != nullptr ? static_cast<const SceneScriptServices*>(
+                                                                 merge->extensions[script::kServiceScene])
+                                                           : nullptr;
+    ResourceHost* resources = services != nullptr ? ResourcesOf(services) : nullptr;
+    const StringView mesh_slot = SlotName(p.mesh_slot, sizeof(p.mesh_slot));
+    const StringView field = SlotName(p.field, sizeof(p.field));
+    if (resources == nullptr || SlotOverrideKind(field) == 0)
+    {
+        return false;
+    }
+    if (p.op == kSlotOpClear)
+    {
+        const MeshReference* reference = context.World()->Get<MeshReference>(target);
+        u32 index = 0;
+        bool removed = false;
+        return reference != nullptr && reference->mesh != 0 &&
+               resources->FindMeshSlot(reference->mesh, mesh_slot, &index) == ENGINE_OK &&
+               RemoveSlotOverrideInWorld(*context.World(), target, field, index, &removed) == ENGINE_OK;
+    }
+    engine_slot_override value = {};
+    value.struct_size = sizeof(engine_slot_override);
+    value.kind = p.kind;
+    MemCopy(value.value, p.value, sizeof(value.value));
+    value.texture_resource = p.texture_resource;
+    value.host_texture.value = p.host_texture;
+    if (p.kind == ENGINE_SLOT_HOST_TEXTURE && services->runtime->textures.Find(value.host_texture).Get() == nullptr)
+    {
+        return false;  // the texture was destroyed since the script named it
+    }
+    return ApplySlotOverrideInWorld(*context.World(), target, field, value, SlotOverrides::kAllMeshSlots, &mesh_slot,
+                                    resources) == ENGINE_OK;
+}
+
 bool RegisterSceneCommandKinds(CommandKindTable* kinds)
 {
     bool ok = true;
@@ -1237,6 +1772,10 @@ bool RegisterSceneCommandKinds(CommandKindTable* kinds)
     ok &= kinds->Register(kCommandTreeSetLocal, CommandKind{"tree.set_local", &ApplyTreeSetLocal, false, false, true});
     ok &= kinds->Register(kCommandJointRotation, CommandKind{"animation.set_joint_rotation", &ApplyJointRotation, false,
                                                              true, false, &JointRotationConflictKey});
+    ok &= kinds->Register(kCommandMeshSlot, CommandKind{"mesh.set_slot", &ApplyMeshSlot, false, true});
+    ok &= kinds->Register(kCommandClipPlay, CommandKind{"animation.play", &ApplyClipPlay, false, true});
+    ok &= kinds->Register(kCommandClipSpeed, CommandKind{"animation.set_speed", &ApplyClipSpeed, false, true});
+    ok &= kinds->Register(kCommandClipStop, CommandKind{"animation.stop", &ApplyClipStop, false, true});
     return ok;
 }
 
@@ -1315,6 +1854,46 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "this one (`pose * added`, about the joint's own axes). The identity takes it away; it stays until set again, "
         "and several calls for one joint in a tick are last-wins. A joint the skeleton does not have, an entity with "
         "no loaded skeleton instance, or a quaternion that is not finite or not of length 1 within 0.1% is an error.");
+    ok &= registry->Add<&AnimationClip>(
+        "animation", "clip", ThreadRule::WorldRead, "name",
+        "Returns the id of the clip resource that the path `name` names among the mounted resources (a level's or an "
+        "import's clips; a name without a leading `/` is tried with one too; the first mount in priority order that "
+        "has it wins), or nil when there is none or it is not a clip. The id goes to `animation.play`.");
+    ok &= registry->Add<&AnimationPlay>(
+        "animation", "play", ThreadRule::WorldWrite, "e, clip, params",
+        "Starts the clip `clip` (an id from `animation.clip`) on entity `e` at the sync point, as `animation_play` in the "
+        "C API. `params` is nil or a table with `speed` (above 0; 1 by default), `start_time` (seconds), `fade_seconds` "
+        "(blend from what plays now) and `loop` (true by default). Playing the clip that already plays does not "
+        "restart it (a stopped one resumes, at the speed given). A clip that is not mounted or was made for another "
+        "skeleton is an error.");
+    ok &= registry->Add<&AnimationSetSpeed>(
+        "animation", "set_speed", ThreadRule::WorldWrite, "e, speed",
+        "Sets the speed of the clip playing on entity `e` at the sync point (0 pauses, as `animation_set_speed`). An "
+        "entity that had no animation started as of the tick start is an error.");
+    ok &= registry->Add<&AnimationStop>(
+        "animation", "stop", ThreadRule::WorldWrite, "e",
+        "Stops the clip playing on entity `e` at the sync point (the pose is held, as `animation_stop`); "
+        "`animation.play` resumes it. An entity that had no animation started as of the tick start is an error.");
+    ok &= registry->Add<&AnimationTime>(
+        "animation", "time", ThreadRule::WorldRead, "e",
+        "Returns the seconds into the clip playing on entity `e` as of the tick start, or nil when none was started.");
+    ok &= registry->Add<&MeshSetSlot>(
+        "mesh", "set_slot", ThreadRule::WorldWrite, "e, slot, field, value",
+        "Overrides one field of the material of mesh slot `slot` (the slot's name in the mesh, such as `\"Screen\"`) of "
+        "entity `e` at the sync point, as `entity_set_mesh_slot_override`. `field` is `base_color` or `emissive_color` "
+        "(a colour: a vec4, a vec3 or `{r, g, b, a}`), `roughness`, `metallic`, `alpha_cutoff`, `occlusion`, "
+        "`occlusion_strength` or `emissive_from_albedo` (a number), `albedo_uv` (a vec4), `albedo_uv_outside` (a colour) or "
+        "a texture field (`albedo_tex`, `normal_tex`, `metallic_roughness_tex`, `occlusion_tex`, `emissive_tex`) given "
+        "the name of a host texture (the `name` it was made with; the newest of that name) or a texture resource id. An "
+        "entity without that mesh slot (not_found), a name that is not a field or a texture, or a value of the wrong "
+        "kind (type_mismatch) is an error naming the slot and the field.");
+    ok &= registry->Add<&MeshClearSlot>(
+        "mesh", "clear_slot", ThreadRule::WorldWrite, "e, slot, field",
+        "Takes away the override of `field` on mesh slot `slot` of entity `e` at the sync point; no override there is "
+        "not an error. An entity without that mesh slot or a name that is not a field is an error.");
+    ok &= registry->Add<&MeshHasSlot>(
+        "mesh", "has_slot", ThreadRule::WorldRead, "e, slot",
+        "Returns whether entity `e`'s mesh has a mesh slot called `slot`, as of the tick start.");
     return ok;
 }
 

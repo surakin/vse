@@ -1967,6 +1967,100 @@ engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size
     return ENGINE_OK;
 }
 
+u32 SlotOverrideKind(StringView name)
+{
+    return KindOfSlot(name);
+}
+
+engine_status ApplySlotOverrideInWorld(ecs::World& world, ecs::Entity entity, StringView name,
+                                       const engine_slot_override& value, u32 mesh_slot,
+                                       const StringView* mesh_slot_name, ResourceHost* resources)
+{
+    if (mesh_slot_name != nullptr)
+    {
+        const MeshReference* reference = world.Peek<MeshReference>(entity);
+        if (reference == nullptr || reference->mesh == 0)
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the entity has no mesh reference");
+        }
+        if (resources == nullptr)
+        {
+            return Fail(ENGINE_ERROR_NOT_FOUND, "no resources are loaded");
+        }
+        const engine_status found = resources->FindMeshSlot(reference->mesh, *mesh_slot_name, &mesh_slot);
+        if (found != ENGINE_OK)
+        {
+            return found;
+        }
+    }
+    if (mesh_slot != SlotOverrides::kAllMeshSlots && mesh_slot >= SlotMaterialsComponent::kMax)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a mesh slot is numbered below 16");
+    }
+    SlotOverrides overrides;
+    if (const SlotOverrides* have = world.Peek<SlotOverrides>(entity))
+    {
+        overrides = *have;
+    }
+    u32 at = overrides.count;
+    for (u32 i = 0; i < overrides.count; ++i)
+    {
+        if (StringView(overrides.items[i].name) == name && overrides.items[i].mesh_slot == mesh_slot)
+        {
+            at = i;
+        }
+    }
+    if (at == SlotOverrides::kMax)
+    {
+        return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "an entity holds at most 8 slot overrides");
+    }
+    SlotOverrides::Item& item = overrides.items[at];
+    item = SlotOverrides::Item();
+    item.mesh_slot = mesh_slot;
+    MemCopy(item.name, name.Data(), name.Length());
+    item.kind = value.kind;
+    MemCopy(item.value, value.value, sizeof(item.value));
+    item.texture = value.texture_resource;
+    item.host_texture = value.kind == ENGINE_SLOT_HOST_TEXTURE ? value.host_texture.value : 0;
+    if (at == overrides.count)
+    {
+        ++overrides.count;
+    }
+    return SetOrAdd(world, entity, overrides);
+}
+
+engine_status RemoveSlotOverrideInWorld(ecs::World& world, ecs::Entity entity, StringView name, u32 mesh_slot,
+                                        bool* removed)
+{
+    *removed = false;
+    const SlotOverrides* have = world.Peek<SlotOverrides>(entity);
+    if (have == nullptr)
+    {
+        return ENGINE_OK;
+    }
+    SlotOverrides overrides = *have;
+    for (u32 i = overrides.count; i > 0; --i)
+    {
+        if (StringView(overrides.items[i - 1].name) == name && overrides.items[i - 1].mesh_slot == mesh_slot)
+        {
+            overrides.items[i - 1] = overrides.items[overrides.count - 1];
+            overrides.items[overrides.count - 1] = SlotOverrides::Item();
+            --overrides.count;
+            *removed = true;
+        }
+    }
+    if (!*removed)
+    {
+        return ENGINE_OK;
+    }
+    if (overrides.count == 0)
+    {
+        world.Remove<SlotOverrides>(entity);
+        return ENGINE_OK;
+    }
+    return SetOrAdd(world, entity, overrides);
+}
+
 // Sets an override of the material slot `slot` on `key`'s mesh slot `mesh_slot` (SlotOverrides::kAllMeshSlots: all).
 // With a name, `mesh_slot_name` names the mesh slot instead (looked up in the entity's mounted mesh).
 engine_status SetSlotOverride(engine_handle world, u64 key, engine_string slot, const engine_slot_override* value,
@@ -2011,59 +2105,12 @@ engine_status SetSlotOverride(engine_handle world, u64 key, engine_string slot, 
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a texture override needs a texture resource id");
     }
-    return WithWorld(
-        world, true, key,
-        [&](WorldObject& object, ecs::Entity entity)
-        {
-            if (mesh_slot_name != nullptr)
-            {
-                const MeshReference* reference = object.world.Peek<MeshReference>(entity);
-                if (reference == nullptr || reference->mesh == 0)
-                {
-                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the entity has no mesh reference");
-                }
-                const engine_status found = CurrentRuntime()->Resources()->FindMeshSlot(reference->mesh,
-                                                                                        *mesh_slot_name, &mesh_slot);
-                if (found != ENGINE_OK)
-                {
-                    return found;
-                }
-            }
-            if (mesh_slot != SlotOverrides::kAllMeshSlots && mesh_slot >= SlotMaterialsComponent::kMax)
-            {
-                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a mesh slot is numbered below 16");
-            }
-            SlotOverrides overrides;
-            if (const SlotOverrides* have = object.world.Peek<SlotOverrides>(entity))
-            {
-                overrides = *have;
-            }
-            u32 at = overrides.count;
-            for (u32 i = 0; i < overrides.count; ++i)
-            {
-                if (StringView(overrides.items[i].name) == name && overrides.items[i].mesh_slot == mesh_slot)
-                {
-                    at = i;
-                }
-            }
-            if (at == SlotOverrides::kMax)
-            {
-                return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "an entity holds at most 8 slot overrides");
-            }
-            SlotOverrides::Item& item = overrides.items[at];
-            item = SlotOverrides::Item();
-            item.mesh_slot = mesh_slot;
-            MemCopy(item.name, name.Data(), name.Length());
-            item.kind = value->kind;
-            MemCopy(item.value, value->value, sizeof(item.value));
-            item.texture = value->texture_resource;
-            item.host_texture = host_texture ? value->host_texture.value : 0;
-            if (at == overrides.count)
-            {
-                ++overrides.count;
-            }
-            return SetOrAdd(object.world, entity, overrides);
-        });
+    return WithWorld(world, true, key,
+                     [&](WorldObject& object, ecs::Entity entity)
+                     {
+                         return ApplySlotOverrideInWorld(object.world, entity, name, *value, mesh_slot, mesh_slot_name,
+                                                         CurrentRuntime()->Resources());
+                     });
 }
 
 engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_string slot,
@@ -2207,6 +2254,38 @@ engine_status EntityClearMeshSlotMaterialsFn(engine_handle world, u64 key)
                      });
 }
 
+engine_status ApplyAnimationPlayInWorld(ecs::World& world, ecs::Entity entity, ResourceHost* resources, u64 clip,
+                                        const engine_play_params& play)
+{
+    const animation::SkeletonInstance* instance = world.Peek<animation::SkeletonInstance>(entity);
+    // An entity without a skeleton instance plays a clip of morph weights only (maintenance,
+    // 2026-11-20): PinClip refuses a clip with joint tracks for skeleton 0.
+    bool weights = false;
+    TRY_STATUS(resources->PinClip(clip, instance != nullptr ? instance->skeleton : 0, &weights));
+    if (weights && !world.Has<animation::MorphWeights>(entity))
+    {  // the animation system writes the weights of an entity that has the component
+        TRY_STATUS(SetOrAdd(world, entity, animation::MorphWeights()));
+    }
+    animation::AnimationPlayer player;
+    if (animation::AnimationPlayer* old = world.Poke<animation::AnimationPlayer>(entity))
+    {
+        if (play.fade_seconds > 0.0f && old->clip != 0 && old->clip != clip)
+        {
+            player.fade_clip = old->clip;
+            player.fade_time = old->time;
+            player.fade_total = play.fade_seconds;
+            player.fade_elapsed = 0.0f;
+            player.fade_sampler = Move(old->sampler);
+        }
+    }
+    player.clip = clip;
+    player.time = play.start_time;
+    player.speed = play.speed == 0.0f ? 1.0f : play.speed;
+    player.playing = true;
+    player.looping = (play.flags & ENGINE_PLAY_LOOP) != 0;
+    return SetOrAdd(world, entity, Move(player));
+}
+
 engine_status AnimationPlayFn(engine_handle world, u64 key, u64 clip, const engine_play_params* params)
 {
     engine_play_params play = {};
@@ -2230,38 +2309,8 @@ engine_status AnimationPlayFn(engine_handle world, u64 key, u64 clip, const engi
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "speed, start_time and fade_seconds are finite and >= 0");
     }
     return WithWorld(
-        world, true, key,
-        [&](WorldObject& object, ecs::Entity entity)
-        {
-            const animation::SkeletonInstance* instance = object.world.Peek<animation::SkeletonInstance>(entity);
-            Runtime* runtime = CurrentRuntime();
-            // An entity without a skeleton instance plays a clip of morph weights only (maintenance,
-            // 2026-11-20): PinClip refuses a clip with joint tracks for skeleton 0.
-            bool weights = false;
-            TRY_STATUS(runtime->Resources()->PinClip(clip, instance != nullptr ? instance->skeleton : 0, &weights));
-            if (weights && !object.world.Has<animation::MorphWeights>(entity))
-            {  // the animation system writes the weights of an entity that has the component
-                TRY_STATUS(SetOrAdd(object.world, entity, animation::MorphWeights()));
-            }
-            animation::AnimationPlayer player;
-            if (animation::AnimationPlayer* old = object.world.Poke<animation::AnimationPlayer>(entity))
-            {
-                if (play.fade_seconds > 0.0f && old->clip != 0 && old->clip != clip)
-                {
-                    player.fade_clip = old->clip;
-                    player.fade_time = old->time;
-                    player.fade_total = play.fade_seconds;
-                    player.fade_elapsed = 0.0f;
-                    player.fade_sampler = Move(old->sampler);
-                }
-            }
-            player.clip = clip;
-            player.time = play.start_time;
-            player.speed = play.speed == 0.0f ? 1.0f : play.speed;
-            player.playing = true;
-            player.looping = (play.flags & ENGINE_PLAY_LOOP) != 0;
-            return SetOrAdd(object.world, entity, Move(player));
-        });
+        world, true, key, [&](WorldObject& object, ecs::Entity entity)
+        { return ApplyAnimationPlayInWorld(object.world, entity, CurrentRuntime()->Resources(), clip, play); });
 }
 
 engine_status AnimationSetSpeedFn(engine_handle world, u64 key, float speed)

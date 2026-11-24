@@ -696,6 +696,324 @@ static void TestJoints(engine_handle engine)
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
 }
 
+/* Clips and bytes from scripts (maintenance, 2026-11-24): animation.clip / play / set_speed / stop / time on a skeleton
+   entity driven by events, and bytes.pack / unpack / size, with bytes going through events both ways. */
+static void AddBlobPath(engine_handle engine, uint64_t id, const FileBlob* blob, const char* path)
+{
+    engine_resource_add_info info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = sizeof(info);
+    info.id = id;
+    info.path = Str(path);
+    info.bytes = blob->data;
+    info.size = blob->size;
+    CHECK_STATUS(g_api->resource_add(engine, &info), ENGINE_OK);
+}
+
+static const char kClipScript[] =
+    "local function fails(f, ...)\n"
+    "  local ok, message = pcall(f, ...)\n"
+    "  return (not ok) and tostring(message) or ''\n"
+    "end\n"
+    "local function has(message, text) return string.find(message, text, 1, true) ~= nil and 1 or 0 end\n"
+    "local function report(t, a, b, c, d, e) host.report(t, a or 0, b or 0, c or 0, d or 0, e or 0, 0, 0, 0, 0) end\n"
+    "behavior('clips', {\n"
+    "  on_create = function(self)\n"
+    "    local me = entity.self()\n"
+    "    local plain = entity.find('plain')\n"
+    "    local idle = animation.clip('/clips/idle')\n"
+    "    local hold = animation.clip('clips/hold')\n"
+    "    local other = animation.clip('/clips/other')\n"
+    "    report(1, idle and 1 or 0, hold and 1 or 0, animation.clip('/clips/missing') == nil and 1 or 0,\n"
+    "           animation.time(me) == nil and 1 or 0, (idle ~= hold) and 1 or 0)\n"
+    "    event.on('go', function(_, what)\n"
+    "      if what == 1 then animation.play(me, idle, {speed = 1})\n"
+    "      elseif what == 2 then animation.play(me, hold, {fade_seconds = 0.5, loop = false})\n"
+    "      elseif what == 3 then animation.set_speed(me, 0)\n"
+    "      elseif what == 4 then animation.stop(me)\n"
+    "      elseif what == 5 then report(3, animation.time(me) or -1)\n"
+    "      elseif what == 6 then animation.play(me, hold, {loop = false, start_time = 1000})\n"
+    "      elseif what == 7 then animation.play(me, hold, {loop = false})\n"
+    "      end\n"
+    "    end)\n"
+    "    event.on('probe', function()\n"
+    "      report(2, has(fails(animation.play, me, other, nil), 'skeleton'),\n"
+    "                has(fails(animation.play, me, 4096, nil), 'not_found'),\n"
+    "                has(fails(animation.set_speed, plain, 1), 'no animation'),\n"
+    "                has(fails(animation.stop, plain), 'no animation'),\n"
+    "                has(fails(animation.play, me, idle, {speed = 'fast'}), 'speed'))\n"
+    "    end)\n"
+    "  end,\n"
+    "})\n";
+
+static void ClipState(engine_handle world, uint64_t key, engine_animation_state* state)
+{
+    memset(state, 0, sizeof(*state));
+    state->struct_size = sizeof(*state);
+    CHECK_STATUS(g_api->component_get(world, key, ENGINE_COMPONENT_ANIMATION_PLAYER, state), ENGINE_OK);
+}
+
+static void Frames(engine_handle engine, int count)
+{
+    int i;
+    for (i = 0; i < count; ++i)
+    {
+        Frame(engine);
+    }
+}
+
+static void TestClips(engine_handle engine)
+{
+    engine_handle world;
+    engine_script_load load;
+    engine_script_component component;
+    engine_skeleton_instance instance;
+    engine_animation_state state;
+    FileBlob blobs[5];
+    uint64_t script = 0;
+    uint64_t hero;
+    uint64_t plain;
+    double t1 = 0.0;
+    double t2 = 0.0;
+    memset(g_rows, 0, sizeof(g_rows));
+    blobs[0] = ReadBlob("hero.skel.blob");
+    blobs[1] = ReadBlob("other.skel.blob");
+    blobs[2] = ReadBlob("idle.anim.blob");
+    blobs[3] = ReadBlob("hold.anim.blob");
+    blobs[4] = ReadBlob("other.anim.blob");
+    if (blobs[0].data == NULL || blobs[1].data == NULL || blobs[2].data == NULL || blobs[3].data == NULL ||
+        blobs[4].data == NULL)
+    {
+        return;
+    }
+    CHECK_STATUS(g_api->resource_remove(engine, 0xa01ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK); /* TestJoints' */
+    CHECK_STATUS(g_api->resource_remove(engine, 0xc01ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+    AddBlobAs(engine, 0xa01ull, &blobs[0]);
+    AddBlobAs(engine, 0xa02ull, &blobs[1]);
+    AddBlobPath(engine, 0xc01ull, &blobs[2], "/clips/idle");
+    AddBlobPath(engine, 0xc03ull, &blobs[3], "/clips/hold");
+    AddBlobPath(engine, 0xc02ull, &blobs[4], "/clips/other");
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->script_register_function(world, Str("host.report"), 10, 0, &HostReport, NULL), ENGINE_OK);
+    plain = PlaceEntity(world);
+    CHECK_STATUS(g_api->entity_name_set(world, plain, Str("plain")), ENGINE_OK);
+    hero = PlaceEntity(world);
+    memset(&instance, 0, sizeof(instance));
+    instance.struct_size = sizeof(instance);
+    instance.skeleton = 0xa01ull;
+    CHECK_STATUS(g_api->component_set(world, hero, ENGINE_COMPONENT_SKELETON_INSTANCE, &instance), ENGINE_OK);
+    memset(&load, 0, sizeof(load));
+    load.struct_size = sizeof(load);
+    load.name = Str("clips");
+    load.source = Str(kClipScript);
+    CHECK_STATUS(g_api->script_load(world, &load, &script), ENGINE_OK);
+    memset(&component, 0, sizeof(component));
+    component.struct_size = sizeof(component);
+    component.enabled = 1;
+    strcpy(component.behavior, "clips");
+    CHECK_STATUS(g_api->component_set(world, hero, ENGINE_COMPONENT_SCRIPT, &component), ENGINE_OK);
+    Frames(engine, 2);
+    /* the clips are found by path (with and without the slash), a missing one is nil, nothing plays yet */
+    CHECK(g_rows[1].seen && Near(g_rows[1].v[0], 1.0) && Near(g_rows[1].v[1], 1.0) && Near(g_rows[1].v[2], 1.0) &&
+          Near(g_rows[1].v[3], 1.0) && Near(g_rows[1].v[4], 1.0));
+    CHECK_STATUS(g_api->animation_time(world, hero, &t1), ENGINE_ERROR_NOT_FOUND);
+    /* play: the idle clip loops at speed 1 */
+    EmitTurn(world, "go", 1.0, hero);
+    Frames(engine, 4);
+    ClipState(world, hero, &state);
+    CHECK(state.clip == 0xc01ull && state.playing == 1 && state.looping == 1 && state.fading == 0);
+    CHECK_STATUS(g_api->animation_time(world, hero, &t1), ENGINE_OK);
+    CHECK(t1 > 0.0);
+    /* the same clip again does not restart it */
+    EmitTurn(world, "go", 1.0, hero);
+    Frames(engine, 4);
+    CHECK_STATUS(g_api->animation_time(world, hero, &t2), ENGINE_OK);
+    CHECK(t2 > t1);
+    /* another clip, faded to, not looping */
+    EmitTurn(world, "go", 2.0, hero);
+    Frames(engine, 3);
+    ClipState(world, hero, &state);
+    CHECK(state.clip == 0xc03ull && state.playing == 1 && state.looping == 0 && state.fading == 1);
+    /* pause with a speed of 0: the time stands still */
+    EmitTurn(world, "go", 3.0, hero);
+    Frames(engine, 3);
+    ClipState(world, hero, &state);
+    CHECK(state.speed == 0.0f);
+    CHECK_STATUS(g_api->animation_time(world, hero, &t1), ENGINE_OK);
+    Frames(engine, 3);
+    CHECK_STATUS(g_api->animation_time(world, hero, &t2), ENGINE_OK);
+    CHECK(t1 == t2);
+    /* the script reads the time as of its tick */
+    EmitTurn(world, "go", 5.0, hero);
+    Frames(engine, 3);
+    CHECK(g_rows[3].seen && fabs(g_rows[3].v[0] - t1) < 0.05);
+    /* stop */
+    EmitTurn(world, "go", 4.0, hero);
+    Frames(engine, 3);
+    ClipState(world, hero, &state);
+    CHECK(state.playing == 0);
+    /* a clip that ran to its end plays again from the start when asked for again */
+    EmitTurn(world, "go", 1.0, hero);
+    Frames(engine, 3);
+    EmitTurn(world, "go", 6.0, hero);
+    Frames(engine, 4);
+    ClipState(world, hero, &state);
+    CHECK(state.clip == 0xc03ull && state.finished == 1);
+    EmitTurn(world, "go", 7.0, hero);
+    Frames(engine, 3);
+    ClipState(world, hero, &state);
+    CHECK(state.clip == 0xc03ull && state.finished == 0 && state.time < 100.0f);
+    /* a clip of another skeleton, an unknown id, nothing started and a bad parameter are errors */
+    EmitTurn(world, "probe", 0.0, hero);
+    Frames(engine, 3);
+    CHECK(g_rows[2].seen && Near(g_rows[2].v[0], 1.0) && Near(g_rows[2].v[1], 1.0) && Near(g_rows[2].v[2], 1.0) &&
+          Near(g_rows[2].v[3], 1.0) && Near(g_rows[2].v[4], 1.0));
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+    CHECK_STATUS(g_api->resource_remove(engine, 0xc01ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->resource_remove(engine, 0xc02ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->resource_remove(engine, 0xc03ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->resource_remove(engine, 0xa01ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->resource_remove(engine, 0xa02ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+    {
+        int i;
+        for (i = 0; i < 5; ++i)
+        {
+            free(blobs[i].data);
+        }
+    }
+}
+
+static const char kBytesScript[] =
+    "local function fails(f, ...)\n"
+    "  local ok, message = pcall(f, ...)\n"
+    "  return (not ok) and tostring(message) or ''\n"
+    "end\n"
+    "local function has(message, text) return string.find(message, text, 1, true) ~= nil and 1 or 0 end\n"
+    "local function r(t, ...)\n"
+    "  local v = {...}\n"
+    "  host.report(t, v[1] or 0, v[2] or 0, v[3] or 0, v[4] or 0, v[5] or 0, v[6] or 0, v[7] or 0, v[8] or 0, v[9] or 0)\n"
+    "end\n"
+    "behavior('packer', {\n"
+    "  on_create = function(self)\n"
+    "    local fmt = 'B b H h I i f d'\n"
+    "    local b = bytes.pack(fmt, 255, -128, 65535, -32768, 4294967295, -2147483648, 1.5, -0.0)\n"
+    "    local a, bb, c, d, e, f, g, h, nxt = bytes.unpack(b, fmt, nil)\n"
+    "    r(1, bytes.size('B B H I I f f f H h H H'), bytes.size(fmt), a, bb, c, d, e, f)\n"
+    "    r(2, g, (1 / h < 0) and 1 or 0, nxt, select('#', bytes.unpack(b, '', 26)),\n"
+    "      has(fails(bytes.unpack, b, 'B', 26), 'offset 26'), has(fails(bytes.unpack, b, 'B', 27), 'offset 27'),\n"
+    "      has(fails(bytes.unpack, b, 'x', nil), '`x`'), bytes.size('s1') == nil and 1 or 0)\n"
+    "    local n = bytes.pack('f', 0 / 0)\n"
+    "    local nan = bytes.unpack(n, 'f', nil)\n"
+    "    local str = bytes.pack('c3 s1 B', 'abc', 'hi', 0)\n"
+    "    local s3, s1, zero, end_at = bytes.unpack(str, 'c3 s1 B', nil)\n"
+    "    local second = bytes.unpack(b, 'B', 1)\n"
+    "    r(3, (nan ~= nan) and 1 or 0, (s3 == 'abc') and 1 or 0, (s1 == 'hi') and 1 or 0, zero, end_at, second + 0,\n"
+    "      has(fails(bytes.pack, 'B', 256), 'value 1'), has(fails(bytes.pack, 'c2', 'abc'), 'exactly'))\n"
+    "    event.on('pose', function(_, payload)\n"
+    "      local t1, t2, flags, p, q, x, y, z, hh, ii, jj, kk = bytes.unpack(payload, 'B B H I I f f f H h H H', nil)\n"
+    "      r(4, t1, t2, flags, p, q, x, y, z)\n"
+    "      event.emit('echo', bytes.pack('H I', hh, 99))\n"
+    "    end)\n"
+    "  end,\n"
+    "})\n";
+
+static int g_echo_ok = 0;
+
+static void OnEcho(void* user, engine_string name, uint64_t sender, const engine_value_pool* payload)
+{
+    static const unsigned char kExpect[6] = {0x78, 0x56, 0x63, 0x00, 0x00, 0x00};
+    (void)user;
+    (void)name;
+    (void)sender;
+    if (payload != NULL && payload->root_count == 1 && payload->items[0].tag == ENGINE_VALUE_BYTES &&
+        payload->items[0].count == 6 && memcmp(payload->bytes + payload->items[0].i, kExpect, 6) == 0)
+    {
+        g_echo_ok = 1;
+    }
+}
+
+static void TestBytes(engine_handle engine)
+{
+    engine_handle world;
+    engine_script_load load;
+    engine_script_component component;
+    engine_value item;
+    engine_value_pool pool;
+    uint32_t subscription = 0;
+    unsigned char pose[32];
+    uint64_t script = 0;
+    uint64_t holder;
+    float f;
+    memset(g_rows, 0, sizeof(g_rows));
+    g_echo_ok = 0;
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->script_register_function(world, Str("host.report"), 10, 0, &HostReport, NULL), ENGINE_OK);
+    CHECK_STATUS(g_api->script_event_subscribe(world, Str("echo"), &OnEcho, NULL, &subscription), ENGINE_OK);
+    holder = PlaceEntity(world);
+    memset(&load, 0, sizeof(load));
+    load.struct_size = sizeof(load);
+    load.name = Str("packer");
+    load.source = Str(kBytesScript);
+    CHECK_STATUS(g_api->script_load(world, &load, &script), ENGINE_OK);
+    memset(&component, 0, sizeof(component));
+    component.struct_size = sizeof(component);
+    component.enabled = 1;
+    strcpy(component.behavior, "packer");
+    CHECK_STATUS(g_api->component_set(world, holder, ENGINE_COMPONENT_SCRIPT, &component), ENGINE_OK);
+    Frames(engine, 2);
+    /* sizes and every letter round-trip: the report holds what came back */
+    CHECK(g_rows[1].seen && Near(g_rows[1].v[0], 32.0) && Near(g_rows[1].v[1], 26.0) && Near(g_rows[1].v[2], 255.0) &&
+          Near(g_rows[1].v[3], -128.0) && Near(g_rows[1].v[4], 65535.0) && Near(g_rows[1].v[5], -32768.0) &&
+          Near(g_rows[1].v[6], 4294967295.0) && Near(g_rows[1].v[7], -2147483648.0));
+    /* a float, a negative zero, the next offset, the exact end (one result: the offset), and the errors */
+    CHECK(g_rows[2].seen && Near(g_rows[2].v[0], 1.5) && Near(g_rows[2].v[1], 1.0) && Near(g_rows[2].v[2], 26.0) &&
+          Near(g_rows[2].v[3], 1.0) && Near(g_rows[2].v[4], 1.0) && Near(g_rows[2].v[5], 1.0) &&
+          Near(g_rows[2].v[6], 1.0) && Near(g_rows[2].v[7], 1.0));
+    /* a NaN, strings, a zero byte, one past the end naming, a byte read at an offset, errors of pack */
+    CHECK(g_rows[3].seen && Near(g_rows[3].v[0], 1.0) && Near(g_rows[3].v[1], 1.0) && Near(g_rows[3].v[2], 1.0) &&
+          Near(g_rows[3].v[3], 0.0) && Near(g_rows[3].v[4], 7.0) && Near(g_rows[3].v[5], 128.0) &&
+          Near(g_rows[3].v[6], 1.0) && Near(g_rows[3].v[7], 1.0));
+    /* bytes in through an event: a 32-byte pose frame; bytes out through another */
+    memset(pose, 0, sizeof(pose));
+    pose[0] = 7;    /* B */
+    pose[1] = 9;    /* B */
+    pose[2] = 0x34; /* H = 0x1234 */
+    pose[3] = 0x12;
+    pose[4] = 1000 & 0xff; /* I = 1000 */
+    pose[5] = 1000 >> 8;
+    pose[8] = 2; /* I = 2 */
+    f = 0.5f;
+    memcpy(pose + 12, &f, 4); /* f */
+    f = -2.0f;
+    memcpy(pose + 16, &f, 4); /* f */
+    f = 8.0f;
+    memcpy(pose + 20, &f, 4); /* f */
+    pose[24] = 0x78;          /* H = 0x5678 */
+    pose[25] = 0x56;
+    memset(&item, 0, sizeof(item));
+    item.tag = ENGINE_VALUE_BYTES;
+    item.count = sizeof(pose);
+    item.i = 0;
+    memset(&pool, 0, sizeof(pool));
+    pool.struct_size = sizeof(pool);
+    pool.root_count = 1;
+    pool.item_count = 1;
+    pool.item_capacity = 1;
+    pool.items = &item;
+    pool.byte_count = sizeof(pose);
+    pool.byte_capacity = sizeof(pose);
+    pool.bytes = pose;
+    CHECK_STATUS(g_api->script_event_emit(world, Str("pose"), &pool, holder), ENGINE_OK);
+    Frames(engine, 4);
+    CHECK(g_rows[4].seen && Near(g_rows[4].v[0], 7.0) && Near(g_rows[4].v[1], 9.0) && Near(g_rows[4].v[2], 0x1234) &&
+          Near(g_rows[4].v[3], 1000.0) && Near(g_rows[4].v[4], 2.0) && Near(g_rows[4].v[5], 0.5) &&
+          Near(g_rows[4].v[6], -2.0) && Near(g_rows[4].v[7], 8.0));
+    CHECK(g_echo_ok == 1);
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+}
+
 int main(void)
 {
     engine_create_info create;
@@ -728,6 +1046,8 @@ int main(void)
         TestFind(engine);
     }
     TestJoints(engine);
+    TestClips(engine);
+    TestBytes(engine);
     if (getenv("HOST_SCRIPT_SCENE_NO_PICTURE") == NULL) /* ThreadSanitizer cannot run the GPU driver's threads */
     {
         TestPicture(engine);

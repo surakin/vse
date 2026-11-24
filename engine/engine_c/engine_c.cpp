@@ -64,6 +64,11 @@ void SetLastError(const char* format, ...)
     ENGINE_VA_END(args);
 }
 
+const char* LastErrorText()
+{
+    return t_last_error;
+}
+
 engine_status Fail(engine_status status, const char* what)
 {
     SetLastError("%s: %s", StatusName(status), what);

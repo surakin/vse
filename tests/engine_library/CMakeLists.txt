@@ -539,7 +539,7 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
     # test that opens its window with the platform layer.
     set(ENGINE_C_TEST_SOURCES status_map_test.cpp height_map_pins_test.cpp environment_usable_test.cpp)
     if(ENGINE_LIBRARY_WITH_IMPORTER)
-      list(APPEND ENGINE_C_TEST_SOURCES level_spawn_test.cpp)  # maintenance 2026-11-20: a level's lights are checked at spawn
+      list(APPEND ENGINE_C_TEST_SOURCES level_spawn_test.cpp script_slots_test.cpp)  # maintenance 2026-11-20: a level's lights are checked at spawn
     endif()
     if(suffix STREQUAL "" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
       list(APPEND ENGINE_C_TEST_SOURCES surface_wayland_test.cpp surface_input_test.cpp)

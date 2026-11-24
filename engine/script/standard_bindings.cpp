@@ -1,4 +1,7 @@
+#include "containers/vector.h"
+#include "cstr/mem_ops.h"
 #include "lang/scalar.h"
+#include "string/string.h"
 #include "script/bindings.h"
 #include "script/component_bindings.h"
 #include "script/entity_bindings.h"
@@ -246,6 +249,361 @@ Mat4 MatLookAt(Vec3 eye, Vec3 target, Vec3 up)
     return m;
 }
 
+// ---- bytes: packing and unpacking binary data (little-endian)
+
+struct PackItem
+{
+    char letter;  // B b H h I i f d c (fixed bytes) s (one length byte, then that many)
+    u32 count;    // `c`: the number of bytes
+};
+
+constexpr usize kMaxPackItems = 4096;
+constexpr u32 kMaxFixedBytes = 1u << 20;
+
+// Reads the format into `items`; returns false with `*error` set (naming the letter and its position).
+bool ParsePackFormat(StringView format, Vector<PackItem>* items, StringBuilder<HeapAllocator>* error)
+{
+    usize at = 0;
+    while (at < format.Length())
+    {
+        const char c = format[at];
+        if (c == ' ')
+        {
+            ++at;
+            continue;
+        }
+        PackItem item{c, 0};
+        const usize letter_at = at++;
+        if (c == 'c')
+        {
+            u64 n = 0;
+            bool digits = false;
+            while (at < format.Length() && format[at] >= '0' && format[at] <= '9')
+            {
+                n = n * 10 + static_cast<u64>(format[at] - '0');
+                digits = true;
+                if (n > kMaxFixedBytes)
+                {
+                    break;
+                }
+                ++at;
+            }
+            if (!digits || n == 0 || n > kMaxFixedBytes)
+            {
+                error->Append(StringView("format letter `c` at position "));
+                error->AppendInt(static_cast<i64>(letter_at));
+                error->Append(StringView(" needs a size from 1 to 1048576 (`c16`)"));
+                return false;
+            }
+            item.count = static_cast<u32>(n);
+        }
+        else if (c == 's')
+        {
+            if (at >= format.Length() || format[at] != '1')
+            {
+                error->Append(StringView("format letter `s` at position "));
+                error->AppendInt(static_cast<i64>(letter_at));
+                error->Append(StringView(" is `s1` (a length byte, then the text)"));
+                return false;
+            }
+            ++at;
+        }
+        else if (!(c == 'B' || c == 'b' || c == 'H' || c == 'h' || c == 'I' || c == 'i' || c == 'f' || c == 'd'))
+        {
+            error->Append(StringView("format letter `"));
+            error->Append(StringView(&c, 1));
+            error->Append(StringView("` at position "));
+            error->AppendInt(static_cast<i64>(letter_at));
+            error->Append(StringView(" is not one of B b H h I i f d c<n> s1"));
+            return false;
+        }
+        if (items->Size() >= kMaxPackItems)
+        {
+            error->Append(StringView("the format has more than 4096 items"));
+            return false;
+        }
+        items->Push(item);
+    }
+    return true;
+}
+
+u32 PackItemSize(const PackItem& item)
+{
+    switch (item.letter)
+    {
+    case 'B':
+    case 'b': return 1;
+    case 'H':
+    case 'h': return 2;
+    case 'I':
+    case 'i':
+    case 'f': return 4;
+    case 'd': return 8;
+    case 'c': return item.count;
+    default: return 0;  // s1: its size is in the data
+    }
+}
+
+Outcome BytesError(StringView name, StringView text)
+{
+    StringBuilder<HeapAllocator> message(HeapAllocator::Default());
+    message.Append(StringView("bytes."));
+    message.Append(name);
+    message.Append(StringView(": "));
+    message.Append(text);
+    return Outcome(Status::RuntimeError, message.View());
+}
+
+// The bytes of a byte blob or a string (a Lua string is binary-safe).
+bool PackSource(const Value& v, Span<const u8>* out)
+{
+    if (v.Kind() == ValueKind::Bytes)
+    {
+        *out = v.Bytes();
+        return true;
+    }
+    if (v.Kind() == ValueKind::Text)
+    {
+        const StringView text = v.Text();
+        *out = Span<const u8>(reinterpret_cast<const u8*>(text.Data()), text.Length());
+        return true;
+    }
+    return false;
+}
+
+u64 ReadLittle(const u8* p, u32 n)
+{
+    u64 v = 0;
+    for (u32 i = 0; i < n; ++i)
+    {
+        v |= static_cast<u64>(p[i]) << (8 * i);
+    }
+    return v;
+}
+
+Outcome BytesUnpack(void*, Span<const Value> args, Vector<Value>* results)
+{
+    Span<const u8> data;
+    if (!PackSource(args[0], &data))
+    {
+        return BytesError(StringView("unpack"), StringView("`data` is a byte blob or a string"));
+    }
+    if (args[1].Kind() != ValueKind::Text)
+    {
+        return BytesError(StringView("unpack"), StringView("`format` is a string"));
+    }
+    u64 offset = 0;
+    if (args.Size() > 3)
+    {
+        return BytesError(StringView("unpack"), StringView("takes `data`, `format` and an optional `offset`"));
+    }
+    if (args.Size() == 3 && !args[2].IsNil())
+    {
+        if (!args[2].IsNumber() || !(args[2].ToDouble() >= 0.0) || args[2].ToDouble() > 4294967295.0 ||
+            args[2].ToDouble() != Floor(args[2].ToDouble()))
+        {
+            return BytesError(StringView("unpack"), StringView("`offset` is a whole number of bytes, 0 or more"));
+        }
+        offset = static_cast<u64>(args[2].ToDouble());
+    }
+    Vector<PackItem> items;
+    StringBuilder<HeapAllocator> why(HeapAllocator::Default());
+    if (!ParsePackFormat(args[1].Text(), &items, &why))
+    {
+        return BytesError(StringView("unpack"), why.View());
+    }
+    for (usize i = 0; i < items.Size(); ++i)
+    {
+        const PackItem& item = items[i];
+        u64 need = PackItemSize(item);
+        if (item.letter == 's')
+        {
+            if (offset >= data.Size())
+            {
+                need = 1;
+            }
+            else
+            {
+                need = 1u + data.Data()[offset];
+            }
+        }
+        if (offset > data.Size() || need > data.Size() - offset)
+        {
+            StringBuilder<HeapAllocator> text(HeapAllocator::Default());
+            text.Append(StringView("format letter `"));
+            text.Append(StringView(&item.letter, 1));
+            text.Append(StringView("` at offset "));
+            text.AppendInt(static_cast<i64>(offset));
+            text.Append(StringView(" needs "));
+            text.AppendInt(static_cast<i64>(need));
+            text.Append(StringView(" bytes but the data has "));
+            text.AppendInt(static_cast<i64>(offset > data.Size() ? 0 : data.Size() - offset));
+            text.Append(StringView(" left"));
+            return BytesError(StringView("unpack"), text.View());
+        }
+        const u8* p = data.Data() + offset;
+        switch (item.letter)
+        {
+        case 'B': results->Push(Value::FromInt(static_cast<i64>(p[0]))); break;
+        case 'b': results->Push(Value::FromInt(static_cast<i64>(static_cast<i8>(p[0])))); break;
+        case 'H': results->Push(Value::FromInt(static_cast<i64>(ReadLittle(p, 2)))); break;
+        case 'h': results->Push(Value::FromInt(static_cast<i64>(static_cast<i16>(ReadLittle(p, 2))))); break;
+        case 'I': results->Push(Value::FromInt(static_cast<i64>(ReadLittle(p, 4)))); break;
+        case 'i': results->Push(Value::FromInt(static_cast<i64>(static_cast<i32>(ReadLittle(p, 4))))); break;
+        case 'f':
+        {
+            const u32 bits = static_cast<u32>(ReadLittle(p, 4));
+            f32 f = 0.0f;
+            MemCopy(&f, &bits, 4);
+            results->Push(Value::FromFloat(static_cast<f64>(f)));
+            break;
+        }
+        case 'd':
+        {
+            const u64 bits = ReadLittle(p, 8);
+            f64 d = 0.0;
+            MemCopy(&d, &bits, 8);
+            results->Push(Value::FromFloat(d));
+            break;
+        }
+        case 'c': results->Push(Value::FromText(StringView(reinterpret_cast<const char*>(p), item.count))); break;
+        default:  // s1
+            results->Push(Value::FromText(StringView(reinterpret_cast<const char*>(p + 1), need - 1)));
+            break;
+        }
+        offset += need;
+    }
+    results->Push(Value::FromInt(static_cast<i64>(offset)));
+    return Outcome();
+}
+
+void PutLittle(Vector<u8>* out, u64 v, u32 n)
+{
+    for (u32 i = 0; i < n; ++i)
+    {
+        out->Push(static_cast<u8>(v >> (8 * i)));
+    }
+}
+
+Outcome BytesPack(void*, Span<const Value> args, Vector<Value>* results)
+{
+    if (args[0].Kind() != ValueKind::Text)
+    {
+        return BytesError(StringView("pack"), StringView("`format` is a string"));
+    }
+    Vector<PackItem> items;
+    StringBuilder<HeapAllocator> why(HeapAllocator::Default());
+    if (!ParsePackFormat(args[0].Text(), &items, &why))
+    {
+        return BytesError(StringView("pack"), why.View());
+    }
+    if (args.Size() - 1 != items.Size())
+    {
+        StringBuilder<HeapAllocator> text(HeapAllocator::Default());
+        text.Append(StringView("the format has "));
+        text.AppendInt(static_cast<i64>(items.Size()));
+        text.Append(StringView(" items but "));
+        text.AppendInt(static_cast<i64>(args.Size() - 1));
+        text.Append(StringView(" values were given"));
+        return BytesError(StringView("pack"), text.View());
+    }
+    Vector<u8> out;
+    for (usize i = 0; i < items.Size(); ++i)
+    {
+        const PackItem& item = items[i];
+        const Value& v = args[i + 1];
+        StringBuilder<HeapAllocator> where(HeapAllocator::Default());
+        where.Append(StringView("value "));
+        where.AppendInt(static_cast<i64>(i + 1));
+        where.Append(StringView(" (format letter `"));
+        where.Append(StringView(&item.letter, 1));
+        where.Append(StringView("`) "));
+        if (item.letter == 'c' || item.letter == 's')
+        {
+            Span<const u8> source;
+            if (!PackSource(v, &source))
+            {
+                where.Append(StringView("is a string or a byte blob"));
+                return BytesError(StringView("pack"), where.View());
+            }
+            if (item.letter == 'c' ? source.Size() != item.count : source.Size() > 255)
+            {
+                where.Append(StringView(item.letter == 'c' ? "must be exactly the size of its `c` item"
+                                                           : "is longer than 255 bytes"));
+                return BytesError(StringView("pack"), where.View());
+            }
+            if (item.letter == 's')
+            {
+                out.Push(static_cast<u8>(source.Size()));
+            }
+            for (usize b = 0; b < source.Size(); ++b)
+            {
+                out.Push(source.Data()[b]);
+            }
+            continue;
+        }
+        if (!v.IsNumber())
+        {
+            where.Append(StringView("is a number"));
+            return BytesError(StringView("pack"), where.View());
+        }
+        const f64 number = v.ToDouble();
+        if (item.letter == 'f')
+        {
+            const f32 f = static_cast<f32>(number);
+            u32 bits = 0;
+            MemCopy(&bits, &f, 4);
+            PutLittle(&out, bits, 4);
+        }
+        else if (item.letter == 'd')
+        {
+            u64 bits = 0;
+            MemCopy(&bits, &number, 8);
+            PutLittle(&out, bits, 8);
+        }
+        else
+        {
+            const bool is_signed = item.letter == 'b' || item.letter == 'h' || item.letter == 'i';
+            const u32 size = PackItemSize(item);
+            const f64 low = is_signed ? -static_cast<f64>(u64{1} << (8 * size - 1)) : 0.0;
+            const f64 high = is_signed ? static_cast<f64>(u64{1} << (8 * size - 1)) - 1.0
+                                       : static_cast<f64>((u64{1} << (8 * size)) - 1);
+            if (!(number >= low && number <= high) || number != Floor(number))
+            {
+                where.Append(StringView("is not a whole number that fits the letter"));
+                return BytesError(StringView("pack"), where.View());
+            }
+            PutLittle(&out, static_cast<u64>(static_cast<i64>(number)), size);
+        }
+    }
+    results->Push(Value::FromBytes(Span<const u8>(out.Data(), out.Size())));
+    return Outcome();
+}
+
+Value BytesSize(StringView format)
+{
+    Vector<PackItem> items;
+    StringBuilder<HeapAllocator> why(HeapAllocator::Default());
+    if (!ParsePackFormat(format, &items, &why))
+    {
+        StringBuilder<HeapAllocator> text(HeapAllocator::Default());
+        text.Append(StringView("bytes.size: "));
+        text.Append(why.View());
+        RaiseScriptError(text.View());
+        return Value();
+    }
+    u64 total = 0;
+    for (usize i = 0; i < items.Size(); ++i)
+    {
+        if (items[i].letter == 's')
+        {
+            return Value();  // the size is in the data
+        }
+        total += PackItemSize(items[i]);
+    }
+    return Value::FromInt(static_cast<i64>(total));
+}
+
 }  // namespace
 
 bool RegisterStandardBindings(BindingRegistry* registry)
@@ -319,6 +677,24 @@ bool RegisterStandardBindings(BindingRegistry* registry)
         "mat4", "look_at", ThreadRule::Pure, "eye, target, up",
         "Returns the view matrix of a camera at `eye` looking at `target` (right-handed, "
         "looking down -Z); the identity when the view direction is zero or parallel to `up`.");
+    ok &= registry->AddDynamic(
+        "bytes", "unpack", ThreadRule::Pure, "data, format, ...",
+        "Reads values from `data` (a byte blob or a string) as `format` says, little-endian, from `offset` (the optional "
+        "third argument, 0-based; 0 by default), and returns them followed by the offset after the last one. Format "
+        "letters: `B` `H` `I` unsigned 8, 16, 32 bits; `b` `h` `i` signed; `f` and `d` 32 and 64-bit floats (a NaN, "
+        "an infinity and -0 come back as they were); `c<n>` n bytes as a string; `s1` a length byte and that many bytes "
+        "as a string; spaces are ignored. Reading up to the exact end is fine; one byte past it is an error that names "
+        "the offset and the letter.",
+        &BytesUnpack, nullptr);
+    ok &= registry->AddDynamic(
+        "bytes", "pack", ThreadRule::Pure, "format, ...",
+        "Returns a byte blob of the values after `format` (the letters of `bytes.unpack`), little-endian; the number "
+        "of values must be the number of items, an integer must fit its letter, a `c<n>` string must be exactly n "
+        "bytes and an `s1` string at most 255.",
+        &BytesPack, nullptr);
+    ok &= registry->Add<&BytesSize>("bytes", "size", ThreadRule::Pure, "format",
+                                    "Returns the number of bytes `format` takes, or nil when it has an `s1` item "
+                                    "(its size is in the data).");
     ok &= RegisterRuntimeBindings(registry);
     ok &= RegisterSettingsBindings(registry);
     ok &= RegisterEntityBindings(registry);

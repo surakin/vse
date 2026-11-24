@@ -579,6 +579,30 @@ void MakeTextBuffer(StringView text, engine_buffer* out);
 /// - Fails: returns null when memory ran out.
 char* MakeBlankBuffer(usize size, engine_buffer* out);
 
+/// The kind (`ENGINE_SLOT_*`) the material slot `name` takes, or 0 when the material has no such slot.
+u32 SlotOverrideKind(StringView name);
+
+/// Sets the override of the material slot `name` on `entity` (the checks of the C call are the caller's: the kind of
+/// `value` is the slot's, its numbers are finite, a texture exists). `mesh_slot` is the mesh slot or
+/// `SlotOverrides::kAllMeshSlots`; a `mesh_slot_name` is looked up in the entity's mesh instead.
+///
+/// - Fails: INVALID_ARGUMENT (no mesh reference, a mesh slot above 15), NOT_FOUND (no mesh slot of that name),
+///   LIMIT_EXCEEDED (eight overrides held).
+engine_status ApplySlotOverrideInWorld(ecs::World& world, ecs::Entity entity, StringView name,
+                                       const engine_slot_override& value, u32 mesh_slot,
+                                       const StringView* mesh_slot_name, ResourceHost* resources);
+
+/// Removes the override of the slot `name` that applies to exactly `mesh_slot`; `*removed` says whether one was there.
+engine_status RemoveSlotOverrideInWorld(ecs::World& world, ecs::Entity entity, StringView name, u32 mesh_slot,
+                                        bool* removed);
+
+/// Starts `clip` on `entity` as `animation_play` does (the checks of the parameters are the caller's): pins the clip
+/// for the entity's skeleton, cross-fades from the clip playing when `play.fade_seconds` is above 0.
+///
+/// - Fails: as `ResourceHost::PinClip`, and anything the component write fails with.
+engine_status ApplyAnimationPlayInWorld(ecs::World& world, ecs::Entity entity, ResourceHost* resources, u64 clip,
+                                        const engine_play_params& play);
+
 /// The world a handle names, or null when the handle is stale or not a world's (the failure text is set as for any
 /// handle).
 ///
