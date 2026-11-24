@@ -164,6 +164,7 @@ using namespace vse::audio;
 namespace
 {
 
+#ifndef AUDIO_ALLOC_TEST_NO_NEW_COUNTER
 AudioClipPtr AlClip(const char* name, u32 frames, ChannelLayout layout, bool loop_points)
 {
     const u32 channels = ChannelCount(layout);
@@ -187,6 +188,7 @@ AudioClipPtr AlClip(const char* name, u32 frames, ChannelLayout layout, bool loo
             ClipStatus::Ok);
     return clip;
 }
+#endif
 
 }  // namespace
 
