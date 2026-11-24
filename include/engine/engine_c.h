@@ -211,7 +211,7 @@ extern "C"
 #define ENGINE_CAP_WORLD_ON_SURFACE                                                                                    \
     0x40u                              /* surface_set_world draws a world's meshes on a surface (Phase 24 Day 359)     \
                                         */
-#define ENGINE_CAP_HOST_TEXTURES 0x80u /* texture_create and the host textures (Phase 24 Day 365) */
+#define ENGINE_CAP_HOST_TEXTURES 0x80u /* texture_create and the host textures (formats: texture_format_support) */
 #define ENGINE_CAP_SURFACE_OFFSCREEN                                                                                   \
     0x100u /* surface_create with ENGINE_SURFACE_OFFSCREEN: a surface with no window (Phase 24 Day 378) */
 #define ENGINE_CAP_AUDIO_PUSH_STREAMS                                                                                  \
@@ -777,12 +777,22 @@ extern "C"
         engine_string name;
     } engine_texture_info;
 
+    /* Flags of engine_update_info: how the bytes of the pixels are laid out. Without a flag they are R, G, B, A. The
+     * sRGB or linear reading of the colours is the texture's (ENGINE_TEXTURE_SRGB) and applies to every layout. */
+#define ENGINE_UPDATE_BGRA 0x1u         /* the bytes of a pixel are B, G, R, A */
+#define ENGINE_UPDATE_IGNORE_ALPHA 0x2u /* the alpha byte is not read: every pixel is opaque (video; either order) */
+
+    /* How a layout of host pixels is served, as texture_format_support answers it. */
+#define ENGINE_FORMAT_NATIVE 0u      /* the texture keeps the pixels as they are: no conversion anywhere */
+#define ENGINE_FORMAT_CONVERTED 1u   /* accepted; the engine converts them while it copies the rows (costs a little) */
+#define ENGINE_FORMAT_UNSUPPORTED 2u /* refused (never answered for a layout this header documents) */
+
     /* How texture_update takes its pixels. `width` and `height` of 0 mean the texture's own size; another size resizes
      * the texture together with the update (a video source that changes resolution). */
     typedef struct engine_update_info
     {
         uint32_t struct_size;
-        uint32_t flags; /* zero */
+        uint32_t flags; /* ENGINE_UPDATE_* bits; an unknown bit is INVALID_ARGUMENT */
         uint32_t width;
         uint32_t height;
     } engine_update_info;
@@ -2214,13 +2224,16 @@ extern "C"
          * size above `assets.host_texture.max_size`), LIMIT_EXCEEDED (too many textures), STALE_HANDLE (no engine). */
         engine_status (*texture_create)(engine_handle engine, const engine_texture_info* info, engine_handle* out);
 
-        /* Gives the texture new pixels: `height` rows of `width` RGBA8 pixels (4 bytes each) read from `pixels`,
+        /* Gives the texture new pixels: `height` rows of `width` pixels of 4 bytes each (R, G, B, A, or as
+         * `info->flags` says: ENGINE_UPDATE_BGRA, ENGINE_UPDATE_IGNORE_ALPHA) read from `pixels`,
          * `stride` bytes apart (at least width * 4, at most 16 MiB). May be called from any thread, also while frames
          * run: it copies the rows (a short lock, no GPU work, no allocation but the texture's own pixel buffer) and
          * returns; each surface that draws the texture uploads the newest pixels in its next frame, and an update that
          * a newer one overtakes before it was uploaded is counted in engine_frame_stats.updates_replaced. `info` may be
-         * NULL (the texture's own size). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL pixels, a stride below the
-         * row), TOO_LARGE (a size or a stride above its limit), STRUCT_SIZE, TYPE_MISMATCH (not a texture). */
+         * NULL (the texture's own size). Every layout is accepted on every device (texture_format_support says which
+         * cost a conversion). Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (NULL pixels, a stride below the row, an unknown flag), TOO_LARGE (a size or a
+         * stride above its limit), STRUCT_SIZE, TYPE_MISMATCH (not a texture). */
         engine_status (*texture_update)(engine_handle texture, const void* pixels, size_t stride,
                                         const engine_update_info* info);
 
@@ -2769,6 +2782,19 @@ extern "C"
          * world uses it from its next frame. Fails with: STALE_HANDLE, NOT_FOUND (no such resource), TYPE_MISMATCH (not
          * a texture resource). */
         engine_status (*world_set_sky_cube)(engine_handle world, uint64_t texture);
+
+        /* ---- Host texture layouts (maintenance) ---- */
+
+        /* Tells how `engine` serves the pixel layout `flags` (ENGINE_UPDATE_* bits) of texture_update: `*out_support`
+         * is ENGINE_FORMAT_NATIVE (R, G, B, A and B, G, R, A: the bytes are kept as they are and the device samples a
+         * texture of that order, so there is no conversion on the CPU or the GPU; a device that cannot sample BGRA8
+         * gets the channels swapped while the rows are uploaded), ENGINE_FORMAT_CONVERTED (a layout with
+         * ENGINE_UPDATE_IGNORE_ALPHA: the engine writes 255 into the alpha bytes while it copies the rows, on the
+         * calling thread, for either order) or ENGINE_FORMAT_UNSUPPORTED (never for a documented layout). The answer
+         * depends only on the flags, is the same before and after any surface exists and on every call. Needs
+         * ENGINE_CAP_HOST_TEXTURES. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL `out_support`, an unknown flag).
+         */
+        engine_status (*texture_format_support)(engine_handle engine, uint32_t flags, uint32_t* out_support);
 
     } engine_api;
 

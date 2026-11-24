@@ -52,12 +52,16 @@ public:
     HostTexture(u32 width, u32 height, bool srgb, StringView name, const HostTextureLimits& limits,
                 TextureCounters* counters);
 
-    /// Replaces the pixels with `height` rows of `width` RGBA8 pixels read from `pixels` with `stride` bytes between
-    /// rows. A `width` or `height` of 0 keeps the texture's own; another size resizes it with the update.
+    /// Replaces the pixels with `height` rows of `width` 4-byte pixels read from `pixels` with `stride` bytes between
+    /// rows, in the layout `layout` (`ENGINE_UPDATE_*` bits; 0 is R, G, B, A). The texture keeps the bytes in the
+    /// order the update had (B, G, R, A or R, G, B, A: [[engine_c::HostTexture::Bgra]]), so a device that samples a
+    /// BGRA texture takes them with no conversion; an `ENGINE_UPDATE_IGNORE_ALPHA` layout gets alpha 255 in the pass
+    /// that copies the rows. A `width` or `height` of 0 keeps the texture's own; another size resizes it with the
+    /// update.
     ///
-    /// - Fails: INVALID_ARGUMENT (NULL, a stride below the row, above 16 MiB or not a whole number of pixels is not
-    ///   needed), TOO_LARGE (a size above the limit).
-    engine_status Update(const void* pixels, usize stride, u32 width, u32 height);
+    /// - Fails: INVALID_ARGUMENT (NULL, a stride below the row, an unknown `layout` bit), TOO_LARGE (a size above the
+    ///   limit, a stride above 16 MiB).
+    engine_status Update(const void* pixels, usize stride, u32 width, u32 height, u32 layout = 0);
 
     /// Changes the size; the pixels are dropped until the next update.
     ///
@@ -72,17 +76,21 @@ public:
     u32 Height() const;
     /// Whether the pixels are sRGB.
     bool Srgb() const { return srgb_; }
+    /// Whether the kept bytes are in B, G, R, A order (the layout of the newest update).
+    bool Bgra() const;
     /// The version of the newest pixels (0 before the first update; every update and resize raises it).
     u64 Version() const;
 
     /// Copies the newest pixels into `dst` as rows of `dst_pitch` bytes when their version is above `*seen`, and sets
-    /// `*seen`, `*width` and `*height`. Returns false when nothing newer exists, when there are no pixels yet, or when
+    /// `*seen`, `*width` and `*height`; the bytes are in the order `want_bgra` says (swapped on the way when the kept
+    /// ones are in the other). Returns false when nothing newer exists, when there are no pixels yet, or when
     /// `dst_capacity` is too small for the size (then `*width` and `*height` still say what is needed).
     ///
     /// - Thread-safety: thread-safe.
-    bool CopyIfNewer(u64* seen, u32* width, u32* height, u8* dst, usize dst_capacity, usize dst_pitch);
+    bool CopyIfNewer(u64* seen, u32* width, u32* height, u8* dst, usize dst_capacity, usize dst_pitch,
+                     bool want_bgra = false);
 
-    /// Copies the newest pixels, tightly packed.
+    /// Copies the newest pixels, tightly packed, as R, G, B, A.
     ///
     /// - Returns: false when there are no pixels yet.
     bool Read(Vector<u8>* out, u32* width, u32* height) const;
@@ -96,6 +104,7 @@ private:
     TextureCounters* counters_;
     Vector<u8> pixels_;  // width_ * height_ * 4 bytes when `has_pixels_`
     bool has_pixels_ = false;
+    bool bgra_ = false;     // the kept bytes are B, G, R, A
     bool consumed_ = true;  // some device uploaded the newest pixels (an update over unread pixels is a replace)
     u64 version_ = 0;
 };
@@ -159,6 +168,7 @@ HostTextureLimits ReadHostTextureSettings(const settings::Registry& registry);
 // The functions of the table that the texture host serves (engine_c.cpp lists them in the table).
 engine_status TextureCreateFn(engine_handle engine, const engine_texture_info* info, engine_handle* out);
 engine_status TextureUpdateFn(engine_handle texture, const void* pixels, size_t stride, const engine_update_info* info);
+engine_status TextureFormatSupportFn(engine_handle engine, u32 flags, u32* out_support);
 engine_status TextureResizeFn(engine_handle texture, u32 width, u32 height);
 engine_status TextureDestroyFn(engine_handle texture);
 engine_status TextureReadPixelsFn(engine_handle texture, engine_buffer* out, u32* width, u32* height);

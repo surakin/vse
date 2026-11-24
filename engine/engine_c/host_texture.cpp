@@ -51,11 +51,15 @@ u64 HostTexture::Version() const
     return version_;
 }
 
-engine_status HostTexture::Update(const void* pixels, usize stride, u32 width, u32 height)
+engine_status HostTexture::Update(const void* pixels, usize stride, u32 width, u32 height, u32 layout)
 {
     if (pixels == nullptr)
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`pixels` is NULL");
+    }
+    if ((layout & ~(ENGINE_UPDATE_BGRA | ENGINE_UPDATE_IGNORE_ALPHA)) != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_update_info.flags has an unknown bit");
     }
     LockGuard<Mutex> lock(mutex_);
     const u32 w = width != 0 ? width : width_;
@@ -79,9 +83,19 @@ engine_status HostTexture::Update(const void* pixels, usize stride, u32 width, u
         pixels_.Resize(bytes);
     }
     const u8* source = static_cast<const u8*>(pixels);
+    const bool opaque = (layout & ENGINE_UPDATE_IGNORE_ALPHA) != 0;
     for (u32 y = 0; y < h; ++y)
     {
-        MemCopy(pixels_.Data() + static_cast<usize>(y) * row, source + static_cast<usize>(y) * stride, row);
+        u8* dst = pixels_.Data() + static_cast<usize>(y) * row;
+        const u8* src = source + static_cast<usize>(y) * stride;
+        MemCopy(dst, src, row);  // the bytes stay in the order the host sent
+        if (opaque)
+        {
+            for (u32 x = 0; x < w; ++x)
+            {
+                dst[static_cast<usize>(x) * 4u + 3u] = 255;
+            }
+        }
     }
     if (has_pixels_ && !consumed_ && counters_ != nullptr)
     {
@@ -89,6 +103,7 @@ engine_status HostTexture::Update(const void* pixels, usize stride, u32 width, u
     }
     width_ = w;
     height_ = h;
+    bgra_ = (layout & ENGINE_UPDATE_BGRA) != 0;
     has_pixels_ = true;
     consumed_ = false;
     ++version_;
@@ -115,7 +130,14 @@ engine_status HostTexture::Resize(u32 width, u32 height)
     return ENGINE_OK;
 }
 
-bool HostTexture::CopyIfNewer(u64* seen, u32* width, u32* height, u8* dst, usize dst_capacity, usize dst_pitch)
+bool HostTexture::Bgra() const
+{
+    LockGuard<Mutex> lock(mutex_);
+    return bgra_;
+}
+
+bool HostTexture::CopyIfNewer(u64* seen, u32* width, u32* height, u8* dst, usize dst_capacity, usize dst_pitch,
+                              bool want_bgra)
 {
     LockGuard<Mutex> lock(mutex_);
     *width = width_;
@@ -129,9 +151,24 @@ bool HostTexture::CopyIfNewer(u64* seen, u32* width, u32* height, u8* dst, usize
     {
         return false;
     }
+    const bool swap = bgra_ != want_bgra;
     for (u32 y = 0; y < height_; ++y)
     {
-        MemCopy(dst + static_cast<usize>(y) * dst_pitch, pixels_.Data() + static_cast<usize>(y) * row, row);
+        u8* out = dst + static_cast<usize>(y) * dst_pitch;
+        const u8* in = pixels_.Data() + static_cast<usize>(y) * row;
+        if (!swap)
+        {
+            MemCopy(out, in, row);
+            continue;
+        }
+        for (u32 x = 0; x < width_; ++x)  // the device texture is in the other order: swap while copying
+        {
+            const usize k = static_cast<usize>(x) * 4u;
+            out[k + 0] = in[k + 2];
+            out[k + 1] = in[k + 1];
+            out[k + 2] = in[k + 0];
+            out[k + 3] = in[k + 3];
+        }
     }
     *seen = version_;
     consumed_ = true;
@@ -149,6 +186,15 @@ bool HostTexture::Read(Vector<u8>* out, u32* width, u32* height) const
     }
     out->Resize(pixels_.Size());
     MemCopy(out->Data(), pixels_.Data(), pixels_.Size());
+    if (bgra_)
+    {
+        for (usize k = 0; k + 3 < out->Size(); k += 4)  // the read-back is always R, G, B, A
+        {
+            const u8 b = (*out)[k];
+            (*out)[k] = (*out)[k + 2];
+            (*out)[k + 2] = b;
+        }
+    }
     return true;
 }
 
@@ -232,16 +278,14 @@ engine_status TextureHost::Update(engine_handle texture, const void* pixels, siz
 {
     u32 width = 0;
     u32 height = 0;
+    u32 layout = 0;
     if (info != nullptr)
     {
         if (StructSizeOf(info) < sizeof(engine_update_info))
         {
             return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_update_info.struct_size is smaller than the struct");
         }
-        if (info->flags != 0)
-        {
-            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_update_info.flags has an unknown bit");
-        }
+        layout = info->flags;
         width = info->width;
         height = info->height;
     }
@@ -256,7 +300,7 @@ engine_status TextureHost::Update(engine_handle texture, const void* pixels, siz
         }
         found = slot->object;
     }
-    return found->Update(pixels, stride, width, height);  // outside the table's lock: the copy can take a while
+    return found->Update(pixels, stride, width, height, layout);  // outside the table's lock: the copy can take a while
 }
 
 engine_status TextureHost::Resize(engine_handle texture, u32 width, u32 height)
@@ -403,6 +447,29 @@ engine_status TextureUpdateFn(engine_handle texture, const void* pixels, size_t 
     TextureHost* textures = CurrentTextures();
     return textures == nullptr ? Fail(ENGINE_ERROR_STALE_HANDLE, "no engine exists")
                                : textures->Update(texture, pixels, stride, info);
+}
+
+engine_status TextureFormatSupportFn(engine_handle engine, u32 flags, u32* out_support)
+{
+    Runtime* runtime = nullptr;
+    const engine_status resolved = ResolveRuntime(engine, &runtime);
+    if (resolved != ENGINE_OK)
+    {
+        return resolved;
+    }
+    if (out_support == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`out_support` is NULL");
+    }
+    if ((flags & ~(ENGINE_UPDATE_BGRA | ENGINE_UPDATE_IGNORE_ALPHA)) != 0)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "an unknown layout flag");
+    }
+    // The device texture is made RGBA8 or BGRA8 as the update's bytes are, and Vulkan, Direct3D 12 and Metal sample
+    // both as they are: those two layouts are native. Ignoring the alpha byte is a pass over the rows in the update
+    // call (the engine writes 255), so that costs a little.
+    *out_support = (flags & ENGINE_UPDATE_IGNORE_ALPHA) != 0 ? ENGINE_FORMAT_CONVERTED : ENGINE_FORMAT_NATIVE;
+    return ENGINE_OK;
 }
 
 engine_status TextureResizeFn(engine_handle texture, u32 width, u32 height)

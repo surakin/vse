@@ -152,7 +152,7 @@ static void SetVec(engine_handle world, uint64_t key, const char* slot, uint32_t
     CHECK_STATUS(g_api->entity_set_slot_override(world, key, S(slot), &o), ENGINE_OK);
 }
 
-static engine_handle MakeTexture(engine_handle engine, const unsigned char* rgba, int w, int h)
+static engine_handle MakeTextureLayout(engine_handle engine, const unsigned char* bytes, int w, int h, uint32_t layout)
 {
     engine_texture_info info;
     engine_update_info update;
@@ -167,8 +167,14 @@ static engine_handle MakeTexture(engine_handle engine, const unsigned char* rgba
     CHECK_STATUS(g_api->texture_create(engine, &info, &texture), ENGINE_OK);
     memset(&update, 0, sizeof(update));
     update.struct_size = sizeof(update);
-    CHECK_STATUS(g_api->texture_update(texture, rgba, (uint32_t)w * 4u, &update), ENGINE_OK);
+    update.flags = layout;
+    CHECK_STATUS(g_api->texture_update(texture, bytes, (uint32_t)w * 4u, &update), ENGINE_OK);
     return texture;
+}
+
+static engine_handle MakeTexture(engine_handle engine, const unsigned char* rgba, int w, int h)
+{
+    return MakeTextureLayout(engine, rgba, w, h, 0u);
 }
 
 static void Rotate(engine_handle world, uint64_t key, float degrees_about_y)
@@ -341,6 +347,39 @@ int main(void)
     PixelAt(engine, surface, W / 2, H / 2, c);
     CHECK(c[0] < 8 && c[1] < 8 && c[2] < 8);
     CHECK_STATUS(g_api->entity_clear_slot_override(world, screen, S("emissive_from_albedo")), ENGINE_OK);
+
+    /* 1b. the same orange sent as B, G, R, A (the device samples a BGRA texture) and with an alpha byte of 0 that is
+     * ignored: the picture is the same colour, and opaque */
+    {
+        unsigned char bgra[4 * 4 * 4];
+        engine_slot_override o;
+        uint32_t layouts[2];
+        int k;
+        layouts[0] = ENGINE_UPDATE_BGRA;
+        layouts[1] = ENGINE_UPDATE_BGRA | ENGINE_UPDATE_IGNORE_ALPHA;
+        for (k = 0; k < 2; ++k)
+        {
+            for (i = 0; i < 16; ++i)
+            {
+                bgra[i * 4 + 0] = 50;
+                bgra[i * 4 + 1] = 100;
+                bgra[i * 4 + 2] = 200;
+                bgra[i * 4 + 3] = k == 0 ? 255 : 0;
+            }
+            CHECK_STATUS(g_api->texture_destroy(picture), ENGINE_OK);
+            picture = MakeTextureLayout(engine, bgra, 4, 4, layouts[k]);
+            memset(&o, 0, sizeof(o));
+            o.struct_size = sizeof(o);
+            o.kind = ENGINE_SLOT_HOST_TEXTURE;
+            o.host_texture = picture;
+            CHECK_STATUS(g_api->entity_set_slot_override(world, screen, S("albedo_tex"), &o), ENGINE_OK);
+            SetFloat(world, screen, "emissive_from_albedo", 1.0f);
+            PixelAt(engine, surface, W / 2, H / 2, c);
+            CHECK(c[0] > 60 && c[0] > c[1] + 20 && c[1] > c[2] + 10); /* red stays red: the order was honoured */
+            SetFloat(world, screen, "emissive_from_albedo", 0.0f);
+        }
+        CHECK_STATUS(g_api->entity_clear_slot_override(world, screen, S("emissive_from_albedo")), ENGINE_OK);
+    }
 
     /* 2. the glow follows albedo_uv and the bars stay black: a red and a green half */
     CHECK_STATUS(g_api->texture_destroy(picture), ENGINE_OK);

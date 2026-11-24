@@ -1170,6 +1170,51 @@ static void TestTextures(engine_handle engine)
         engine_buffer_release(&out);
     }
 
+    /* the layouts: R, G, B, A; B, G, R, A; either with the alpha byte ignored. The data's alpha is not 255. */
+    {
+        unsigned char src[4 * 4 * 4];
+        const unsigned int layouts[4] = {0u, ENGINE_UPDATE_BGRA, ENGINE_UPDATE_IGNORE_ALPHA,
+                                         ENGINE_UPDATE_BGRA | ENGINE_UPDATE_IGNORE_ALPHA};
+        unsigned int support = 99u;
+        unsigned int again = 98u;
+        int k;
+        for (i = 0; i < 16; ++i)
+        {
+            src[i * 4 + 0] = (unsigned char)(10 + i);
+            src[i * 4 + 1] = (unsigned char)(50 + i);
+            src[i * 4 + 2] = (unsigned char)(90 + i);
+            src[i * 4 + 3] = (unsigned char)(130 + i);
+        }
+        memset(&update, 0, sizeof(update));
+        update.struct_size = sizeof(update);
+        for (k = 0; k < 4; ++k)
+        {
+            const unsigned char* got;
+            const int bgra = (layouts[k] & ENGINE_UPDATE_BGRA) != 0;
+            const int opaque = (layouts[k] & ENGINE_UPDATE_IGNORE_ALPHA) != 0;
+            update.flags = layouts[k];
+            CHECK_STATUS(g_api->texture_update(texture, src, 16, &update), ENGINE_OK);
+            CHECK_STATUS(g_api->texture_read_pixels(texture, &out, &w, &h), ENGINE_OK);
+            got = (const unsigned char*)out.data;
+            CHECK(out.size == 64);
+            for (i = 0; i < 16; ++i)
+            {
+                CHECK(got[i * 4 + 0] == src[i * 4 + (bgra ? 2 : 0)]);
+                CHECK(got[i * 4 + 1] == src[i * 4 + 1]);
+                CHECK(got[i * 4 + 2] == src[i * 4 + (bgra ? 0 : 2)]);
+                CHECK(got[i * 4 + 3] == (opaque ? 255 : src[i * 4 + 3]));
+            }
+            engine_buffer_release(&out);
+            /* the query: never UNSUPPORTED for a documented layout, the plain one native, the same on a second call */
+            CHECK_STATUS(g_api->texture_format_support(engine, layouts[k], &support), ENGINE_OK);
+            CHECK_STATUS(g_api->texture_format_support(engine, layouts[k], &again), ENGINE_OK);
+            CHECK(support == again && support != ENGINE_FORMAT_UNSUPPORTED);
+            CHECK((support == ENGINE_FORMAT_NATIVE) == (opaque == 0));
+        }
+        CHECK_STATUS(g_api->texture_format_support(engine, 0x40u, &support), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->texture_format_support(engine, 0u, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+    }
+
     /* an update that carries another size resizes; a bad size changes nothing */
     memset(big, 0x55, sizeof(big));
     memset(&update, 0, sizeof(update));
@@ -1183,7 +1228,7 @@ static void TestTextures(engine_handle engine)
     update.width = 1u << 20;
     CHECK_STATUS(g_api->texture_update(texture, big, 32, &update), ENGINE_ERROR_TOO_LARGE);
     update.width = 8;
-    update.flags = 1;
+    update.flags = 0x80u; /* an unknown bit */
     CHECK_STATUS(g_api->texture_update(texture, big, 32, &update), ENGINE_ERROR_INVALID_ARGUMENT);
 
     /* resize drops the pixels until the next update */

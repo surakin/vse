@@ -337,6 +337,12 @@ public:
     /// A surface in a host's window, a host texture (`surface_create`, `texture_create`).
     inline Status CreateSurface(const engine_surface_info& info, Surface* out) const;
     inline Status CreateTexture(const engine_texture_info& info, Texture* out) const;
+    /// How a pixel layout of `texture_update` is served (`texture_format_support`): `ENGINE_FORMAT_NATIVE` or
+    /// `ENGINE_FORMAT_CONVERTED`; `flags` are `ENGINE_UPDATE_*` bits.
+    Status TextureFormatSupport(uint32_t flags, uint32_t* out_support) const
+    {
+        return Api()->texture_format_support(Get(), flags, out_support);
+    }
 
     /// Sets the font the label component draws with, from the bytes of a font file (`label_font_set`).
     Status SetLabelFont(const void* data, size_t size) const { return Api()->label_font_set(Get(), data, size); }

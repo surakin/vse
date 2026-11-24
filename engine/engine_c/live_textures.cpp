@@ -68,8 +68,11 @@ bool LiveTextures::Make(Live* live, u32 width, u32 height)
     rhi::TextureDesc td;
     td.width = width;
     td.height = height;
-    td.format = live->source->Srgb() ? rhi::Format::RGBA8_SRGB : rhi::Format::RGBA8_UNorm;
     td.usage = rhi::TextureUsage::Sampled | rhi::TextureUsage::CopyDst;
+    // A host that sends B, G, R, A gets a BGRA texture when the device samples one: no conversion anywhere.
+    const rhi::Format bgra = live->source->Srgb() ? rhi::Format::BGRA8_SRGB : rhi::Format::BGRA8_UNorm;
+    live->bgra = live->source->Bgra() && device_->FormatSupport(bgra, td.usage);
+    td.format = live->bgra ? bgra : (live->source->Srgb() ? rhi::Format::RGBA8_SRGB : rhi::Format::RGBA8_UNorm);
     live->texture = device_->CreateTexture(td);
     if (!live->texture.IsValid())
     {
@@ -185,7 +188,7 @@ rhi::TextureHandle LiveTextures::Acquire(u64 handle)
         u32 h = 0;
         const u32 slot = live->ring % kRing;
         if (live->source->CopyIfNewer(&seen, &w, &h, live->mapped[slot], static_cast<usize>(live->pitch) * live->height,
-                                      live->pitch) &&
+                                      live->pitch, live->bgra) &&
             w == live->width && h == live->height)  // a resize between the two reads: the next frame remakes it
         {
             live->seen = seen;

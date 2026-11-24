@@ -70,6 +70,7 @@ private:
         bool wanted = false;
         bool copied = false;  // a copy waits for Flush
         bool state_shader_read = false;
+        bool bgra = false;  // the device texture is B8G8R8A8 (the host sends B, G, R, A and the device samples it)
     };
 
     bool Make(Live* live, u32 width, u32 height);
