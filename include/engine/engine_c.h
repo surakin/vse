@@ -1109,6 +1109,10 @@ extern "C"
         float sky_horizon_blend;
         float sky_exposure;
         float sky_ambient_intensity;
+        /* Turns a cube sky (world_set_sky_cube) about +Y, in radians, right-handed: its +X face then looks toward
+         * (cos, 0, -sin). Finite. The earlier version of the struct ended before this field: a struct_size that does
+         * not cover it means 0. */
+        float sky_rotation;
     } engine_environment;
 #define ENGINE_SKY_COLOR 0u
 #define ENGINE_SKY_NONE 1u
@@ -2093,7 +2097,8 @@ extern "C"
         /* Sets the environment of `world` (ambient light, the sky colour behind the scene, the exposure): see
          * engine_environment. Every surface that shows the world uses it from its next frame. Fails with:
          * STALE_HANDLE, INVALID_ARGUMENT (a NULL or not finite value, a negative intensity, an exposure that is not
-         * positive), STRUCT_SIZE, TYPE_MISMATCH. */
+         * positive, a sky field that is not finite or is negative whatever the sky mode is; for the procedural mode
+         * also a sun that does not exist), STRUCT_SIZE, TYPE_MISMATCH. */
         engine_status (*world_set_environment)(engine_handle world, const engine_environment* environment);
 
         /* ---- Phase 24 Day 362: hierarchy, names, visibility and material overrides ---- */
@@ -2687,7 +2692,9 @@ extern "C"
          * entity (by entity key) whose map covers the point, at the entity's current world placement (the one the last
          * frame computed; before any frame, its local transform), the same surface the collider and the renderer use
          * (two triangles a cell). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a coordinate that is not finite or
-         * lies beyond 1e12 metres), NOT_FOUND (no terrain covers the point, or its height map is not mounted). */
+         * lies beyond 1e12 metres), NOT_FOUND (no terrain covers the point, or its height map is not mounted; a terrain
+         * that is scaled or tilted is not drawn and does not count), NOT_READY (a terrain is a child that no frame has
+         * placed yet and nothing else covers the point: run a frame). */
         engine_status (*terrain_height)(engine_handle world, double x, double z, double* out_height);
 
         /* ---- Instanced meshes (Phase 28) ---- */
@@ -2750,6 +2757,18 @@ extern "C"
 
         /* Destroys a set or a tree. Fails with: STALE_HANDLE, NOT_FOUND. */
         engine_status (*instance_destroy)(engine_handle world, uint64_t id);
+
+        /* ---- A cube sky (maintenance) ---- */
+
+        /* Draws the sky of `world` from a cube texture: `texture` is the id of a mounted texture resource of six
+         * square faces (a minted cube or environment texture, added with resource_add like any other content); the
+         * engine keeps the resource, and a surface rebuilds its device copy from it after a reset. The cube replaces
+         * the procedural gradient while the sky mode is ENGINE_SKY_PROCEDURAL (its sun, exposure and ambient settings
+         * still apply; the sun disc is part of the picture) and turns by engine_environment.sky_rotation; a texture
+         * that is not ready yet, or not a cube, draws the gradient. 0 removes the cube. Every surface that shows the
+         * world uses it from its next frame. Fails with: STALE_HANDLE, NOT_FOUND (no such resource), TYPE_MISMATCH (not
+         * a texture resource). */
+        engine_status (*world_set_sky_cube)(engine_handle world, uint64_t texture);
 
     } engine_api;
 

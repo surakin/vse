@@ -36,5 +36,6 @@ Measured with `render_features_bench` (a Release build): choosing the tiles of a
 ## Limits
 
 - A terrain's placement is a translation and a turn about y; a scale or a tilt is not drawn, and a collider made from one is refused.
+- `terrain_height` skips a terrain the renderer skips (one with a scale or a tilt: only a translation and a turn about y are placed), and answers `NOT_READY` when the only candidate is a child whose placement no frame has computed yet. The resource host keeps a replaced height map pinned for one more generation, so a reader that took the old view a moment ago stays valid.
 - A terrain's collider is made once, from the samples at that time; replacing the height map afterwards changes what is drawn and what `terrain_height` reads, not the collider that was made.
 - The layer array and splat map of the C API's terrain are texture resources; a terrain with none draws flat grey.

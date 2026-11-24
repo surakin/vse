@@ -1416,6 +1416,15 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 {
                     return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the fade range needs 0 <= fade_start < fade_end");
                 }
+                for (u32 i = in->layer_count; i < ENGINE_TERRAIN_LAYERS_MAX; ++i)
+                {  // a layer the terrain does not use may be left zero, but not hold a NaN or an infinity
+                    const engine_terrain_layer& l = in->layers[i];
+                    if (!(Finite(l.tiling) && Finite(l.tint[0]) && Finite(l.tint[1]) && Finite(l.tint[2]) &&
+                          Finite(l.roughness) && Finite(l.metallic)))
+                    {
+                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "an unused layer holds a value that is not finite");
+                    }
+                }
                 for (u32 i = 0; i < in->layer_count; ++i)
                 {
                     const engine_terrain_layer& l = in->layers[i];
@@ -1497,19 +1506,62 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 }
                 terrain.friction = in->friction;
                 terrain.restitution = in->restitution;
-                if (had_collider)
-                {  // the collider of the last set is made again below, or goes
-                    if (object.world.Has<ColliderSource>(entity))
+                // The set is all or nothing: what it removes is kept, and any later failure puts the entity back.
+                ColliderSource old_source;
+                physics::Collider old_collider;
+                physics::RigidBody old_body;
+                bool had_source = false;
+                bool had_collider_component = false;
+                bool removed_body = false;
+                bool added_body = false;
+                bool added_source = false;
+                auto undo = [&]()
+                {
+                    if (added_source)
                     {
                         object.world.Remove<ColliderSource>(entity);
+                        added_source = false;
                     }
-                    if (object.world.Has<physics::Collider>(entity))
-                    {
-                        object.world.Remove<physics::Collider>(entity);
-                    }
-                    if (!wants_collider && made_body && object.world.Has<physics::RigidBody>(entity))
+                    if (added_body)
                     {
                         object.world.Remove<physics::RigidBody>(entity);
+                        added_body = false;
+                    }
+                    if (removed_body)
+                    {
+                        object.world.Add<physics::RigidBody>(entity, old_body);
+                    }
+                    if (had_source)
+                    {
+                        object.world.Add<ColliderSource>(entity, old_source);
+                    }
+                    if (had_collider_component)
+                    {
+                        object.world.Add<physics::Collider>(entity, old_collider);
+                    }
+                };
+                if (had_collider)
+                {  // the collider of the last set is made again below, or goes
+                    if (const ColliderSource* source = object.world.Peek<ColliderSource>(entity))
+                    {
+                        old_source = *source;
+                        had_source = true;
+                        object.world.Remove<ColliderSource>(entity);
+                    }
+                    if (const physics::Collider* collider = object.world.Peek<physics::Collider>(entity))
+                    {
+                        old_collider = *collider;
+                        had_collider_component = true;
+                        object.world.Remove<physics::Collider>(entity);
+                    }
+                    if (!wants_collider && made_body)
+                    {
+                        if (const physics::RigidBody* body = object.world.Peek<physics::RigidBody>(entity))
+                        {
+                            old_body = *body;
+                            removed_body = true;
+                            object.world.Remove<physics::RigidBody>(entity);
+                        }
                         made_body = false;
                     }
                 }
@@ -1522,8 +1574,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                         const ecs::Status added = object.world.Add<physics::RigidBody>(entity, body);
                         if (added != ecs::Status::Ok)
                         {
+                            undo();
                             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the terrain's body could not be added");
                         }
+                        added_body = true;
                         made_body = true;
                     }
                     ColliderSource source;
@@ -1534,13 +1588,20 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                     const ecs::Status added = object.world.Add<ColliderSource>(entity, source);
                     if (added != ecs::Status::Ok)
                     {
+                        undo();
                         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the terrain's collider could not be added");
                     }
+                    added_source = true;
                     object.collider_sources = true;
                     object.physics_used = true;
                 }
                 terrain.made_body = made_body;
-                return SetOrAdd(object.world, entity, terrain);
+                const engine_status stored = SetOrAdd(object.world, entity, terrain);
+                if (stored != ENGINE_OK)
+                {
+                    undo();
+                }
+                return stored;
             }
             if (kind == ENGINE_COMPONENT_MORPH_WEIGHTS)
             {
@@ -2762,6 +2823,32 @@ engine_status LevelSpawnFn(engine_handle world, u64 level, const engine_spawn_pa
         });
 }
 
+bool EnvironmentUsable(const Environment& e)
+{
+    const auto colour = [](const f32* c)
+    { return Finite(c[0]) && Finite(c[1]) && Finite(c[2]) && c[0] >= 0.0f && c[1] >= 0.0f && c[2] >= 0.0f; };
+    if (!(colour(e.ambient_color) && colour(e.sky_color) && colour(e.sky_zenith) && colour(e.sky_horizon) &&
+          colour(e.sky_ground) && colour(e.sun_color)))
+    {
+        return false;
+    }
+    if (!(Finite(e.ambient_intensity) && e.ambient_intensity >= 0.0f && Finite(e.exposure) && e.exposure > 0.0f &&
+          Finite(e.reflection_intensity) && e.reflection_intensity >= 0.0f && Finite(e.sun_size) &&
+          Finite(e.sky_horizon_blend) && Finite(e.sky_exposure) && Finite(e.sky_ambient_intensity) &&
+          e.sky_ambient_intensity >= 0.0f && Finite(e.sun_direction[0]) && Finite(e.sun_direction[1]) &&
+          Finite(e.sun_direction[2]) && e.sky_mode <= ENGINE_SKY_PROCEDURAL))
+    {
+        return false;
+    }
+    if (e.sky_mode == ENGINE_SKY_PROCEDURAL)
+    {
+        const f32* d = e.sun_direction;
+        return d[0] * d[0] + d[1] * d[1] + d[2] * d[2] > 1e-12f && e.sun_size > 0.0f && e.sun_size <= 1.5707964f &&
+               e.sky_horizon_blend > 0.0f && e.sky_horizon_blend <= 1.0f && e.sky_exposure > 0.0f;
+    }
+    return true;
+}
+
 engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environment* environment)
 {
     const engine_status checked = CheckInStruct(environment, offsetof(engine_environment, reflection_intensity),
@@ -2794,7 +2881,9 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
     }
     const bool has_reflection = StructSizeOf(environment) >=
                                 offsetof(engine_environment, reflection_intensity) + sizeof(float);
-    const bool has_sky = StructSizeOf(environment) >= sizeof(engine_environment);
+    const bool has_sky = StructSizeOf(environment) >=
+                         offsetof(engine_environment, sky_ambient_intensity) + sizeof(float);
+    const bool has_rotation = StructSizeOf(environment) >= sizeof(engine_environment);
     if (has_reflection && !(Finite(environment->reflection_intensity) && environment->reflection_intensity >= 0.0f))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the reflection intensity is not finite and >= 0");
@@ -2805,41 +2894,60 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
         {
             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky mode is not an ENGINE_SKY_* value");
         }
-        if (environment->sky_mode == ENGINE_SKY_PROCEDURAL)
+        // Every sky field must be finite (colours also >= 0) whatever the mode is, so a mode switched on later never
+        // finds a NaN stored; the rules that name a usable sky (a sun that exists, an exposure above 0) are the
+        // procedural mode's, as a zero-filled struct is a valid flat-colour environment.
+        const float* colors[3] = {environment->sky_zenith, environment->sky_horizon, environment->sky_ground};
+        for (int k = 0; k < 3; ++k)
         {
-            const float* colors[5] = {environment->sky_zenith, environment->sky_horizon, environment->sky_ground,
-                                      environment->sun_color, environment->sun_direction};
-            for (int k = 0; k < 4; ++k)
+            for (int i = 0; i < 3; ++i)
             {
-                for (int i = 0; i < 3; ++i)
+                if (!(Finite(colors[k][i]) && colors[k][i] >= 0.0f))
                 {
-                    if (!(Finite(colors[k][i]) && colors[k][i] >= 0.0f))
-                    {
-                        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a sky or sun colour is not finite and >= 0");
-                    }
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a sky colour is not finite and >= 0");
                 }
             }
-            const float* d = environment->sun_direction;
-            if (!(Finite(d[0]) && Finite(d[1]) && Finite(d[2]) && d[0] * d[0] + d[1] * d[1] + d[2] * d[2] > 1e-12f))
+        }
+        if (has_rotation && !Finite(environment->sky_rotation))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky rotation is not finite");
+        }
+        for (int i = 0; i < 3; ++i)
+        {
+            if (!(Finite(environment->sun_color[i]) && environment->sun_color[i] >= 0.0f))
             {
-                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sun direction is not finite and non-zero");
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sun colour is not finite and >= 0");
             }
-            if (!(Finite(environment->sun_size) && environment->sun_size > 0.0f && environment->sun_size <= 1.5707964f))
+            if (!Finite(environment->sun_direction[i]))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sun direction is not finite");
+            }
+        }
+        if (!(Finite(environment->sun_size) && Finite(environment->sky_horizon_blend) &&
+              Finite(environment->sky_exposure) && Finite(environment->sky_ambient_intensity) &&
+              environment->sky_ambient_intensity >= 0.0f))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                        "a sky scalar (size, blend, exposure, ambient) is not finite, or the ambient is negative");
+        }
+        if (environment->sky_mode == ENGINE_SKY_PROCEDURAL)
+        {
+            const float* d = environment->sun_direction;
+            if (!(d[0] * d[0] + d[1] * d[1] + d[2] * d[2] > 1e-12f))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sun direction is zero");
+            }
+            if (!(environment->sun_size > 0.0f && environment->sun_size <= 1.5707964f))
             {
                 return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sun size is not in (0, pi / 2]");
             }
-            if (!(Finite(environment->sky_horizon_blend) && environment->sky_horizon_blend > 0.0f &&
-                  environment->sky_horizon_blend <= 1.0f))
+            if (!(environment->sky_horizon_blend > 0.0f && environment->sky_horizon_blend <= 1.0f))
             {
                 return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky horizon blend is not in (0, 1]");
             }
-            if (!(Finite(environment->sky_exposure) && environment->sky_exposure > 0.0f))
+            if (!(environment->sky_exposure > 0.0f))
             {
-                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky exposure is not finite and > 0");
-            }
-            if (!(Finite(environment->sky_ambient_intensity) && environment->sky_ambient_intensity >= 0.0f))
-            {
-                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky ambient intensity is not finite and >= 0");
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the sky exposure is not > 0");
             }
         }
     }
@@ -2856,6 +2964,7 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
         return found;
     }
     Environment value;
+    value.sky_cube = object->environment.sky_cube;  // set by `world_set_sky_cube`, kept across this call
     if (has_sky)
     {
         value.sky_mode = environment->sky_mode;
@@ -2871,6 +2980,7 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
         value.sky_horizon_blend = environment->sky_horizon_blend;
         value.sky_exposure = environment->sky_exposure;
         value.sky_ambient_intensity = environment->sky_ambient_intensity;
+        value.sky_rotation = has_rotation ? environment->sky_rotation : 0.0f;
     }
     value.reflection_intensity = has_reflection ? environment->reflection_intensity : 0.0f;
     for (int i = 0; i < 3; ++i)
@@ -2881,6 +2991,39 @@ engine_status WorldSetEnvironmentFn(engine_handle world, const engine_environmen
     value.ambient_intensity = environment->ambient_intensity;
     value.exposure = environment->exposure;
     object->environment = value;
+    object->environment_set = true;
+    return ENGINE_OK;
+}
+
+engine_status WorldSetSkyCubeFn(engine_handle world, u64 texture)
+{
+    Runtime* runtime = CurrentRuntime();
+    if (runtime == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the world is not an engine's");
+    }
+    if (texture != 0)
+    {
+        engine_resource_info info = {};
+        info.struct_size = sizeof(info);
+        const engine_status mounted = runtime->Resources()->Mounted(texture, &info);
+        if (mounted != ENGINE_OK)
+        {
+            return mounted;
+        }
+        if (info.type != ENGINE_RESOURCE_TEXTURE)
+        {
+            return Fail(ENGINE_ERROR_TYPE_MISMATCH, "the sky cube is not a texture resource");
+        }
+    }
+    LockGuard<Mutex> lock(runtime->world_mutex);
+    engine_status found = ENGINE_OK;
+    WorldObject* object = FindWorld(*runtime, world, &found);
+    if (object == nullptr)
+    {
+        return found;
+    }
+    object->environment.sky_cube = texture;
     object->environment_set = true;
     return ENGINE_OK;
 }
@@ -3436,6 +3579,23 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                      });
 }
 
+// True for the identity matrix: what a child's world transform holds until a frame's propagation has placed it.
+bool MatIsIdentity(const Mat4& m)
+{
+    const Mat4 identity = Mat4::Identity();
+    for (u32 c = 0; c < 4; ++c)
+    {
+        for (u32 r = 0; r < 4; ++r)
+        {
+            if (m.col[c][r] != identity.col[c][r])
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 engine_status TerrainHeightFn(engine_handle world, double x, double z, double* out_height)
 {
     constexpr double kLimit = physics::kMaxWorldCoordinate;
@@ -3452,8 +3612,16 @@ engine_status TerrainHeightFn(engine_handle world, double x, double z, double* o
         {
             ResourceHost* resources = CurrentRuntime()->Resources();
             bool found = false;
+            bool not_ready = false;  // a terrain whose parent has no world transform yet
             u64 best = 0;
             f64 height = 0.0;
+            struct Pinned
+            {
+                u64 id;
+                const asset::HeightMapView* view;
+            };
+            Vector<Pinned>
+                pinned;  // each map is pinned once per call (the pin lock is taken once per map, not per terrain)
             auto query = object.world.Query<ecs::Read<TerrainComponent>>();
             query.ForEach(
                 [&](ecs::Entity entity, const TerrainComponent& terrain)
@@ -3479,10 +3647,40 @@ engine_status TerrainHeightFn(engine_handle world, double x, double z, double* o
                         placed = world_transform->matrix;
                         placed_at = world_transform->position;
                     }
-                    const asset::HeightMapView* view = nullptr;
-                    if (resources->PinHeightMap(terrain.height_map, &view, nullptr) != ENGINE_OK)
+                    else
                     {
+                        not_ready = true;  // no frame has placed the child yet
                         return;
+                    }
+                    if (local != nullptr && object.world.Has<ecs::Parent>(entity) &&
+                        world_transform->position.x == 0.0 && world_transform->position.y == 0.0 &&
+                        world_transform->position.z == 0.0 && MatIsIdentity(world_transform->matrix) &&
+                        (local->position.x != 0.0 || local->position.y != 0.0 || local->position.z != 0.0))
+                    {
+                        // A child's world transform starts as the identity and a frame's propagation replaces it: an
+                        // identity under a non-zero local offset is that start, not a placement.
+                        not_ready = true;
+                        return;
+                    }
+                    if (!renderer::TerrainWorldValid(placed))
+                    {
+                        return;  // scaled or tilted: the renderer does not draw it, so it has no surface here
+                    }
+                    const asset::HeightMapView* view = nullptr;
+                    for (usize i = 0; i < pinned.Size(); ++i)
+                    {
+                        if (pinned[i].id == terrain.height_map)
+                        {
+                            view = pinned[i].view;
+                        }
+                    }
+                    if (view == nullptr)
+                    {
+                        if (resources->PinHeightMap(terrain.height_map, &view, nullptr) != ENGINE_OK)
+                        {
+                            return;
+                        }
+                        pinned.Push(Pinned{terrain.height_map, view});
                     }
                     // The terrain's placement is a translation and a turn about y: its inverse is the transposed turn.
                     const f64 dx = x - placed_at.x;  // the offset in double precision, then single in the map's space
@@ -3501,6 +3699,10 @@ engine_status TerrainHeightFn(engine_handle world, double x, double z, double* o
                     best = key;
                     height = placed_at.y + static_cast<f64>(view->HeightAt(lx, lz));
                 });
+            if (!found && not_ready)
+            {
+                return Fail(ENGINE_ERROR_NOT_READY, "a terrain's placement is not computed yet: run a frame first");
+            }
             if (!found)
             {
                 return Fail(ENGINE_ERROR_NOT_FOUND, "no terrain covers the point");

@@ -893,6 +893,7 @@ extern "C"
             &engine_c::InstanceTreeUpdateFn,
             &engine_c::InstanceTreeSetLocalFn,
             &engine_c::InstanceDestroyFn,
+            &engine_c::WorldSetSkyCubeFn,
         };
         *out = &table;
         return ENGINE_OK;

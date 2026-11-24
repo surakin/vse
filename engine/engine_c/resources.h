@@ -130,6 +130,11 @@ public:
     /// - Param hash: receives the content hash of its bytes; may be null.
     /// - Returns: ENGINE_OK, NOT_FOUND (not mounted) or TYPE_MISMATCH (not an `HGHT`), with the text set.
     engine_status PinHeightMap(u64 id, const asset::HeightMapView** view, asset::ContentHash* hash);
+
+    /// The height-map pins held (a replaced map keeps one earlier generation).
+    /// - Fails: never.
+    /// - Thread-safety: thread-safe.
+    usize HeightMapPinCount() const;
     /// Makes the blob of a height map from samples the host holds and adds it to the memory backend (the engine's CPU
     /// copy a surface and a physics world are rebuilt from).
     ///
@@ -192,7 +197,7 @@ private:
     UniquePtr<ImportHost> imports_;  // after the backend: destroyed before it
     UniquePtr<asset::ResourceManager> manager_;
     UniquePtr<animation::ManagerResolver> animation_;  // over manager_
-    Mutex pin_mutex_;
+    mutable Mutex pin_mutex_;
     Vector<asset::Handle<asset::SkeletonView>> skeleton_pins_;
     Vector<asset::Handle<asset::ClipView>> clip_pins_;
     struct MeshColliderPin
@@ -204,7 +209,9 @@ private:
     struct HeightMapPin
     {
         asset::Handle<asset::HeightMapView> handle;
+        SharedBytesPtr bytes;  ///< The bytes `hash` is of: a view object may be given new ones.
         asset::ContentHash hash;
+        bool hashed = false;  ///< `hash` is made on the first call that asks for it.
     };
     Vector<HeightMapPin> height_map_pins_;  ///< Pins of the height maps.
     Mutex loader_mutex_;                    // the loader belongs to one thread at a time

@@ -28,6 +28,7 @@ enum SceneCommandKind : u16
     kCommandInstancesSet = 134,     ///< `instances.set`: moves one instance of a set.
     kCommandInstancesRemove = 135,  ///< `instances.remove`: removes one instance of a set.
     kCommandTreeSetLocal = 136,     ///< `tree.set_local`: sets a node's local transform.
+    kCommandSkyCubeSet = 137,       ///< `environment.set_sky_cube`: names the texture resource of a cube sky.
 };
 
 /// What the scene bindings need: its address goes in `MergeServices::extensions[script::kServiceScene]`.

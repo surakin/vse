@@ -143,7 +143,17 @@ struct Environment
     f32 sky_horizon_blend = 0.1f;
     f32 sky_exposure = 1.0f;
     f32 sky_ambient_intensity = 1.0f;
+    f32 sky_rotation = 0.0f;  // radians about +Y, of a cube sky
+    u64 sky_cube = 0;         // the texture resource of a cube sky (0: none), set by `world_set_sky_cube`
 };
+
+/// Whether an environment can be stored and drawn: every field finite, the colours and intensities not negative, the
+/// exposure above 0 and, for a procedural sky, a sun that exists (non-zero direction, size in (0, pi / 2]), a horizon
+/// blend in (0, 1] and a sky exposure above 0.
+///
+/// - Fails: never.
+/// - Thread-safety: thread-safe. A pure function of its argument.
+bool EnvironmentUsable(const Environment& e);
 
 /// The component of ENGINE_COMPONENT_NAME: what `entity_name_set` writes and `level_spawn` gives the nodes of a level
 /// (`name_prefix` + `/` + the node's name); `entity_find` and the scripts' `entity.find` and `entity.name` read it.
@@ -541,6 +551,8 @@ engine_status EntitySetMeshSlotMaterialByNameFn(engine_handle world, u64 key, en
 engine_status EntityClearMeshSlotMaterialsFn(engine_handle world, u64 key);
 engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind);
 engine_status ComponentHasFn(engine_handle world, u64 key, u32 kind, int* out);
+/// See `engine_api.world_set_sky_cube`.
+engine_status WorldSetSkyCubeFn(engine_handle world, u64 texture);
 /// See `engine_api.terrain_height`.
 engine_status TerrainHeightFn(engine_handle world, double x, double z, double* out_height);
 engine_status LabelFontSetFn(engine_handle engine, const void* data, size_t size);

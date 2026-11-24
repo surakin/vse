@@ -229,21 +229,37 @@ engine_status ResourceHost::PinHeightMap(u64 id, const asset::HeightMapView** vi
     }
     for (usize i = 0; i < height_map_pins_.Size(); ++i)
     {
-        if (height_map_pins_[i].handle.Get() == handle.Get())
+        HeightMapPin& known = height_map_pins_[i];
+        if (known.handle.Get() == handle.Get())
         {
+            if (known.bytes.Get() != handle.Get()->Bytes().Get())
+            {  // the same view object holds new bytes (a replaced map): the remembered hash is of the old ones
+                known.bytes = handle.Get()->Bytes();
+                known.hashed = false;
+            }
+            if (hash != nullptr && !known.hashed)
+            {
+                known.hash = asset::HashBytes(known.bytes->Bytes());
+                known.hashed = true;
+            }
             if (view != nullptr)
             {
                 *view = handle.Get();
             }
             if (hash != nullptr)
             {
-                *hash = height_map_pins_[i].hash;
+                *hash = known.hash;
             }
             return ENGINE_OK;
         }
     }
     HeightMapPin pin;
-    pin.hash = asset::HashBytes(handle.Get()->Bytes()->Bytes());
+    pin.bytes = handle.Get()->Bytes();
+    if (hash != nullptr)
+    {  // hashing reads every byte: a caller that does not need the hash does not pay for it (it is made on demand)
+        pin.hash = asset::HashBytes(pin.bytes->Bytes());
+        pin.hashed = true;
+    }
     if (view != nullptr)
     {
         *view = handle.Get();
@@ -253,8 +269,24 @@ engine_status ResourceHost::PinHeightMap(u64 id, const asset::HeightMapView** vi
         *hash = pin.hash;
     }
     pin.handle = static_cast<asset::Handle<asset::HeightMapView>&&>(handle);
+    // A replaced map keeps its predecessor one generation (a reader that took the old view a moment ago still holds
+    // valid bytes); older generations of the same id are released, so ten replacements leave two pins, not eleven.
+    u32 same = 0;
+    for (usize i = height_map_pins_.Size(); i > 0; --i)
+    {
+        if (height_map_pins_[i - 1].handle.Get()->Id().Value() == id && ++same >= 2)
+        {
+            height_map_pins_.Remove(i - 1);
+        }
+    }
     height_map_pins_.Push(static_cast<HeightMapPin&&>(pin));
     return ENGINE_OK;
+}
+
+usize ResourceHost::HeightMapPinCount() const
+{
+    LockGuard<Mutex> lock(pin_mutex_);
+    return height_map_pins_.Size();
 }
 
 engine_status ResourceHost::AddHeightMap(u64 id, const u16* samples, u32 width, u32 height, f32 range_min,
@@ -276,7 +308,10 @@ engine_status ResourceHost::AddHeightMap(u64 id, const u16* samples, u32 width, 
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a height map is 2 to 8192 samples a side");
     }
     Vector<byte> little;  // the blob's samples are little-endian
-    little.Resize(usize{width} * height * 2);
+    if (!little.TryResize(usize{width} * height * 2))
+    {
+        return Fail(ENGINE_ERROR_LIMIT_EXCEEDED, "the height map is too large to hold in memory");
+    }
     for (usize i = 0; i < usize{width} * height; ++i)
     {
         little[2 * i] = static_cast<byte>(samples[i] & 0xFFu);

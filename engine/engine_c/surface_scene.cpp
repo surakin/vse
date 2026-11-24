@@ -668,7 +668,21 @@ void SurfaceScene::SyncLights(WorldObject& world, SceneFrameReport* report)
     procedural.ambient_intensity = environment.sky_ambient_intensity;
     if (environment.sky_mode == ENGINE_SKY_PROCEDURAL && renderer::SkySettingsValid(procedural))
     {
-        const renderer::SkySettings& sky = procedural;
+        renderer::SkySettings sky = procedural;
+        if (environment.sky_cube != 0)
+        {  // a cube sky, from the texture resource the engine keeps: a surface that has none ready draws the gradient
+            renderer::GpuTexturePtr cube = ResolveTexture(environment.sky_cube);
+            if (cube && cube->Valid())
+            {
+                sky.mode = renderer::SkyMode::Cube;
+                sky.cube = cube;
+                sky.rotation = environment.sky_rotation;
+            }
+        }
+        if (!renderer::SkySettingsValid(sky))
+        {
+            sky = procedural;
+        }
         frame_.SetExposure(environment.exposure);
         frame_.SetSky(sky, environment.reflection_intensity);
     }

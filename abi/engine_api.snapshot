@@ -332,7 +332,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=1328
+struct engine_api size=1336
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -487,6 +487,7 @@ field engine_api.resource_add_finish offset=1104 size=8
 field engine_api.resource_add_destroy offset=1112 size=8
 field engine_api.import_format_version offset=1120 size=8
 field engine_api.terrain_height offset=1240 size=8
+field engine_api.world_set_sky_cube offset=1328 size=8
 struct engine_audio_info size=24
 field engine_audio_info.struct_size offset=0 size=4
 field engine_audio_info.sample_rate offset=4 size=4

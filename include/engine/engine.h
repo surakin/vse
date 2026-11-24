@@ -589,6 +589,8 @@ public:
     {
         return Api()->world_set_environment(Get(), &environment);
     }
+    /// Draws the sky from a cube texture resource, 0 to go back to the gradient (`world_set_sky_cube`).
+    Status SetSkyCube(uint64_t texture) const { return Api()->world_set_sky_cube(Get(), texture); }
     Status SetSlotOverride(uint64_t key, const char* slot, const engine_slot_override& value) const
     {
         return Api()->entity_set_slot_override(Get(), key, Str(slot), &value);

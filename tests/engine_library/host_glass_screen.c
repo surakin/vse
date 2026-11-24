@@ -418,6 +418,16 @@ int main(void)
         CHECK(g_api->world_set_environment(world, &bad) == ENGINE_ERROR_INVALID_ARGUMENT);
         bad.sky_mode = 7;
         CHECK(g_api->world_set_environment(world, &bad) == ENGINE_ERROR_INVALID_ARGUMENT);
+        /* the flat-colour mode accepts the zero-filled sky fields, but not a stored infinity or NaN a later mode would
+         * draw */
+        bad.sky_mode = ENGINE_SKY_COLOR;
+        CHECK(g_api->world_set_environment(world, &bad) == ENGINE_OK);
+        bad.sun_direction[1] = INFINITY;
+        CHECK(g_api->world_set_environment(world, &bad) == ENGINE_ERROR_INVALID_ARGUMENT);
+        bad.sun_direction[1] = 0.0f;
+        bad.sky_zenith[2] = NAN;
+        bad.sky_mode = ENGINE_SKY_NONE;
+        CHECK(g_api->world_set_environment(world, &bad) == ENGINE_ERROR_INVALID_ARGUMENT);
     }
 
     CHECK_STATUS(g_api->surface_destroy(surface), ENGINE_OK);

@@ -1,6 +1,8 @@
 #include "engine_c/script_scene.h"
 
 #include "engine_c/instances.h"
+#include "engine_c/engine_internal.h"
+#include "engine_c/resources.h"
 #include "engine_c/runtime.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
@@ -43,6 +45,7 @@ constexpr u32 kEnvSunSize = 1u << 11;
 constexpr u32 kEnvSkyHorizonBlend = 1u << 12;
 constexpr u32 kEnvSkyExposure = 1u << 13;
 constexpr u32 kEnvSkyAmbient = 1u << 14;
+constexpr u32 kEnvSkyRotation = 1u << 15;
 constexpr u32 kLightColor = 1u << 0;
 constexpr u32 kLightIntensity = 1u << 1;
 constexpr u32 kLightRadius = 1u << 2;
@@ -70,6 +73,12 @@ struct EnvironmentPayload
     f32 sky_horizon_blend;
     f32 sky_exposure;
     f32 sky_ambient_intensity;
+    f32 sky_rotation;
+};
+
+struct SkyCubePayload
+{
+    u64 texture;
 };
 
 struct LightPayload
@@ -284,8 +293,15 @@ bool EnvironmentValid(const EnvironmentPayload& p)
         script::RaiseScriptError("the environment's `sky_ambient_intensity` must be at least 0");
         return false;
     }
+    if ((p.mask & kEnvSkyRotation) != 0 && !SceneFinite(p.sky_rotation))
+    {
+        script::RaiseScriptError("the environment's `sky_rotation` must be finite");
+        return false;
+    }
     return true;
 }
+
+void MergeEnvironment(Environment& e, const EnvironmentPayload& p);
 
 void EnvironmentSet(Value fields)
 {
@@ -299,11 +315,23 @@ void EnvironmentSet(Value fields)
         script::RaiseScriptError("environment.set takes a table of fields");
         return;
     }
-    static const char* const kAllowed[] = {
-        "ambient_color", "ambient_intensity", "sky_color",         "exposure",     "reflection_intensity",
-        "sky_mode",      "sky_zenith",        "sky_horizon",       "sky_ground",   "sun_direction",
-        "sun_color",     "sun_size",          "sky_horizon_blend", "sky_exposure", "sky_ambient_intensity",
-        nullptr};
+    static const char* const kAllowed[] = {"ambient_color",
+                                           "ambient_intensity",
+                                           "sky_color",
+                                           "exposure",
+                                           "reflection_intensity",
+                                           "sky_mode",
+                                           "sky_zenith",
+                                           "sky_horizon",
+                                           "sky_ground",
+                                           "sun_direction",
+                                           "sun_color",
+                                           "sun_size",
+                                           "sky_horizon_blend",
+                                           "sky_exposure",
+                                           "sky_ambient_intensity",
+                                           "sky_rotation",
+                                           nullptr};
     if (!SceneKnownKeys(fields, StringView("environment"), kAllowed))
     {
         return;
@@ -339,14 +367,47 @@ void EnvironmentSet(Value fields)
                          &p.sky_exposure, &p.mask) ||
         !SceneReadNumber(fields, StringView("environment"), StringView("sky_ambient_intensity"), kEnvSkyAmbient,
                          &p.sky_ambient_intensity, &p.mask) ||
+        !SceneReadNumber(fields, StringView("environment"), StringView("sky_rotation"), kEnvSkyRotation,
+                         &p.sky_rotation, &p.mask) ||
         !EnvironmentValid(p))
     {
         return;
+    }
+    {
+        // The fields are checked one by one above; the result must be a usable environment as well (a procedural sky
+        // over a sun size the host left at 0 is not).
+        const SceneScriptServices* services = SceneServicesOf(context);
+        Environment merged = services->object->environment;
+        MergeEnvironment(merged, p);
+        if (!EnvironmentUsable(merged))
+        {
+            script::RaiseScriptError(
+                "the environment would not be valid: a procedural sky needs a non-zero `sun_direction`, `sun_size` "
+                "in (0, pi / 2], `sky_horizon_blend` in (0, 1] and `sky_exposure` above 0; set them in the same call");
+            return;
+        }
     }
     if (p.mask != 0)
     {
         SceneRecord(context, kCommandEnvironmentSet, ecs::Entity(), &p, sizeof(p));
     }
+}
+
+void EnvironmentSetSkyCube(i64 texture)
+{
+    PartitionContext* context = SceneContext();
+    if (context == nullptr || SceneServicesOf(context) == nullptr)
+    {
+        return;
+    }
+    if (texture < 0)
+    {
+        script::RaiseScriptError("environment.set_sky_cube takes a texture resource id, or 0 for none");
+        return;
+    }
+    SkyCubePayload p = {};
+    p.texture = static_cast<u64>(texture);
+    SceneRecord(context, kCommandSkyCubeSet, ecs::Entity(), &p, sizeof(p));
 }
 
 Value EnvironmentGet()
@@ -373,25 +434,16 @@ Value EnvironmentGet()
     map.Set("sun_direction", Value::FromVec3(Vec3(e.sun_direction[0], e.sun_direction[1], e.sun_direction[2])));
     map.Set("sun_color", Value::FromVec3(Vec3(e.sun_color[0], e.sun_color[1], e.sun_color[2])));
     map.Set("sun_size", Value::FromFloat(e.sun_size));
+    map.Set("sky_rotation", Value::FromFloat(e.sky_rotation));
     map.Set("sky_horizon_blend", Value::FromFloat(e.sky_horizon_blend));
     map.Set("sky_exposure", Value::FromFloat(e.sky_exposure));
     map.Set("sky_ambient_intensity", Value::FromFloat(e.sky_ambient_intensity));
     return map;
 }
 
-bool ApplyEnvironmentSet(MergeContext& context, ecs::Entity, Span<const u8> payload)
+// Writes the named fields of `p` into `e`.
+void MergeEnvironment(Environment& e, const EnvironmentPayload& p)
 {
-    const script::MergeServices* merge = static_cast<const script::MergeServices*>(context.User());
-    const SceneScriptServices* services = merge != nullptr ? static_cast<const SceneScriptServices*>(
-                                                                 merge->extensions[script::kServiceScene])
-                                                           : nullptr;
-    EnvironmentPayload p;
-    if (services == nullptr || services->object == nullptr || payload.Size() != sizeof(p))
-    {
-        return false;
-    }
-    MemCopy(&p, payload.Data(), sizeof(p));
-    Environment& e = services->object->environment;
     if ((p.mask & kEnvAmbientColor) != 0)
     {
         MemCopy(e.ambient_color, p.ambient_color, sizeof(e.ambient_color));
@@ -452,6 +504,33 @@ bool ApplyEnvironmentSet(MergeContext& context, ecs::Entity, Span<const u8> payl
     {
         e.sky_ambient_intensity = p.sky_ambient_intensity;
     }
+    if ((p.mask & kEnvSkyRotation) != 0)
+    {
+        e.sky_rotation = p.sky_rotation;
+    }
+}
+
+bool ApplyEnvironmentSet(MergeContext& context, ecs::Entity, Span<const u8> payload)
+{
+    const script::MergeServices* merge = static_cast<const script::MergeServices*>(context.User());
+    const SceneScriptServices* services = merge != nullptr ? static_cast<const SceneScriptServices*>(
+                                                                 merge->extensions[script::kServiceScene])
+                                                           : nullptr;
+    EnvironmentPayload p;
+    if (services == nullptr || services->object == nullptr || payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    // The environment as the command would leave it: refused whole when it is not usable (a sky mode switched on over
+    // fields a host left at zero), so no invalid environment is ever stored.
+    Environment merged = services->object->environment;
+    MergeEnvironment(merged, p);
+    if (!EnvironmentUsable(merged))
+    {
+        return false;
+    }
+    services->object->environment = merged;
     services->object->environment_set = true;  // as `world_set_environment`: the default sun goes
     return true;
 }
@@ -890,6 +969,34 @@ bool ApplyInstancesSet(MergeContext& context, ecs::Entity, Span<const u8> payloa
     return entry->set->SetTransform(id, t) == renderer::InstanceStatus::Ok;
 }
 
+bool ApplySkyCubeSet(MergeContext& context, ecs::Entity, Span<const u8> payload)
+{
+    const script::MergeServices* merge = static_cast<const script::MergeServices*>(context.User());
+    const SceneScriptServices* services = merge != nullptr ? static_cast<const SceneScriptServices*>(
+                                                                 merge->extensions[script::kServiceScene])
+                                                           : nullptr;
+    SkyCubePayload p;
+    if (services == nullptr || services->object == nullptr || payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    if (p.texture != 0)
+    {  // as `world_set_sky_cube`: the resource must be a mounted texture
+        Runtime* runtime = CurrentRuntime();
+        engine_resource_info info = {};
+        info.struct_size = sizeof(info);
+        if (runtime == nullptr || runtime->Resources()->Mounted(p.texture, &info) != ENGINE_OK ||
+            info.type != ENGINE_RESOURCE_TEXTURE)
+        {
+            return false;
+        }
+    }
+    services->object->environment.sky_cube = p.texture;
+    services->object->environment_set = true;
+    return true;
+}
+
 bool ApplyInstancesRemove(MergeContext& context, ecs::Entity, Span<const u8> payload)
 {
     InstancePayload p;
@@ -980,6 +1087,8 @@ bool RegisterSceneCommandKinds(CommandKindTable* kinds)
     bool ok = true;
     ok &= kinds->Register(kCommandEnvironmentSet,
                           CommandKind{"environment.set", &ApplyEnvironmentSet, false, false, true});
+    ok &= kinds->Register(kCommandSkyCubeSet,
+                          CommandKind{"environment.set_sky_cube", &ApplySkyCubeSet, false, false, true});
     ok &= kinds->Register(kCommandLightSet, CommandKind{"light.set", &ApplyLightSet, false, true});
     ok &= kinds->Register(kCommandLightCreate, CommandKind{"light.create", &ApplyLightCreate, false, true});
     ok &= kinds->Register(kCommandInstancesAdd, CommandKind{"instances.add", &ApplyInstancesAdd, false, false, true});
@@ -1002,11 +1111,18 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "draws the flat `sky_color`, 1 nothing, 2 a procedural sky), `sky_zenith`, `sky_horizon`, `sky_ground`, "
         "`sun_color` (vec3s, at least 0), `sun_direction` (a vec3, not zero), `sun_size` (radians, above 0, at most "
         "pi/2), `sky_horizon_blend` (above 0, at most 1), `sky_exposure` (above 0) and `sky_ambient_intensity` (at "
-        "least 0: the sky's blurred colour as ambient light, replacing `ambient_color` when above 0); a field left out keeps its "
+        "least 0: the sky's blurred colour as ambient light, replacing `ambient_color` when above 0) and `sky_rotation` "
+        "(radians, turns a cube sky about +Y); a field left out keeps its "
         "value, and calling it every tick is fine. An unknown field or a value out of range is an error naming it. As "
         "`world_set_environment` in the C API, it also removes the default sun of a world with no light. When the "
         "host and a script both set the environment, the later write wins: the host's call happens between frames, "
         "the script's at the sync point inside the next frame.");
+    ok &= registry->Add<&EnvironmentSetSkyCube>(
+        "environment", "set_sky_cube", ThreadRule::WorldWrite, "texture",
+        "Draws the sky from the cube texture resource with id `texture` (a minted cube or environment texture the host "
+        "added), or from the gradient again when `texture` is 0, at the sync point. The cube turns by "
+        "`environment.set({sky_rotation = radians})` and shows while `sky_mode` is 2. A resource that is not mounted "
+        "or is not a texture counts a failed command and changes nothing.");
     ok &= registry->Add<&EnvironmentGet>(
         "environment", "get", ThreadRule::WorldRead, "",
         "Returns a table with `ambient_color`, `ambient_intensity`, `sky_color`, "

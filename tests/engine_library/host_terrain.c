@@ -296,6 +296,88 @@ static void Physics(engine_handle engine)
         CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &moved), ENGINE_OK);
     }
 
+    /* a NaN in a layer the terrain does not use is refused as well; unused layers left zero are fine */
+    t = MakeTerrain(0x7e1, 0);
+    t.layers[3].tint[1] = nanf("");
+    CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TERRAIN, &t), ENGINE_ERROR_INVALID_ARGUMENT);
+    t = MakeTerrain(0x7e1, ENGINE_TERRAIN_COLLIDER);
+    memset(&t.layers[2], 0, sizeof(t.layers[2]));
+    CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TERRAIN, &t), ENGINE_OK);
+
+    /* the collider reads back as a height field naming its map, and a height field can be set as a collider */
+    {
+        engine_collider field;
+        engine_collider back;
+        uint64_t plain = 0;
+        Frames(engine, 2);
+        memset(&back, 0, sizeof(back));
+        back.struct_size = sizeof(back);
+        CHECK_STATUS(g_api->component_get(world, terrain, ENGINE_COMPONENT_COLLIDER, &back), ENGINE_OK);
+        CHECK(back.shape == ENGINE_SHAPE_HEIGHT_FIELD && back.mesh_resource == 0x7e1);
+        memset(&field, 0, sizeof(field));
+        field.struct_size = sizeof(field);
+        field.shape = ENGINE_SHAPE_HEIGHT_FIELD;
+        field.mesh_resource = 0x7e1;
+        field.rotation[3] = 1.0f;
+        field.friction = 0.5f;
+        field.density = 1000.0f;
+        field.group = 1u;
+        field.mask = 0xFFFFFFFFu;
+        CHECK_STATUS(g_api->entity_create(world, &plain), ENGINE_OK);
+        CHECK_STATUS(g_api->component_set(world, plain, ENGINE_COMPONENT_COLLIDER, &field), ENGINE_OK);
+        Frames(engine, 2);
+        memset(&back, 0, sizeof(back));
+        back.struct_size = sizeof(back);
+        CHECK_STATUS(g_api->component_get(world, plain, ENGINE_COMPONENT_COLLIDER, &back), ENGINE_OK);
+        CHECK(back.shape == ENGINE_SHAPE_HEIGHT_FIELD && back.mesh_resource == 0x7e1);
+        field.mesh_resource = 0x9998;
+        CHECK_STATUS(g_api->component_set(world, plain, ENGINE_COMPONENT_COLLIDER, &field), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->entity_destroy(world, plain), ENGINE_OK);
+    }
+
+    /* a scaled terrain is not drawn, so it has no surface to read; a child whose parent no frame has placed is not
+     * ready */
+    {
+        engine_transform scaled;
+        engine_transform back;
+        engine_transform parent_at;
+        uint64_t child = 0;
+        uint64_t parent = 0;
+        engine_terrain ct = MakeTerrain(0x7e1, 0);
+        memset(&scaled, 0, sizeof(scaled));
+        scaled.struct_size = sizeof(scaled);
+        scaled.position[0] = 10.0f;
+        scaled.position[1] = 1.0f;
+        scaled.position[2] = 20.0f;
+        scaled.rotation[3] = 1.0f;
+        scaled.scale[0] = 2.0f;
+        scaled.scale[1] = scaled.scale[2] = 1.0f;
+        back = scaled;
+        back.scale[0] = 1.0f;
+        CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &scaled), ENGINE_OK);
+        CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, &height), ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &back), ENGINE_OK);
+        CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, &height), ENGINE_OK);
+
+        CHECK_STATUS(g_api->component_remove(world, terrain, ENGINE_COMPONENT_TERRAIN), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_create(world, &parent), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_create(world, &child), ENGINE_OK);
+        memset(&parent_at, 0, sizeof(parent_at));
+        parent_at.struct_size = sizeof(parent_at);
+        parent_at.rotation[3] = 1.0f;
+        parent_at.scale[0] = parent_at.scale[1] = parent_at.scale[2] = 1.0f;
+        CHECK_STATUS(g_api->component_set(world, parent, ENGINE_COMPONENT_TRANSFORM, &parent_at), ENGINE_OK);
+        SetTransform(world, child, 10.0f, 1.0f, 20.0f);
+        CHECK_STATUS(g_api->entity_set_parent(world, child, parent), ENGINE_OK);
+        CHECK_STATUS(g_api->component_set(world, child, ENGINE_COMPONENT_TERRAIN, &ct), ENGINE_OK);
+        CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, &height), ENGINE_ERROR_NOT_READY);
+        Frames(engine, 3);
+        CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, &height), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_destroy(world, child), ENGINE_OK);
+        CHECK_STATUS(g_api->entity_destroy(world, parent), ENGINE_OK);
+        CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TERRAIN, &ct), ENGINE_OK);
+    }
+
     /* taking the terrain off takes its collider and its body with it */
     CHECK_STATUS(g_api->component_remove(world, terrain, ENGINE_COMPONENT_TERRAIN), ENGINE_OK);
     CHECK_STATUS(g_api->component_has(world, terrain, ENGINE_COMPONENT_COLLIDER, &has), ENGINE_OK);
