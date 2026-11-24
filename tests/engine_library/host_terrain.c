@@ -307,13 +307,13 @@ static void Physics(engine_handle engine)
     /* the collider reads back as a height field naming its map, and a height field can be set as a collider */
     {
         engine_collider field;
-        engine_collider back;
+        engine_collider collider_back;
         uint64_t plain = 0;
         Frames(engine, 2);
-        memset(&back, 0, sizeof(back));
-        back.struct_size = sizeof(back);
-        CHECK_STATUS(g_api->component_get(world, terrain, ENGINE_COMPONENT_COLLIDER, &back), ENGINE_OK);
-        CHECK(back.shape == ENGINE_SHAPE_HEIGHT_FIELD && back.mesh_resource == 0x7e1);
+        memset(&collider_back, 0, sizeof(collider_back));
+        collider_back.struct_size = sizeof(collider_back);
+        CHECK_STATUS(g_api->component_get(world, terrain, ENGINE_COMPONENT_COLLIDER, &collider_back), ENGINE_OK);
+        CHECK(collider_back.shape == ENGINE_SHAPE_HEIGHT_FIELD && collider_back.mesh_resource == 0x7e1);
         memset(&field, 0, sizeof(field));
         field.struct_size = sizeof(field);
         field.shape = ENGINE_SHAPE_HEIGHT_FIELD;
@@ -326,10 +326,10 @@ static void Physics(engine_handle engine)
         CHECK_STATUS(g_api->entity_create(world, &plain), ENGINE_OK);
         CHECK_STATUS(g_api->component_set(world, plain, ENGINE_COMPONENT_COLLIDER, &field), ENGINE_OK);
         Frames(engine, 2);
-        memset(&back, 0, sizeof(back));
-        back.struct_size = sizeof(back);
-        CHECK_STATUS(g_api->component_get(world, plain, ENGINE_COMPONENT_COLLIDER, &back), ENGINE_OK);
-        CHECK(back.shape == ENGINE_SHAPE_HEIGHT_FIELD && back.mesh_resource == 0x7e1);
+        memset(&collider_back, 0, sizeof(collider_back));
+        collider_back.struct_size = sizeof(collider_back);
+        CHECK_STATUS(g_api->component_get(world, plain, ENGINE_COMPONENT_COLLIDER, &collider_back), ENGINE_OK);
+        CHECK(collider_back.shape == ENGINE_SHAPE_HEIGHT_FIELD && collider_back.mesh_resource == 0x7e1);
         field.mesh_resource = 0x9998;
         CHECK_STATUS(g_api->component_set(world, plain, ENGINE_COMPONENT_COLLIDER, &field), ENGINE_ERROR_NOT_FOUND);
         CHECK_STATUS(g_api->entity_destroy(world, plain), ENGINE_OK);
@@ -339,7 +339,7 @@ static void Physics(engine_handle engine)
      * ready */
     {
         engine_transform scaled;
-        engine_transform back;
+        engine_transform transform_back;
         engine_transform parent_at;
         uint64_t child = 0;
         uint64_t parent = 0;
@@ -352,11 +352,11 @@ static void Physics(engine_handle engine)
         scaled.rotation[3] = 1.0f;
         scaled.scale[0] = 2.0f;
         scaled.scale[1] = scaled.scale[2] = 1.0f;
-        back = scaled;
-        back.scale[0] = 1.0f;
+        transform_back = scaled;
+        transform_back.scale[0] = 1.0f;
         CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &scaled), ENGINE_OK);
         CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, &height), ENGINE_ERROR_NOT_FOUND);
-        CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &back), ENGINE_OK);
+        CHECK_STATUS(g_api->component_set(world, terrain, ENGINE_COMPONENT_TRANSFORM, &transform_back), ENGINE_OK);
         CHECK_STATUS(g_api->terrain_height(world, 30.0f, 40.0f, &height), ENGINE_OK);
 
         CHECK_STATUS(g_api->component_remove(world, terrain, ENGINE_COMPONENT_TERRAIN), ENGINE_OK);

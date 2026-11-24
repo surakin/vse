@@ -530,13 +530,32 @@ static void TestAsync(engine_handle engine, const Bytes* gltf)
     int counts[6];
     int i;
     uint32_t last_steps = 0;
+    engine_status polled;
+    int rounds = 0;
     CHECK_STATUS(g_api->import_gltf_async(engine, gltf->data, gltf->size, &options, &ticket), ENGINE_OK);
     CHECK(ticket.value != 0);
+    if (ticket.value == 0)
+    {
+        return; /* nothing started: the rest would poll a ticket that does not exist */
+    }
     do
     {
         memset(&info, 0, sizeof(info));
         info.struct_size = sizeof(info);
-        CHECK_STATUS(g_api->import_poll(ticket, &info), ENGINE_OK);
+        polled = g_api->import_poll(ticket, &info);
+        CHECK_STATUS(polled, ENGINE_OK);
+        if (polled != ENGINE_OK || ++rounds > 60000)
+        {
+            /* a poll that fails never reports done, and one that never finishes would spin until ctest's timeout: stop
+               with a line instead (60,000 rounds of a 1 ms wait is about a minute) */
+            if (polled == ENGINE_OK)
+            {
+                printf("host_import: line %d: the asynchronous import did not finish\n", __LINE__);
+                ++g_failures;
+            }
+            g_api->import_destroy(ticket);
+            return;
+        }
         CHECK(info.steps_done <= info.steps_total && info.steps_total > 0 && info.steps_done >= last_steps);
         last_steps = info.steps_done;
         if (!info.done)
