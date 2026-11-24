@@ -99,6 +99,8 @@ behavior('host_replacer', {  -- tries to replace the behavior host's globals and
     say(self, try(function() event.on = function() end end))
     say(self, try(function() rawset(event, 'emit', print) end))
     say(self, try(function() task.run = nil end))
+    say(self, try(function() type = function() return 'table' end end))  -- a builtin the host calls
+    say(self, try(function() rawset(_G, 'error', print) end))
     say(self, try(function() my_global = 1 end))
   end,
 })
@@ -341,7 +343,7 @@ TEST_CASE("Events: the behavior host's globals and tables cannot be replaced by 
     EventRig rig;
     const ecs::Entity e = rig.Make("host_replacer");
     rig.runtime->Tick(&rig.world, 0.1);
-    CHECK(rig.Text(e).View() == StringView("LLLLLLR"));  // its own globals stay writable
+    CHECK(rig.Text(e).View() == StringView("LLLLLLLLR"));  // its own globals stay writable
     CHECK(rig.runtime->Stats().errors == 0);
 }
 

@@ -1623,6 +1623,20 @@ void SealGlobals(lua_State* L)
         lua_pushnil(L);
         lua_rawset(L, LUA_GLOBALSINDEX);  // S[name] = nil
     }
+    // The engine's own builtins are sealed too (`type`, `error`, `pairs`, `setmetatable`, ...): the host code looks
+    // them up through the scripts' globals, so a script that assigned one would change what every behavior of the state
+    // calls.
+    lua_pushnil(L);
+    while (lua_next(L, env) != 0)
+    {
+        lua_pop(L, 1);
+        if (lua_type(L, -1) == LUA_TSTRING)
+        {
+            lua_pushvalue(L, -1);
+            lua_pushboolean(L, 1);
+            lua_rawset(L, sealed);
+        }
+    }
     lua_getmetatable(L, LUA_GLOBALSINDEX);
     lua_pushcfunction(L, &SealedNewIndex);
     lua_setfield(L, -2, "__newindex");

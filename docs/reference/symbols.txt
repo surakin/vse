@@ -4426,16 +4426,16 @@ ecs::ComponentOf()	function	ecs	ecs-componentof	ecs.md	engine/ecs/component.h:17
 ecs::ComponentSet	struct	ecs	ecs-componentset	ecs.md	engine/ecs/component_set.h:17
 ecs::ComponentSet::words	variable	ecs	ecs-componentset-words	ecs.md	engine/ecs/component_set.h:20
 ecs::ComponentSet::Add(ComponentId)	function	ecs	ecs-componentset-add-componentid	ecs.md	engine/ecs/component_set.h:24
-ecs::ComponentSet::Remove(ComponentId)	function	ecs	ecs-componentset-remove-componentid	ecs.md	engine/ecs/component_set.h:31
-ecs::ComponentSet::Has(ComponentId) const	function	ecs	ecs-componentset-has-componentid-const	ecs.md	engine/ecs/component_set.h:38
-ecs::ComponentSet::IsEmpty() const	function	ecs	ecs-componentset-isempty-const	ecs.md	engine/ecs/component_set.h:41
-ecs::ComponentSet::Count() const	function	ecs	ecs-componentset-count-const	ecs.md	engine/ecs/component_set.h:44
-ecs::ComponentSet::IsSubsetOf(const ComponentSet&) const	function	ecs	ecs-componentset-issubsetof-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:47
-ecs::ComponentSet::Intersects(const ComponentSet&) const	function	ecs	ecs-componentset-intersects-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:53
-ecs::ComponentSet::Hash() const	function	ecs	ecs-componentset-hash-const	ecs.md	engine/ecs/component_set.h:59
-ecs::ComponentSet::NextFrom(u32) const	function	ecs	ecs-componentset-nextfrom-u32-const	ecs.md	engine/ecs/component_set.h:72
-Hash<ecs::ComponentSet>	struct	ecs	hash-lt-ecs-componentset-gt	ecs.md	engine/ecs/component_set.h:126
-Hash<ecs::ComponentSet>::operator()(const ecs::ComponentSet&) const	function	ecs	hash-lt-ecs-componentset-gt-operator-call-const-ecs-componentset-amp-const	ecs.md	engine/ecs/component_set.h:129
+ecs::ComponentSet::Remove(ComponentId)	function	ecs	ecs-componentset-remove-componentid	ecs.md	engine/ecs/component_set.h:32
+ecs::ComponentSet::Has(ComponentId) const	function	ecs	ecs-componentset-has-componentid-const	ecs.md	engine/ecs/component_set.h:39
+ecs::ComponentSet::IsEmpty() const	function	ecs	ecs-componentset-isempty-const	ecs.md	engine/ecs/component_set.h:45
+ecs::ComponentSet::Count() const	function	ecs	ecs-componentset-count-const	ecs.md	engine/ecs/component_set.h:48
+ecs::ComponentSet::IsSubsetOf(const ComponentSet&) const	function	ecs	ecs-componentset-issubsetof-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:51
+ecs::ComponentSet::Intersects(const ComponentSet&) const	function	ecs	ecs-componentset-intersects-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:57
+ecs::ComponentSet::Hash() const	function	ecs	ecs-componentset-hash-const	ecs.md	engine/ecs/component_set.h:63
+ecs::ComponentSet::NextFrom(u32) const	function	ecs	ecs-componentset-nextfrom-u32-const	ecs.md	engine/ecs/component_set.h:76
+Hash<ecs::ComponentSet>	struct	ecs	hash-lt-ecs-componentset-gt	ecs.md	engine/ecs/component_set.h:130
+Hash<ecs::ComponentSet>::operator()(const ecs::ComponentSet&) const	function	ecs	hash-lt-ecs-componentset-gt-operator-call-const-ecs-componentset-amp-const	ecs.md	engine/ecs/component_set.h:133
 ecs::Entity	struct	ecs	ecs-entity	ecs.md	engine/ecs/entity.h:17
 ecs::Entity::index	variable	ecs	ecs-entity-index	ecs.md	engine/ecs/entity.h:20
 ecs::Entity::generation	variable	ecs	ecs-entity-generation	ecs.md	engine/ecs/entity.h:22
@@ -12312,9 +12312,9 @@ rhi::FormatProperties::has_stencil	variable	rhi	rhi-formatproperties-has-stencil
 rhi::FormatProperties::is_srgb	variable	rhi	rhi-formatproperties-is-srgb	rhi.md	engine/rhi/format.h:73
 rhi::FormatProperties::is_compressed	variable	rhi	rhi-formatproperties-is-compressed	rhi.md	engine/rhi/format.h:75
 rhi::FormatInfo(Format)	function	rhi	rhi-formatinfo-format	rhi.md	engine/rhi/format.h:117
-rhi::MipExtent(u32,u32)	function	rhi	rhi-mipextent-u32-u32	rhi.md	engine/rhi/format.h:129
-rhi::FormatRowBytes(Format,u32)	function	rhi	rhi-formatrowbytes-format-u32	rhi.md	engine/rhi/format.h:140
-rhi::FormatSliceBytes(Format,u32,u32)	function	rhi	rhi-formatslicebytes-format-u32-u32	rhi.md	engine/rhi/format.h:153
+rhi::MipExtent(u32,u32)	function	rhi	rhi-mipextent-u32-u32	rhi.md	engine/rhi/format.h:131
+rhi::FormatRowBytes(Format,u32)	function	rhi	rhi-formatrowbytes-format-u32	rhi.md	engine/rhi/format.h:142
+rhi::FormatSliceBytes(Format,u32,u32)	function	rhi	rhi-formatslicebytes-format-u32-u32	rhi.md	engine/rhi/format.h:155
 rhi::Handle	struct	rhi	rhi-handle	rhi.md	engine/rhi/handle.h:23
 rhi::Handle::index	variable	rhi	rhi-handle-index	rhi.md	engine/rhi/handle.h:26
 rhi::Handle::generation	variable	rhi	rhi-handle-generation	rhi.md	engine/rhi/handle.h:28

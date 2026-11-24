@@ -239,6 +239,7 @@ struct HandleFade
     u64 handle;
     u32 frames;
     u32 use_default;
+    u64 owner;  // the issuing entity's key: the merge checks it against the voice's owner
 };
 
 struct HandleFlag
@@ -246,6 +247,7 @@ struct HandleFlag
     u64 handle;
     u32 flag;
     u32 pad;
+    u64 owner;
 };
 
 struct HandleValue
@@ -253,6 +255,7 @@ struct HandleValue
     u64 handle;
     f32 value;
     u32 pad;
+    u64 owner;
 };
 
 struct BusValue
@@ -448,7 +451,7 @@ void AudioStop(i64 voice, Value fade)
     {
         return;
     }
-    HandleFade payload{static_cast<u64>(voice), 0, 1};
+    HandleFade payload{static_cast<u64>(voice), 0, 1, context->current_entity_key};
     bool given = false;
     if (!FadeFrames(fade, services, &payload.frames, &given))
     {
@@ -472,7 +475,7 @@ void RecordFlag(i64 voice, u32 flag)
         script::RaiseScriptError("a placed sound cannot be paused (stop it, or give it a gain of 0)");
         return;
     }
-    const HandleFlag payload{static_cast<u64>(voice), flag, 0};
+    const HandleFlag payload{static_cast<u64>(voice), flag, 0, context->current_entity_key};
     Record(context, kCommandAudioPause, &payload, sizeof(payload));
 }
 
@@ -499,7 +502,7 @@ void RecordValue(u16 kind, i64 voice, f64 value, f32 lo, f32 hi, const char* wha
         Raise("the ", StringView(what), " is out of range");
         return;
     }
-    const HandleValue payload{static_cast<u64>(voice), static_cast<f32>(value), 0};
+    const HandleValue payload{static_cast<u64>(voice), static_cast<f32>(value), 0, context->current_entity_key};
     Record(context, kind, &payload, sizeof(payload));
 }
 
@@ -654,6 +657,14 @@ template <class T> bool ReadPayload(Span<const u8> payload, T* out)
     return true;
 }
 
+// A handle of a voice started earlier in the same tick passes the call-time check on its partition alone; the merge
+// has the voice's entry by now, so it settles the owner here (a handle another entity of the partition guessed fails).
+bool OwnedBy(const AudioScriptServices* audio, u64 handle, u64 owner)
+{
+    const VoiceTable::Entry* entry = audio->voices->Find(handle);
+    return entry == nullptr || entry->owner_key == owner;
+}
+
 // The voice a handle names at the merge, or false (a play that failed, a voice that ended).
 bool VoiceOf(const AudioScriptServices* audio, u64 handle, audio::VoiceId* voice)
 {
@@ -772,7 +783,7 @@ bool ApplyStop(MergeContext& context, ecs::Entity, Span<const u8> payload)
     const AudioScriptServices* audio = MergeAudio(context);
     HandleFade p;
     audio::VoiceId voice;
-    if (audio == nullptr || !ReadPayload(payload, &p))
+    if (audio == nullptr || !ReadPayload(payload, &p) || !OwnedBy(audio, p.handle, p.owner))
     {
         return false;
     }
@@ -812,7 +823,8 @@ bool ApplyPause(MergeContext& context, ecs::Entity, Span<const u8> payload)
     const AudioScriptServices* audio = MergeAudio(context);
     HandleFlag p;
     audio::VoiceId voice;
-    if (audio == nullptr || !ReadPayload(payload, &p) || !VoiceOf(audio, p.handle, &voice))
+    if (audio == nullptr || !ReadPayload(payload, &p) || !OwnedBy(audio, p.handle, p.owner) ||
+        !VoiceOf(audio, p.handle, &voice))
     {
         return false;
     }
@@ -824,7 +836,8 @@ bool ApplySetGain(MergeContext& context, ecs::Entity, Span<const u8> payload)
     const AudioScriptServices* audio = MergeAudio(context);
     HandleValue p;
     audio::VoiceId voice;
-    if (audio != nullptr && ReadPayload(payload, &p) && EmitterOf(audio, p.handle).IsValid())
+    if (audio != nullptr && ReadPayload(payload, &p) && OwnedBy(audio, p.handle, p.owner) &&
+        EmitterOf(audio, p.handle).IsValid())
     {
         audio::AudioSource* source = context.World()->Get<audio::AudioSource>(EmitterOf(audio, p.handle));
         if (source == nullptr)
@@ -834,8 +847,8 @@ bool ApplySetGain(MergeContext& context, ecs::Entity, Span<const u8> payload)
         source->gain = p.value;
         return true;
     }
-    return audio != nullptr && ReadPayload(payload, &p) && VoiceOf(audio, p.handle, &voice) &&
-           audio->mixer->SetGain(voice, p.value) == audio::MixerStatus::Ok;
+    return audio != nullptr && ReadPayload(payload, &p) && OwnedBy(audio, p.handle, p.owner) &&
+           VoiceOf(audio, p.handle, &voice) && audio->mixer->SetGain(voice, p.value) == audio::MixerStatus::Ok;
 }
 
 bool ApplySetPitch(MergeContext& context, ecs::Entity, Span<const u8> payload)
@@ -843,7 +856,8 @@ bool ApplySetPitch(MergeContext& context, ecs::Entity, Span<const u8> payload)
     const AudioScriptServices* audio = MergeAudio(context);
     HandleValue p;
     audio::VoiceId voice;
-    if (audio != nullptr && ReadPayload(payload, &p) && EmitterOf(audio, p.handle).IsValid())
+    if (audio != nullptr && ReadPayload(payload, &p) && OwnedBy(audio, p.handle, p.owner) &&
+        EmitterOf(audio, p.handle).IsValid())
     {
         audio::AudioSource* source = context.World()->Get<audio::AudioSource>(EmitterOf(audio, p.handle));
         if (source == nullptr)
@@ -853,8 +867,8 @@ bool ApplySetPitch(MergeContext& context, ecs::Entity, Span<const u8> payload)
         source->pitch = p.value;
         return true;
     }
-    return audio != nullptr && ReadPayload(payload, &p) && VoiceOf(audio, p.handle, &voice) &&
-           audio->mixer->SetPitch(voice, p.value) == audio::MixerStatus::Ok;
+    return audio != nullptr && ReadPayload(payload, &p) && OwnedBy(audio, p.handle, p.owner) &&
+           VoiceOf(audio, p.handle, &voice) && audio->mixer->SetPitch(voice, p.value) == audio::MixerStatus::Ok;
 }
 
 bool ApplyBusGain(MergeContext& context, ecs::Entity, Span<const u8> payload)

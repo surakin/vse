@@ -353,6 +353,28 @@ TEST_CASE("Script media: a voice handle works only for the entity whose script s
     REQUIRE(rig.RunAndMerge("audio.stop(a, 0)", &read, handle).IsOk());
 }
 
+TEST_CASE("Script media: a handle of the same tick and partition is bound to the entity that started it",
+          "[script_media][audio]")
+{
+    StateRig rig;
+    CallOutput out;
+    REQUIRE(rig.Run("return audio.play('beep', nil)", &out).IsOk());
+    const i64 handle = out.results[0].AsInt();
+    // Another entity of the same partition, in the same tick, passes the call-time check with the guessed number...
+    const u64 owner = rig.context.current_entity_key;
+    rig.context.current_entity_key = owner + 1;
+    CallOutput read;
+    const Value args[1] = {Value::FromInt(handle)};
+    REQUIRE(rig.Run("audio.stop(a, 0)", &read, args, 1).IsOk());
+    rig.context.current_entity_key = owner;
+    CommandBuffer* buffers[] = {&rig.buffer};
+    Merge(&rig.world, Span<CommandBuffer* const>(buffers, 1), rig.kinds, ConflictPolicy::LastWins, &rig.merge_services);
+    // ...but the merge refuses the stop: the voice is still held and not stopping.
+    const VoiceTable::Entry* entry = rig.voices.Find(static_cast<u64>(handle));
+    REQUIRE(entry != nullptr);
+    CHECK_FALSE(entry->stopping);
+}
+
 namespace media_test
 {
 
