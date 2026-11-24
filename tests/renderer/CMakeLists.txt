@@ -22,6 +22,7 @@ set(RENDERER_TEST_SOURCES
   instance_set_test.cpp  # Phase 28 Day 495
   instance_cull_test.cpp  # Phase 28 Day 496
   instance_tree_test.cpp  # Phase 28 Day 499
+  instance_tree_cull_test.cpp  # Phase 28 Day 500
   renderer_fault_test.cpp
   render_settings_test.cpp
   device_resources_test.cpp
@@ -81,6 +82,8 @@ function(engine_add_renderer_tests target suffix label spec)
   if(label STREQUAL "renderer")
     engine_soak_catch_test(${target} "An instance set holds and edits a million instances and agrees with a model"
       SOURCE tests/renderer/instance_set_test.cpp)
+    engine_soak_catch_test(${target} "Instance tree cull: the work follows the visible nodes, not the tree"
+      SOURCE tests/renderer/instance_tree_cull_test.cpp)
   endif()
 endfunction()
 

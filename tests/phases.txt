@@ -208,6 +208,7 @@ tests/renderer/terrain_tiles_test.cpp                 28
 tests/renderer/instance_set_test.cpp                28
 tests/renderer/instance_cull_test.cpp               28
 tests/renderer/instance_tree_test.cpp               28
+tests/renderer/instance_tree_cull_test.cpp          28
 tests/renderer/terrain_material_test.cpp              28
 tests/renderer/lsan_options.cpp                       5
 tests/renderer/material_test.cpp                      5

@@ -40,6 +40,35 @@ Transform TreeLocalTransform(const Vec3d& position, const Quaternion& rotation, 
     return t;
 }
 
+bool LodValid(const TreeLod& lod, usize mesh_count)
+{
+    if (lod.level_count < 1 || lod.level_count > kMaxTreeLevels || !IsFinite(lod.hysteresis) || lod.hysteresis < 0.0f ||
+        !IsFinite(lod.cull_distance) || lod.cull_distance < 0.0f || !IsFinite(lod.standin_distance) ||
+        lod.standin_distance < 0.0f)
+    {
+        return false;
+    }
+    f32 previous = 0.0f;
+    for (u32 k = 1; k < lod.level_count; ++k)
+    {
+        if (lod.mesh[k] >= mesh_count || !IsFinite(lod.switch_distance[k - 1]) ||
+            !(lod.switch_distance[k - 1] > previous))
+        {
+            return false;
+        }
+        previous = lod.switch_distance[k - 1];
+    }
+    if (lod.cull_distance != 0.0f && !(lod.cull_distance > previous))
+    {
+        return false;
+    }
+    if (lod.standin_mesh != kTreeNoMesh && (lod.standin_mesh >= mesh_count || !(lod.standin_distance > 0.0f)))
+    {
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 // ---- the builder ---------------------------------------------------------------------------------------------------
@@ -73,6 +102,10 @@ TreeStatus InstanceTreeBuilder::Check(const TreeNodeDesc& desc, bool root) const
     }
     if (!IsFinite(desc.extra.tint.x) || !IsFinite(desc.extra.tint.y) || !IsFinite(desc.extra.tint.z) ||
         !IsFinite(desc.extra.tint.w))
+    {
+        return TreeStatus::InvalidValue;
+    }
+    if (desc.has_lod && !LodValid(desc.lod, meshes_.Size()))
     {
         return TreeStatus::InvalidValue;
     }
@@ -184,6 +217,11 @@ InstanceTreePtr InstanceTreeBuilder::Finish(jobs::Scheduler* scheduler)
             node.flags = p.desc.flags;
             node.depth = p.depth;
             node.dirty = 1;
+            if (p.desc.has_lod)
+            {
+                node.lod = static_cast<u32>(tree->lods_.Size());
+                tree->lods_.Push(p.desc.lod);
+            }
             tree->nodes_.Push(node);
             // Push the children so that the first added is popped first: walk the sibling list, which is in order,
             // into a small reversed run.
@@ -229,6 +267,12 @@ const TreeMeshInfo& InstanceTree::Mesh(u32 index) const
 {
     ENGINE_ASSERT(index < meshes_.Size(), "the mesh index is out of range");
     return meshes_[index];
+}
+
+const TreeLod& InstanceTree::Lod(u32 index) const
+{
+    ENGINE_ASSERT(index < lods_.Size(), "the level-of-detail index is out of range");
+    return lods_[index];
 }
 
 u32 InstanceTree::Find(TreeNodeId id) const
@@ -277,7 +321,7 @@ usize InstanceTree::MemoryBytes() const
 {
     return nodes_.Capacity() * sizeof(InstanceTreeNode) +
            (index_of_id_.Capacity() + roots_.Capacity() + dirty_nodes_.Capacity()) * sizeof(u32) +
-           meshes_.Capacity() * sizeof(TreeMeshInfo);
+           meshes_.Capacity() * sizeof(TreeMeshInfo) + lods_.Capacity() * sizeof(TreeLod);
 }
 
 // Recomputes parent, subtree_size, the id map and the root list from the order and the depths.
@@ -292,6 +336,7 @@ void InstanceTree::Relink()
         stack.Resize(Min(static_cast<u32>(stack.Size()), node.depth));
         node.parent = node.depth == 0 ? kTreeNone : stack[node.depth - 1];
         node.subtree_size = 1;
+        node.lod_in_subtree = node.lod != kTreeNone;
         stack.Push(i);
         if (node.depth == 0)
         {
@@ -304,6 +349,7 @@ void InstanceTree::Relink()
         if (node.parent != kTreeNone)
         {
             nodes_[node.parent].subtree_size += node.subtree_size;
+            nodes_[node.parent].lod_in_subtree = nodes_[node.parent].lod_in_subtree || node.lod_in_subtree;
         }
     }
     index_of_id_.Resize(n);
@@ -591,7 +637,8 @@ bool InstanceTree::Validate() const
             }
             ++root_count;
         }
-        if (node.mesh != kTreeNoMesh && node.mesh >= meshes_.Size())
+        if ((node.mesh != kTreeNoMesh && node.mesh >= meshes_.Size()) ||
+            (node.lod != kTreeNone && node.lod >= lods_.Size()))
         {
             return false;
         }

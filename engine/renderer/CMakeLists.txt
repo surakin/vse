@@ -18,6 +18,7 @@ set(RENDERER_SOURCES
   instance_set.cpp  # Phase 28 Day 495
   instance_scatter.cpp  # Phase 28 Day 498
   instance_tree.cpp  # Phase 28 Day 499
+  instance_tree_cull.cpp  # Phase 28 Day 500
   instance_cull.cpp  # Phase 28 Day 496
   instance_query.cpp  # Phase 28 Day 496
   shared_settings.cpp

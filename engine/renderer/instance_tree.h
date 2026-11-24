@@ -74,6 +74,33 @@ struct TreeMeshInfo
     Aabb bounds;  ///< The box of the mesh in its own space; finite, not empty.
 };
 
+/// The most levels of detail a node names (its own mesh and up to three coarser ones).
+inline constexpr u32 kMaxTreeLevels = 4;
+/// The level number [[renderer::TreeVisibleNode]] reports for a stand-in mesh.
+inline constexpr u32 kTreeStandinLevel = kMaxTreeLevels;
+
+/// How a node's mesh changes with the distance of the camera.
+///
+/// Level 0 is the node's own mesh; `mesh[k]` (k from 1 to `level_count - 1`) are coarser ones, used beyond
+/// `switch_distance[k - 1]`. Beyond `cull_distance` the node's own mesh is not drawn (and with `cull_children_beyond`
+/// neither are the nodes below it). An inner node can carry a stand-in: a simplified mesh drawn at the node's place
+/// instead of the node and its whole subtree once the camera is farther than `standin_distance`. With a state
+/// ([[renderer::TreeLodState]]) a change of level happens only when the distance has passed the boundary by
+/// `hysteresis` metres, so a camera moving back and forth across a boundary changes the level once.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct TreeLod
+{
+    u32 level_count = 1;                      ///< 1 to `kMaxTreeLevels`.
+    u32 mesh[kMaxTreeLevels] = {0, 0, 0, 0};  ///< Mesh indices of levels 1 to `level_count - 1`; [0] is unused.
+    f32 switch_distance[kMaxTreeLevels - 1] = {0.0f, 0.0f, 0.0f};  ///< Strictly increasing, above 0.
+    f32 cull_distance = 0.0f;           ///< 0 for never; otherwise above the last switch distance.
+    bool cull_children_beyond = false;  ///< Also skip the subtree beyond `cull_distance`.
+    u32 standin_mesh = kTreeNoMesh;     ///< The stand-in, or `kTreeNoMesh`.
+    f32 standin_distance = 0.0f;        ///< Above 0 when there is a stand-in.
+    f32 hysteresis = 0.0f;              ///< Metres, not below 0.
+};
+
 /// What a node is made with.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -87,6 +114,8 @@ struct TreeNodeDesc
     u32 material_slot = 0;                         ///< Below `kMaxTreeMaterialSlots`.
     InstanceExtra extra;                           ///< The node's tint and custom value.
     u32 flags = 0;                                 ///< Free bits for the user of the tree.
+    bool has_lod = false;                          ///< Whether `lod` is used.
+    TreeLod lod;                                   ///< Levels of detail, the stand-in and the distance limits.
 };
 
 /// One node of the packed array.
@@ -94,20 +123,22 @@ struct TreeNodeDesc
 /// - Thread-safety: thread-compatible plain data.
 struct InstanceTreeNode
 {
-    Transform local;         ///< Relative to the parent; a root's position is zero (see `origin`).
-    Transform world;         ///< In the root's space (a root's position is zero).
-    Aabb bounds;             ///< The node's own mesh box in the root's space; empty for a group.
-    Aabb subtree_bounds;     ///< The union of `bounds` over the subtree, in the root's space.
-    Vec3d origin;            ///< A root's world position; zero for every other node.
-    InstanceExtra extra;     ///< Tint and custom value.
-    u32 id = 0;              ///< The stable id.
-    u32 parent = kTreeNone;  ///< Index of the parent, or `kTreeNone` for a root.
-    u32 subtree_size = 1;    ///< Nodes in the subtree, this one included.
-    u32 mesh = kTreeNoMesh;  ///< Mesh index or `kTreeNoMesh`.
-    u32 material_slot = 0;   ///< Material slot.
-    u32 flags = 0;           ///< User bits.
-    u32 depth = 0;           ///< 0 for a root.
-    u8 dirty = 0;            ///< Bit 0: the local transform changed; bit 1: the world transform changed this pass.
+    Transform local;              ///< Relative to the parent; a root's position is zero (see `origin`).
+    Transform world;              ///< In the root's space (a root's position is zero).
+    Aabb bounds;                  ///< The node's own mesh box in the root's space; empty for a group.
+    Aabb subtree_bounds;          ///< The union of `bounds` over the subtree, in the root's space.
+    Vec3d origin;                 ///< A root's world position; zero for every other node.
+    InstanceExtra extra;          ///< Tint and custom value.
+    u32 id = 0;                   ///< The stable id.
+    u32 parent = kTreeNone;       ///< Index of the parent, or `kTreeNone` for a root.
+    u32 subtree_size = 1;         ///< Nodes in the subtree, this one included.
+    u32 mesh = kTreeNoMesh;       ///< Mesh index or `kTreeNoMesh`.
+    u32 material_slot = 0;        ///< Material slot.
+    u32 flags = 0;                ///< User bits.
+    u32 depth = 0;                ///< 0 for a root.
+    u32 lod = kTreeNone;          ///< Index into the tree's level-of-detail table, or `kTreeNone`.
+    bool lod_in_subtree = false;  ///< Whether this node or one below it has a level-of-detail entry.
+    u8 dirty = 0;                 ///< Bit 0: the local transform changed; bit 1: the world transform changed this pass.
 };
 
 class InstanceTree;
@@ -142,6 +173,9 @@ public:
     /// Returns the box of mesh `index`.
     /// - Aborts: `index` is not below `MeshCount()`.
     const TreeMeshInfo& Mesh(u32 index) const;
+    /// Returns the level-of-detail entry `index` (a node's `lod`).
+    /// - Aborts: `index` is not below the number of entries.
+    const TreeLod& Lod(u32 index) const;
 
     /// Returns the index of the node with this id, or `kTreeNone` when there is none.
     /// - Fails: never.
@@ -227,6 +261,7 @@ private:
     Vector<u32> index_of_id_;
     Vector<u32> roots_;
     Vector<TreeMeshInfo> meshes_;
+    Vector<TreeLod> lods_;
     Vector<u32> dirty_nodes_;
 };
 
