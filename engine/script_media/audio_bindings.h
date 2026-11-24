@@ -100,6 +100,22 @@ struct AudioEventReport
 /// The name of the event a voice's end sends to the entity that started it.
 inline constexpr const char* kEventVoiceEnd = "on_voice_end";
 
+/// Ends the placed sounds that are over (`audio.play` with `position` or `entity`): a one-shot that played to its end,
+/// a sound whose entity or `AudioSource` went (the script's `audio.stop` does that), and a transient one-shot nobody
+/// could hear. Each gets an `on_voice_end` event (`reason` is `"finished"`, or `"stopped"` for a sound whose entity or
+/// source went), and a transient sound's entity is destroyed. Call it once a frame after `SpatialAudio::Update`, beside
+/// `PumpAudioEvents`; the handles are visited in ascending order, so the events are the same on every run.
+///
+/// - Param world: the world of the emitters.
+/// - Param spatial: the spatial system that plays them.
+/// - Param voices: the handle table.
+/// - Param runtime: the script runtime that receives the events.
+/// - Returns: what was done.
+/// - Ownership: borrows all four.
+/// - Fails: never.
+AudioEventReport PumpPlacedSounds(ecs::World* world, const audio::SpatialAudio* spatial, VoiceTable* voices,
+                                  script::ScriptRuntime* runtime);
+
 /// Tells scripts which of their voices ended, from the mixer's events.
 ///
 /// The payload of `on_voice_end` is `voice`

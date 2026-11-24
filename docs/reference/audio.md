@@ -6956,6 +6956,36 @@ What the last update did.
 |---|---|
 | Returns | the report. |
 
+### `IsKnown(ecs::Entity)` {#audio-spatialaudio-isknown-ecs-entity-const}
+
+`method audio::SpatialAudio::IsKnown` — defined in `engine/audio/spatial_audio.h`
+
+```cpp
+bool IsKnown(ecs::Entity entity) const;
+```
+
+Whether the system knows `entity` as an emitter (an update has seen its `AudioSource`).
+
+| Field | Value |
+|---|---|
+| Parameter `entity` | the entity. |
+| Returns | true if known. |
+
+### `IsFinished(ecs::Entity)` {#audio-spatialaudio-isfinished-ecs-entity-const}
+
+`method audio::SpatialAudio::IsFinished` — defined in `engine/audio/spatial_audio.h`
+
+```cpp
+bool IsFinished(ecs::Entity entity) const;
+```
+
+Whether the emitter's one-shot voice has ended (it played to its end and will not start again).
+
+| Field | Value |
+|---|---|
+| Parameter `entity` | the entity. |
+| Returns | true once it ended; false for a playing, a waiting or an unknown emitter. |
+
 ### `IsAudible(ecs::Entity)` {#audio-spatialaudio-isaudible-ecs-entity-const}
 
 `method audio::SpatialAudio::IsAudible` — defined in `engine/audio/spatial_audio.h`

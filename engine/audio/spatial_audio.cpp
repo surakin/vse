@@ -63,6 +63,17 @@ VoiceId SpatialAudio::VoiceOf(Entity entity) const
     return slot != nullptr ? emitters_[*slot].voice : VoiceId();
 }
 
+bool SpatialAudio::IsKnown(Entity entity) const
+{
+    return index_.Find(entity.ToU64()) != nullptr;
+}
+
+bool SpatialAudio::IsFinished(Entity entity) const
+{
+    const u32* slot = index_.Find(entity.ToU64());
+    return slot != nullptr && emitters_[*slot].finished;
+}
+
 bool SpatialAudio::IsAudible(Entity entity) const
 {
     const u32* slot = index_.Find(entity.ToU64());

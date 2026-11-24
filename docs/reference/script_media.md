@@ -172,6 +172,26 @@ inline constexpr const char* kEventVoiceEnd;
 
 The name of the event a voice's end sends to the entity that started it.
 
+## `PumpPlacedSounds(ecs::World*,const audio::SpatialAudio*,VoiceTable*,script::ScriptRuntime*)` {#script-media-pumpplacedsounds-ecs-world-star-const-audio-spatialaudio-star-voicetable-star-script-scriptruntime-star}
+
+`function script_media::PumpPlacedSounds` — defined in `engine/script_media/audio_bindings.h`
+
+```cpp
+AudioEventReport PumpPlacedSounds(ecs::World* world, const audio::SpatialAudio* spatial, VoiceTable* voices, script::ScriptRuntime* runtime);
+```
+
+Ends the placed sounds that are over (`audio.play` with `position` or `entity`): a one-shot that played to its end, a sound whose entity or `AudioSource` went (the script's `audio.stop` does that), and a transient one-shot nobody could hear. Each gets an `on_voice_end` event (`reason` is `"finished"`, or `"stopped"` for a sound whose entity or source went), and a transient sound's entity is destroyed. Call it once a frame after `SpatialAudio::Update`, beside `PumpAudioEvents`; the handles are visited in ascending order, so the events are the same on every run.
+
+| Field | Value |
+|---|---|
+| Parameter `world` | the world of the emitters. |
+| Parameter `spatial` | the spatial system that plays them. |
+| Parameter `voices` | the handle table. |
+| Parameter `runtime` | the script runtime that receives the events. |
+| Returns | what was done. |
+| Fails | never. |
+| Ownership | borrows all four. |
+
 ## `PumpAudioEvents(audio::Mixer*,VoiceTable*,script::ScriptRuntime*)` {#script-media-pumpaudioevents-audio-mixer-star-voicetable-star-script-scriptruntime-star}
 
 `function script_media::PumpAudioEvents` — defined in `engine/script_media/audio_bindings.h`
@@ -325,6 +345,26 @@ bool stopping;
 
 Whether a stop was asked: the handle is then an error value for scripts.
 
+#### `emitter` {#script-media-voicetable-entry-emitter}
+
+`variable script_media::VoiceTable::Entry::emitter` — defined in `engine/script_media/audio_services.h`
+
+```cpp
+ecs::Entity emitter;
+```
+
+For a placed sound (`audio.play` with `position` or `entity`): the entity whose `AudioSource` plays it; the invalid entity for a flat voice. `voice` is invalid for a placed sound: the spatial system starts the voice.
+
+#### `transient` {#script-media-voicetable-entry-transient}
+
+`variable script_media::VoiceTable::Entry::transient` — defined in `engine/script_media/audio_services.h`
+
+```cpp
+bool transient;
+```
+
+Whether the emitter is an entity made for this sound (`position`): it is destroyed when the sound ends.
+
 ### `VoiceTable()` {#script-media-voicetable-voicetable}
 
 `constructor script_media::VoiceTable::VoiceTable` — defined in `engine/script_media/audio_services.h`
@@ -371,6 +411,40 @@ Binds a handle to a voice.
 | Parameter `voice` | the mixer's voice. |
 | Parameter `owner_key` | the starting entity's stable id. |
 | Fails | never; a handle that is already bound is replaced. |
+
+### `AddPlaced(u64,ecs::Entity,u64,bool)` {#script-media-voicetable-addplaced-u64-ecs-entity-u64-bool}
+
+`method script_media::VoiceTable::AddPlaced` — defined in `engine/script_media/audio_services.h`
+
+```cpp
+void AddPlaced(u64 handle, ecs::Entity emitter, u64 owner_key, bool transient);
+```
+
+Binds a handle to a placed sound's emitter entity.
+
+| Field | Value |
+|---|---|
+| Parameter `handle` | the script's handle. |
+| Parameter `emitter` | the entity that carries the `AudioSource`. |
+| Parameter `owner_key` | the starting entity's stable id. |
+| Parameter `transient` | whether the entity was made for the sound and goes with it. |
+| Fails | never; a handle that is already bound is replaced. |
+
+### `PlacedHandles(Vector<u64>*)` {#script-media-voicetable-placedhandles-vector-lt-u64-gt-star-const}
+
+`method script_media::VoiceTable::PlacedHandles` — defined in `engine/script_media/audio_services.h`
+
+```cpp
+void PlacedHandles(Vector<u64>* out) const;
+```
+
+The handles of the placed sounds, in ascending order (so that what is done for each is the same on every run).
+
+| Field | Value |
+|---|---|
+| Parameter `out` | receives the handles; cleared first. |
+| Fails | never. |
+| Ownership | `out` is borrowed for the call. |
 
 ### `Find(u64)` {#script-media-voicetable-find-u64-const}
 
@@ -471,6 +545,16 @@ audio::Mixer* mixer;
 ```
 
 The mixer scripts' commands go to; not null.
+
+### `spatial` {#script-media-audioscriptservices-spatial}
+
+`variable script_media::AudioScriptServices::spatial` — defined in `engine/script_media/audio_services.h`
+
+```cpp
+audio::SpatialAudio* spatial;
+```
+
+The spatial system that plays `AudioSource` entities; null means `audio.play` refuses `position` and `entity`. The host calls `PumpPlacedSounds` once a frame after `SpatialAudio::Update`.
 
 ### `clips` {#script-media-audioscriptservices-clips}
 

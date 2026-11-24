@@ -20,7 +20,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
 | [Scripting](script.md) | 27 | 835 |
 | [Script physics bindings](script_physics.md) | 3 | 53 |
-| [Script audio and input bindings](script_media.md) | 5 | 132 |
+| [Script audio and input bindings](script_media.md) | 5 | 138 |
 | [Platform: OS Services](platform-os.md) | 9 | 91 |
 | [Platform: Windowing and Input](platform-window-input.md) | 23 | 679 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 211 |
@@ -28,7 +28,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [ECS](ecs.md) | 12 | 420 |
 | [Spatial Partitioning](spatial.md) | 12 | 334 |
 | [Physics](physics.md) | 32 | 845 |
-| [Audio](audio.md) | 28 | 822 |
+| [Audio](audio.md) | 28 | 824 |
 | [Audio occlusion over physics](audio_physics.md) | 1 | 9 |
 | [Networking](net.md) | 31 | 730 |
 | [Assets and resources](asset.md) | 42 | 1496 |

@@ -1,6 +1,6 @@
 # Scripts placing sound in the world: `audio.play` with `position` or `entity`
 
-Status: **proposal, waiting for the user's decision** (maintenance `linux-known-issues` Day 07). Nothing is built.
+Status: **A and B built** (2026-11-24, the user's decision after maintenance `linux-known-issues` Day 07); C not built. Tested in `tests/script_media/script_media_test.cpp` (`[placed]`); described in `docs/guide/scripting.md`, "Audio and input". The decisions: one source per entity (a second sound replaces the first); the handle is a table entry with an emitter entity instead of a voice.
 
 ## The gap
 

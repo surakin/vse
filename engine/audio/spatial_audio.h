@@ -142,6 +142,18 @@ public:
     /// - Returns: the report.
     const SpatialAudioReport& Report() const { return report_; }
 
+    /// Whether the system knows `entity` as an emitter (an update has seen its `AudioSource`).
+    ///
+    /// - Param entity: the entity.
+    /// - Returns: true if known.
+    bool IsKnown(ecs::Entity entity) const;
+
+    /// Whether the emitter's one-shot voice has ended (it played to its end and will not start again).
+    ///
+    /// - Param entity: the entity.
+    /// - Returns: true once it ended; false for a playing, a waiting or an unknown emitter.
+    bool IsFinished(ecs::Entity entity) const;
+
     /// Whether `entity` was audible (in range and above the threshold) at the last update.
     ///
     /// - Param entity: the entity.

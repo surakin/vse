@@ -44,7 +44,7 @@ Fades the voice to silence and holds its position.
 
 Thread rule: **world-write**. Id: `0xf801da33`.
 
-Starts a clip by name and returns the voice's handle (a number). `options` is nil or {gain=0..16, pitch=1/16..16, pan=-1..1, bus="name", loop=, priority=, fade_in=}. The sound starts when the commands of the tick are applied.
+Starts a clip by name and returns the voice's handle (a number). `options` is nil or {gain=0..16, pitch=1/16..16, pan=-1..1, bus="name", loop=, priority=, fade_in=, position=vec3, entity=}. The sound starts when the commands of the tick are applied. With `position` the sound is placed at that point (an entity is made for it and goes when the sound ends); with `entity` it follows that entity (one sound per entity: a later one replaces it). A placed sound is attenuated, panned and Doppler-shifted by the spatial audio system, so it takes no `pan` or `fade_in`, and cannot be paused.
 
 ### `audio.play_music`
 

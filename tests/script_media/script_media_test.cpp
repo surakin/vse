@@ -657,6 +657,42 @@ behavior('player', {
     end
   end,
 })
+-- Placed sounds: one at a point, one on the script's own entity, and the refused forms.
+behavior('placer', {
+  on_create = function(self)
+    event.on('on_voice_end', function(me, e)
+      me.ended = (me.ended or 0) + 1
+      component.set(me.entity, 'probe', { ended = me.ended, n = (e.reason == 'finished') and 1 or 2 })
+    end)
+  end,
+  on_update = function(self, dt)
+    self.age = (self.age or 0) + 1
+    if self.age == 1 then self.h = audio.play('loud', { position = vec3.new(6, 0, 0) }) end
+  end,
+})
+behavior('attacher', {
+  on_create = function(self)
+    event.on('on_voice_end', function(me, e)
+      me.ended = (me.ended or 0) + 1
+      component.set(me.entity, 'probe', { ended = me.ended, n = (e.reason == 'stopped') and 1 or 2 })
+    end)
+  end,
+  on_update = function(self, dt)
+    self.age = (self.age or 0) + 1
+    if self.age == 1 then self.h = audio.play('loud', { entity = self.entity, loop = true }) end
+    if self.age == 10 then audio.set_gain(self.h, 0.5) end
+    if self.age == 14 then audio.stop(self.h, nil) end
+  end,
+})
+behavior('bad_both', { on_update = function(self, dt) audio.play('loud', { position = vec3.new(1, 0, 0), entity = self.entity }) end })
+behavior('bad_pan', { on_update = function(self, dt) audio.play('loud', { position = vec3.new(1, 0, 0), pan = 0.5 }) end })
+behavior('bad_pause', {
+  on_update = function(self, dt)
+    self.age = (self.age or 0) + 1
+    if self.age == 1 then self.h = audio.play('loud', { position = vec3.new(1, 0, 0), loop = true }) end
+    if self.age == 3 then audio.pause(self.h) end
+  end,
+})
 -- Reads the snapshot every tick and writes what it saw.
 behavior('reader', {
   on_update = function(self, dt)
@@ -705,6 +741,7 @@ struct RuntimeRig
     InputScriptServices input;
     UniquePtr<ScriptRuntime> runtime;
     audio::RenderHash hash;
+    audio::SpatialAudio spatial;
     u64 tick = 0;
 
     explicit RuntimeRig(u32 partitions) : catalog(&registry)
@@ -727,6 +764,8 @@ struct RuntimeRig
         audio.clips.resolve = &Clips::Resolve;
         audio.clips.user = &clips;
         audio.voices = &voices;
+        spatial.Init(&mixer, audio::SpatialAudioConfig());
+        audio.spatial = &spatial;
         input.snapshot = &snapshot;
         ScriptRuntimeConfig config;
         config.backend = backend.Get();
@@ -758,6 +797,44 @@ struct RuntimeRig
         runtime->Tick(&world, 1.0 / 60.0, scheduler);
         RenderBlock(mixer, &hash);
         PumpAudioEvents(&mixer, &voices, runtime.Get());
+    }
+
+    // One frame with placed sounds: the scripts run and merge, the transforms are made (the propagation system's job in
+    // a game), the spatial system places the sounds, a block renders and both pumps run. Returns the block's peak.
+    f32 PlacedFrame()
+    {
+        ++tick;
+        runtime->Tick(&world, 1.0 / 60.0, nullptr);
+        Vector<ecs::Entity> placed;
+        Vector<ecs::LocalTransform> locals;
+        world.Query<ecs::Read<ecs::LocalTransform>>().ForEach(
+            [&](ecs::Entity e, const ecs::LocalTransform& local)
+            {
+                placed.Push(e);
+                locals.Push(local);
+            });
+        for (usize i = 0; i < placed.Size(); ++i)  // after the query: `Set` that adds moves rows
+        {
+            world.Set<ecs::WorldTransform>(placed[i], ecs::WorldTransform::FromMatrix(locals[i].ToMatrix()));
+        }
+        spatial.Update(world, 1.0f / 60.0f);
+        f32 peak = 0.0f;
+        RenderBlock(mixer, nullptr, &peak);
+        PumpAudioEvents(&mixer, &voices, runtime.Get());
+        PumpPlacedSounds(&world, &spatial, &voices, runtime.Get());
+        return peak;
+    }
+
+    u32 SourceCount()
+    {
+        u32 count = 0;
+        world.Query<ecs::Read<audio::AudioSource>>().ForEach([&](ecs::Entity, const audio::AudioSource&) { ++count; });
+        return count;
+    }
+
+    ecs::Entity Listener()
+    {
+        return world.Create(audio::AudioListener(), ecs::WorldTransform::FromMatrix(ecs::LocalTransform().ToMatrix()));
     }
 
     // One frame from a recorded snapshot: the platform's state is not touched.
@@ -834,6 +911,81 @@ TEST_CASE("Script media: a voice's end reaches the script that started it", "[sc
     // The clips are three and eight blocks long and the script stops its voice every fifth tick: it heard ends.
     CHECK(rig.world.Get<Probe>(player)->ended >= 1);
     CHECK(rig.voices.Size() <= 3);
+}
+
+TEST_CASE("Script media: audio.play with a position places a sound, and its entity goes when it ends",
+          "[script_media][audio][placed]")
+{
+    RuntimeRig rig(2);
+    rig.Listener();
+    const ecs::Entity player = rig.Spawn(StringView("placer"));
+    f32 loudest = 0.0f;
+    u32 most_sources = 0;
+    for (u32 t = 0; t < 40; ++t)
+    {
+        loudest = Max(loudest, rig.PlacedFrame());
+        most_sources = Max(most_sources, rig.SourceCount());
+    }
+    REQUIRE(rig.runtime->Stats().errors == 0);
+    CHECK(most_sources == 1);
+    CHECK(loudest > 0.0f);
+    CHECK(loudest < 0.25f * 0.5f);  // six units away: quieter than the flat clip (0.25) by a good part
+    CHECK(rig.SourceCount() == 0);  // the transient entity is gone
+    CHECK(rig.voices.Size() == 0);
+    CHECK(rig.world.Get<Probe>(player)->ended == 1);
+    CHECK(rig.world.Get<Probe>(player)->n == 1);  // `finished`
+}
+
+TEST_CASE("Script media: audio.play on an entity follows it, takes set_gain and stop", "[script_media][audio][placed]")
+{
+    RuntimeRig rig(2);
+    rig.Listener();
+    const ecs::Entity player = rig.Spawn(StringView("attacher"));
+    rig.world.Get<ecs::LocalTransform>(player)->position = Vec3d(2, 0, 0);
+    f32 before_stop = 0.0f;
+    for (u32 t = 0; t < 13; ++t)
+    {
+        before_stop = rig.PlacedFrame();
+    }
+    CHECK(before_stop > 0.0f);
+    CHECK(rig.SourceCount() == 1);
+    CHECK(rig.world.Has<audio::AudioSource>(player));
+    CHECK(rig.world.Get<audio::AudioSource>(player)->gain == 0.5f);  // set_gain on a placed sound edits the source
+    for (u32 t = 0; t < 12; ++t)
+    {
+        rig.PlacedFrame();
+    }
+    REQUIRE(rig.runtime->Stats().errors == 0);
+    CHECK(!rig.world.Has<audio::AudioSource>(player));  // stop removed the source, not the entity
+    CHECK(rig.world.Exists(player));
+    CHECK(rig.world.Get<Probe>(player)->ended == 1);
+    CHECK(rig.world.Get<Probe>(player)->n == 1);  // `stopped`
+    CHECK(rig.voices.Size() == 0);
+    CHECK(rig.PlacedFrame() == 0.0f);
+}
+
+TEST_CASE("Script media: the refused forms of a placed sound are script errors", "[script_media][audio][placed]")
+{
+    const char* const behaviors[] = {"bad_both", "bad_pan", "bad_pause"};
+    for (const char* behavior : behaviors)
+    {
+        RuntimeRig rig(1);
+        rig.Listener();
+        rig.Spawn(StringView(behavior));
+        for (u32 t = 0; t < 4; ++t)
+        {
+            rig.PlacedFrame();
+        }
+        INFO(behavior);
+        CHECK(rig.runtime->Stats().errors >= 1);
+    }
+    // A world with no spatial system refuses `position`.
+    RuntimeRig bare(1);
+    bare.audio.spatial = nullptr;
+    bare.Spawn(StringView("placer"));
+    bare.runtime->Tick(&bare.world, 1.0 / 60.0, nullptr);
+    CHECK(bare.runtime->Stats().errors >= 1);
+    CHECK(bare.SourceCount() == 0);
 }
 
 TEST_CASE("Script media: 256 players give the same rendered blocks at 1 and 16 threads", "[script_media][parallel]")

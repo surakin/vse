@@ -6,8 +6,11 @@
 #include "audio/clip.h"
 #include "audio/mixer.h"
 #include "audio/music.h"
+#include "audio/spatial_audio.h"
 #include "audio/stream.h"
 #include "containers/hash_map.h"
+#include "containers/vector.h"
+#include "ecs/entity.h"
 #include "mem/heap_allocator.h"
 #include "string_view.h"
 #include "types.h"
@@ -65,6 +68,11 @@ public:
         u64 owner_key = 0;
         /// Whether a stop was asked: the handle is then an error value for scripts.
         bool stopping = false;
+        /// For a placed sound (`audio.play` with `position` or `entity`): the entity whose `AudioSource` plays it; the
+        /// invalid entity for a flat voice. `voice` is invalid for a placed sound: the spatial system starts the voice.
+        ecs::Entity emitter;
+        /// Whether the emitter is an entity made for this sound (`position`): it is destroyed when the sound ends.
+        bool transient = false;
     };
 
     /// Makes an empty table.
@@ -80,6 +88,22 @@ public:
     /// - Param owner_key: the starting entity's stable id.
     /// - Fails: never; a handle that is already bound is replaced.
     void Add(u64 handle, audio::VoiceId voice, u64 owner_key);
+
+    /// Binds a handle to a placed sound's emitter entity.
+    ///
+    /// - Param handle: the script's handle.
+    /// - Param emitter: the entity that carries the `AudioSource`.
+    /// - Param owner_key: the starting entity's stable id.
+    /// - Param transient: whether the entity was made for the sound and goes with it.
+    /// - Fails: never; a handle that is already bound is replaced.
+    void AddPlaced(u64 handle, ecs::Entity emitter, u64 owner_key, bool transient);
+
+    /// The handles of the placed sounds, in ascending order (so that what is done for each is the same on every run).
+    ///
+    /// - Param out: receives the handles; cleared first.
+    /// - Ownership: `out` is borrowed for the call.
+    /// - Fails: never.
+    void PlacedHandles(Vector<u64>* out) const;
 
     /// The entry of a handle.
     ///
@@ -126,6 +150,9 @@ struct AudioScriptServices
 {
     /// The mixer scripts' commands go to; not null.
     audio::Mixer* mixer = nullptr;
+    /// The spatial system that plays `AudioSource` entities; null means `audio.play` refuses `position` and `entity`.
+    /// The host calls `PumpPlacedSounds` once a frame after `SpatialAudio::Update`.
+    audio::SpatialAudio* spatial = nullptr;
     /// Clips by name; `resolve` null means `audio.play` is refused.
     ClipSource clips;
     /// Music streams by name; `resolve` null means `audio.music.*` is refused.

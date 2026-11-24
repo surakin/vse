@@ -2,6 +2,8 @@
 
 #include "audio/components.h"
 #include "cstr/mem_ops.h"
+#include "ecs/transform.h"
+#include "ecs/world.h"
 #include "lang/scalar.h"
 #include "script/merge_services.h"
 #include "script/partition_context.h"
@@ -61,14 +63,14 @@ void Raise(StringView a, StringView b = StringView(), StringView c = StringView(
     script::RaiseScriptError(text.View());
 }
 
-bool Record(PartitionContext* context, u16 kind, const void* payload, u32 size)
+bool Record(PartitionContext* context, u16 kind, const void* payload, u32 size, ecs::Entity target = ecs::Entity())
 {
     if (context->commands == nullptr)
     {
         script::RaiseScriptError("this script cannot change the world (no command buffer)");
         return false;
     }
-    if (!context->commands->Record(kind, context->current_entity_key, ecs::Entity(), payload, size))
+    if (!context->commands->Record(kind, context->current_entity_key, target, payload, size))
     {
         script::RaiseScriptError("the command buffer is full");
         return false;
@@ -168,7 +170,8 @@ bool ReadFlag(const Value& map, StringView key, bool* out)
 
 bool KnownKey(StringView key)
 {
-    static const char* const kKeys[] = {"gain", "pitch", "pan", "bus", "loop", "priority", "fade_in"};
+    static const char* const kKeys[] = {"gain",     "pitch",   "pan",      "bus",   "loop",
+                                        "priority", "fade_in", "position", "entity"};
     for (const char* name : kKeys)
     {
         if (key == StringView(name))
@@ -213,9 +216,10 @@ struct PlayHeader
     f32 pitch;
     f32 pan;
     u32 bus;
-    u32 flags;  // 1 loop, 2 fade in
+    u32 flags;  // 1 loop, 2 fade in, 4 placed at `position`, 8 placed on the command's target entity
     i32 priority;
     u32 name_size;
+    f64 position[3];  // a placed sound at a point (flag 4)
 };
 
 struct HandleFade
@@ -303,7 +307,8 @@ i64 AudioPlay(StringView clip, Value options)
         {
             if (!KnownKey(options.KeyAt(i)))
             {
-                Raise("unknown option `", options.KeyAt(i), "` (gain, pitch, pan, bus, loop, priority, fade_in)");
+                Raise("unknown option `", options.KeyAt(i),
+                      "` (gain, pitch, pan, bus, loop, priority, fade_in, position, entity)");
                 return 0;
             }
         }
@@ -332,8 +337,71 @@ i64 AudioPlay(StringView clip, Value options)
             header.bus = id.index;
         }
     }
+    ecs::Entity target;
+    if (!options.IsNil())
+    {
+        const Value* position = options.Find("position");
+        const Value* entity = options.Find("entity");
+        if (position != nullptr || entity != nullptr)
+        {
+            if (services->spatial == nullptr)
+            {
+                script::RaiseScriptError(
+                    "this world places no sounds (`position` and `entity` need the spatial audio system)");
+                return 0;
+            }
+            if (position != nullptr && entity != nullptr)
+            {
+                script::RaiseScriptError("give `position` or `entity`, not both");
+                return 0;
+            }
+            if (options.Find("pan") != nullptr || fade_in)
+            {
+                script::RaiseScriptError(
+                    "a placed sound is panned by where it is: `pan` and `fade_in` are for flat sounds");
+                return 0;
+            }
+            if (position != nullptr)
+            {
+                if (position->Kind() != ValueKind::Vec3)
+                {
+                    script::RaiseScriptError("the option `position` must be a vec3");
+                    return 0;
+                }
+                const Vec3d at = position->AsVec3d();
+                if (!(at.x > -1.0e12 && at.x < 1.0e12 && at.y > -1.0e12 && at.y < 1.0e12 && at.z > -1.0e12 &&
+                      at.z < 1.0e12))
+                {
+                    script::RaiseScriptError("the option `position` must be finite");
+                    return 0;
+                }
+                header.position[0] = at.x;
+                header.position[1] = at.y;
+                header.position[2] = at.z;
+                header.flags |= 4u;
+            }
+            else
+            {
+                if (entity->Kind() != ValueKind::Entity)
+                {
+                    script::RaiseScriptError("the option `entity` must be an entity");
+                    return 0;
+                }
+                target = entity->AsEntity();
+                const bool valid = target.IsPlaceholder()
+                                       ? context->commands != nullptr && context->commands->IsReserved(target)
+                                       : context->world->Exists(target);
+                if (!valid)
+                {
+                    script::RaiseScriptError("the option `entity` names an entity that does not exist");
+                    return 0;
+                }
+                header.flags |= 8u;
+            }
+        }
+    }
     header.priority = static_cast<i32>(priority);
-    header.flags = (loop ? 1u : 0u) | (fade_in ? 2u : 0u);
+    header.flags |= (loop ? 1u : 0u) | (fade_in ? 2u : 0u);
     const ecs::Entity placeholder = context->commands != nullptr ? context->commands->Reserve() : ecs::Entity();
     if (!placeholder.IsValid())
     {
@@ -353,7 +421,7 @@ i64 AudioPlay(StringView clip, Value options)
     u8 bytes[sizeof(PlayHeader) + kMaxNameBytes];
     MemCopy(bytes, &header, sizeof(header));
     MemCopy(bytes + sizeof(header), clip.Data(), clip.Length());
-    if (!Record(context, kCommandAudioPlay, bytes, static_cast<u32>(sizeof(header) + clip.Length())))
+    if (!Record(context, kCommandAudioPlay, bytes, static_cast<u32>(sizeof(header) + clip.Length()), target))
     {
         return 0;
     }
@@ -384,6 +452,12 @@ void RecordFlag(i64 voice, u32 flag)
     const AudioScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
     if (services == nullptr || !CheckHandle(context, services, voice))
     {
+        return;
+    }
+    const VoiceTable::Entry* entry = services->voices->Find(static_cast<u64>(voice));
+    if (entry != nullptr && entry->emitter.IsValid())
+    {
+        script::RaiseScriptError("a placed sound cannot be paused (stop it, or give it a gain of 0)");
         return;
     }
     const HandleFlag payload{static_cast<u64>(voice), flag, 0};
@@ -576,11 +650,64 @@ bool VoiceOf(const AudioScriptServices* audio, u64 handle, audio::VoiceId* voice
     {
         return false;
     }
+    if (entry->emitter.IsValid())
+    {
+        return false;  // a placed sound has no voice of its own: the callers below handle it before asking
+    }
     *voice = entry->voice;
     return true;
 }
 
-bool ApplyPlay(MergeContext& context, ecs::Entity, Span<const u8> payload)
+// The emitter of a placed sound, or the invalid entity for a flat voice or a handle that is gone.
+ecs::Entity EmitterOf(const AudioScriptServices* audio, u64 handle)
+{
+    const VoiceTable::Entry* entry = audio->voices->Find(handle);
+    return entry != nullptr ? entry->emitter : ecs::Entity();
+}
+
+// The placed forms of `audio.play`: an `AudioSource` on an entity, which the spatial system plays and places.
+bool ApplyPlaceSound(MergeContext& context, const AudioScriptServices* audio, ecs::Entity target,
+                     const PlayHeader& header, const audio::AudioClipConstPtr& clip)
+{
+    if (audio->spatial == nullptr)
+    {
+        return false;
+    }
+    ecs::World* world = context.World();
+    const bool at_point = (header.flags & 4u) != 0;
+    ecs::Entity emitter = target;
+    if (at_point)
+    {
+        ecs::LocalTransform local;
+        local.position = Vec3d(header.position[0], header.position[1], header.position[2]);
+        emitter = ecs::CreateTransformEntity(*world, local);
+    }
+    else if (!emitter.IsValid() || !world->Exists(emitter))
+    {
+        return false;
+    }
+    audio::AudioSource source;
+    source.clip = clip;
+    source.bus = audio::BusId{header.bus};
+    source.gain = header.gain;
+    source.pitch = header.pitch;
+    source.loop = (header.flags & 1u) != 0;
+    source.priority = header.priority;
+    // Another sound already on the entity is replaced: an entity has one source.
+    const ecs::Status status = world->Set<audio::AudioSource>(emitter, Move(source));
+    if (status != ecs::Status::Ok)
+    {
+        if (at_point)
+        {
+            world->Destroy(emitter);
+        }
+        return false;
+    }
+    audio->voices->AddPlaced(header.handle, emitter, header.owner, at_point);
+    return true;
+}
+
+bool ApplyPlay(MergeContext& context, ecs::Entity target, Span<const u8> payload)
 {
     const AudioScriptServices* audio = MergeAudio(context);
     PlayHeader header;
@@ -599,6 +726,10 @@ bool ApplyPlay(MergeContext& context, ecs::Entity, Span<const u8> payload)
     if (desc.clip.Get() == nullptr)
     {
         return false;
+    }
+    if ((header.flags & 12u) != 0)
+    {
+        return ApplyPlaceSound(context, audio, target, header, desc.clip);
     }
     desc.gain = header.gain;
     desc.pitch = header.pitch;
@@ -621,7 +752,32 @@ bool ApplyStop(MergeContext& context, ecs::Entity, Span<const u8> payload)
     const AudioScriptServices* audio = MergeAudio(context);
     HandleFade p;
     audio::VoiceId voice;
-    if (audio == nullptr || !ReadPayload(payload, &p) || !VoiceOf(audio, p.handle, &voice))
+    if (audio == nullptr || !ReadPayload(payload, &p))
+    {
+        return false;
+    }
+    const ecs::Entity emitter = EmitterOf(audio, p.handle);
+    if (emitter.IsValid())
+    {
+        // A placed sound: its entity (or its source) goes, and the spatial system fades the voice out over its own
+        // stop fade, so the fade length of the call is not used.
+        const VoiceTable::Entry* entry = audio->voices->Find(p.handle);
+        ecs::World* world = context.World();
+        if (world->Exists(emitter))
+        {
+            if (entry->transient)
+            {
+                world->Destroy(emitter);
+            }
+            else
+            {
+                world->Remove<audio::AudioSource>(emitter);
+            }
+        }
+        audio->voices->MarkStopping(p.handle);
+        return true;
+    }
+    if (!VoiceOf(audio, p.handle, &voice))
     {
         return false;
     }
@@ -648,6 +804,16 @@ bool ApplySetGain(MergeContext& context, ecs::Entity, Span<const u8> payload)
     const AudioScriptServices* audio = MergeAudio(context);
     HandleValue p;
     audio::VoiceId voice;
+    if (audio != nullptr && ReadPayload(payload, &p) && EmitterOf(audio, p.handle).IsValid())
+    {
+        audio::AudioSource* source = context.World()->Get<audio::AudioSource>(EmitterOf(audio, p.handle));
+        if (source == nullptr)
+        {
+            return false;
+        }
+        source->gain = p.value;
+        return true;
+    }
     return audio != nullptr && ReadPayload(payload, &p) && VoiceOf(audio, p.handle, &voice) &&
            audio->mixer->SetGain(voice, p.value) == audio::MixerStatus::Ok;
 }
@@ -657,6 +823,16 @@ bool ApplySetPitch(MergeContext& context, ecs::Entity, Span<const u8> payload)
     const AudioScriptServices* audio = MergeAudio(context);
     HandleValue p;
     audio::VoiceId voice;
+    if (audio != nullptr && ReadPayload(payload, &p) && EmitterOf(audio, p.handle).IsValid())
+    {
+        audio::AudioSource* source = context.World()->Get<audio::AudioSource>(EmitterOf(audio, p.handle));
+        if (source == nullptr)
+        {
+            return false;
+        }
+        source->pitch = p.value;
+        return true;
+    }
     return audio != nullptr && ReadPayload(payload, &p) && VoiceOf(audio, p.handle, &voice) &&
            audio->mixer->SetPitch(voice, p.value) == audio::MixerStatus::Ok;
 }
@@ -728,8 +904,11 @@ bool RegisterAudioBindings(script::BindingRegistry* registry)
     ok &= registry->Add<&AudioPlay>(
         "audio", "play", ThreadRule::WorldWrite, "clip, options",
         "Starts a clip by name and returns the voice's handle (a number). `options` is nil or {gain=0..16, "
-        "pitch=1/16..16, pan=-1..1, bus=\"name\", loop=, priority=, fade_in=}. The sound starts when the commands of "
-        "the tick are applied.");
+        "pitch=1/16..16, pan=-1..1, bus=\"name\", loop=, priority=, fade_in=, position=vec3, entity=}. The sound "
+        "starts when the commands of the tick are applied. With `position` the sound is placed at that point (an "
+        "entity is made for it and goes when the sound ends); with `entity` it follows that entity (one sound per "
+        "entity: a later one replaces it). A placed sound is attenuated, panned and Doppler-shifted by the spatial "
+        "audio system, so it takes no `pan` or `fade_in`, and cannot be paused.");
     ok &= registry->Add<&AudioStop>("audio", "stop", ThreadRule::WorldWrite, "voice, fade_seconds",
                                     "Fades the voice out (nil: the mixer's short ramp) and frees it. The handle is "
                                     "then no longer valid.");
@@ -795,6 +974,54 @@ bool RegisterAudioComponents(storage::ComponentRegistry* registry)
 void RegisterAudioValidators(script::ComponentCatalog* catalog)
 {
     catalog->SetValidator(kAudioListenerId, &CheckListener);
+}
+
+AudioEventReport PumpPlacedSounds(ecs::World* world, const audio::SpatialAudio* spatial, VoiceTable* voices,
+                                  script::ScriptRuntime* runtime)
+{
+    AudioEventReport report;
+    Vector<u64> handles;
+    voices->PlacedHandles(&handles);
+    for (usize i = 0; i < handles.Size(); ++i)
+    {
+        const u64 handle = handles[i];
+        const VoiceTable::Entry entry = *voices->Find(handle);
+        const bool alive = world->Exists(entry.emitter) && world->Has<audio::AudioSource>(entry.emitter);
+        const audio::AudioSource* source = alive ? world->Get<audio::AudioSource>(entry.emitter) : nullptr;
+        // Over: stopped by the script (the entry says so), the entity or its source gone, or a one-shot that played to
+        // its end. A transient one-shot that the system has seen but never found audible is over too: nobody heard it
+        // and it would wait for the listener forever.
+        const bool one_shot = source != nullptr && !source->loop;
+        const bool finished = alive && one_shot && spatial->IsFinished(entry.emitter);
+        const bool unheard = alive && one_shot && entry.transient && spatial->IsKnown(entry.emitter) &&
+                             !spatial->IsAudible(entry.emitter) && !spatial->VoiceOf(entry.emitter).IsValid();
+        if (alive && !finished && !unheard)
+        {
+            continue;
+        }
+        ++report.polled;
+        const char* reason = !alive ? "stopped" : "finished";
+        if (alive && entry.transient)
+        {
+            world->Destroy(entry.emitter);
+        }
+        if (runtime->HasHandler(entry.owner_key, StringView(kEventVoiceEnd)))
+        {
+            Value payload = Value::MakeMap();
+            payload.Set("voice", Value::FromInt(static_cast<i64>(handle)));
+            payload.Set("reason", Value::FromText(StringView(reason)));
+            if (runtime->Events().Emit(StringView(kEventVoiceEnd), Move(payload), entry.owner_key))
+            {
+                ++report.emitted;
+            }
+        }
+        else
+        {
+            ++report.unhandled;
+        }
+        voices->Remove(handle);
+    }
+    return report;
 }
 
 AudioEventReport PumpAudioEvents(audio::Mixer* mixer, VoiceTable* voices, script::ScriptRuntime* runtime)
