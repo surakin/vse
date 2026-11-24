@@ -462,6 +462,23 @@ static float JointHeight(engine_handle world, uint64_t entity, uint32_t joint)
     return matrix[13];
 }
 
+/* A rotation of 90 degrees about Z on `joint` (the host's "nod"): an arm one above the root then lies along -X. */
+static engine_status TurnJoint(engine_handle world, uint64_t entity, uint32_t joint, int identity)
+{
+    const float turned[4] = {0.0f, 0.0f, 0.70710678f, 0.70710678f};
+    const float none[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    return g_api->animation_set_joint_rotation(world, entity, joint, identity ? none : turned);
+}
+
+static void JointOrigin(engine_handle world, uint64_t entity, uint32_t joint, float* x, float* y)
+{
+    float matrix[16];
+    memset(matrix, 0, sizeof(matrix));
+    CHECK_STATUS(g_api->skeleton_joint_transform(world, entity, joint, matrix), ENGINE_OK);
+    *x = matrix[12];
+    *y = matrix[13];
+}
+
 static float Near(float a, float b)
 {
     return a > b ? a - b : b - a;
@@ -1280,6 +1297,63 @@ int main(void)
         CHECK(Near(JointHeight(world, hero, 1), 3.0f) < 0.01f);
         CHECK_STATUS(g_api->component_get(world, hero, ENGINE_COMPONENT_ANIMATION_PLAYER, &state_out), ENGINE_OK);
         CHECK(state_out.fading == 0);
+        /* a rotation the host adds to a joint (a head that follows where the player looks) */
+        {
+            float x = 0.0f;
+            float y = 0.0f;
+            uint64_t still;
+            const float bad_length[4] = {0.0f, 0.0f, 0.5f, 0.5f};
+            const float not_finite[4] = {0.0f, 0.0f, 0.0f, (float)(1e30 * 1e30)};
+            CHECK_STATUS(g_api->animation_set_joint_rotation(world, hero, 1, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
+            CHECK_STATUS(g_api->animation_set_joint_rotation(world, hero, 1, bad_length),
+                         ENGINE_ERROR_INVALID_ARGUMENT);
+            CHECK_STATUS(g_api->animation_set_joint_rotation(world, hero, 1, not_finite),
+                         ENGINE_ERROR_INVALID_ARGUMENT);
+            CHECK_STATUS(TurnJoint(world, hero, 7, 0), ENGINE_ERROR_INVALID_ARGUMENT); /* no such joint */
+            CHECK_STATUS(TurnJoint(world, 0xdeadull, 0, 0), ENGINE_ERROR_STALE_HANDLE);
+            /* with a clip: the clip's pose (the arm at 1.5) turned about the root's own Z */
+            CHECK_STATUS(Play(world, hero, 0xc01ull, ENGINE_PLAY_LOOP, 1.0f, 0.5f, 0.0f), ENGINE_OK);
+            CHECK_STATUS(g_api->animation_set_speed(world, hero, 0.0f), ENGINE_OK);
+            CHECK_STATUS(TurnJoint(world, hero, 0, 0), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            JointOrigin(world, hero, 1, &x, &y);
+            CHECK(Near(x, -1.5f) < 0.01f && Near(y, 0.0f) < 0.01f);
+            /* the identity takes it away */
+            CHECK_STATUS(TurnJoint(world, hero, 0, 1), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            JointOrigin(world, hero, 1, &x, &y);
+            CHECK(Near(x, 0.0f) < 0.01f && Near(y, 1.5f) < 0.01f);
+            /* it survives another clip, and a cross-fade, and is applied while the fade runs */
+            CHECK_STATUS(TurnJoint(world, hero, 0, 0), ENGINE_OK);
+            CHECK_STATUS(Play(world, hero, 0xc03ull, ENGINE_PLAY_LOOP, 1.0f, 0.0f, 1.0f), ENGINE_OK);
+            for (i = 0; i < 31; ++i)
+            {
+                CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            }
+            JointOrigin(world, hero, 1, &x, &y);
+            CHECK(Near(y, 0.0f) < 0.01f && x < -1.7f && x > -2.9f);
+            for (i = 0; i < 40; ++i)
+            {
+                CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            }
+            JointOrigin(world, hero, 1, &x, &y);
+            CHECK(Near(x, -3.0f) < 0.01f && Near(y, 0.0f) < 0.01f);
+            CHECK_STATUS(TurnJoint(world, hero, 0, 1), ENGINE_OK);
+            /* with no clip at all: the bind pose plus the rotation, and the bind pose again without it */
+            CHECK_STATUS(g_api->entity_create(world, &still), ENGINE_OK);
+            PlaceAt(world, still, 0.0f, 0.0f, 0.0f);
+            CHECK_STATUS(TurnJoint(world, still, 0, 0), ENGINE_ERROR_NOT_FOUND); /* no skeleton instance yet */
+            CHECK_STATUS(SetSkeleton(world, still, 0xa01ull), ENGINE_OK);
+            CHECK_STATUS(TurnJoint(world, still, 0, 0), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            JointOrigin(world, still, 1, &x, &y);
+            CHECK(Near(x, -1.0f) < 0.01f && Near(y, 0.0f) < 0.01f);
+            CHECK_STATUS(TurnJoint(world, still, 0, 1), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            JointOrigin(world, still, 1, &x, &y);
+            CHECK(Near(x, 0.0f) < 0.01f && Near(y, 1.0f) < 0.01f);
+            CHECK_STATUS(g_api->entity_destroy(world, still), ENGINE_OK);
+        }
         /* an entity that follows the arm */
         CHECK_STATUS(g_api->entity_create(world, &bolt), ENGINE_OK);
         PlaceAt(world, bolt, 0.0f, 0.0f, 0.0f);

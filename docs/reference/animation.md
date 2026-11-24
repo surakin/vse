@@ -28,6 +28,7 @@ Stable ids of the animation components in the storage registry (the engine's own
 | <a id="animation-kskeletoninstanceid"></a>`kSkeletonInstanceId` | `41` | [`animation::SkeletonInstance`](#animation-skeletoninstance): stored (the skeleton id only). |
 | <a id="animation-krootmotionid"></a>`kRootMotionId` | `42` | [`animation::RootMotion`](#animation-rootmotion): derived. |
 | <a id="animation-kmorphweightsid"></a>`kMorphWeightsId` | `43` | [`animation::MorphWeights`](#animation-morphweights): stored. |
+| <a id="animation-kjointrotationsid"></a>`kJointRotationsId` | `44` | [`animation::JointRotations`](#animation-jointrotations): derived (a host sets it each run). |
 
 ## `kMaxMorphWeights` {#animation-kmaxmorphweights}
 
@@ -312,6 +313,66 @@ Vector<Mat3x4> palette;
 ```
 
 Set by the system; one 48-byte matrix per joint, the GPU palette layout.
+
+## `JointRotation` {#animation-jointrotation}
+
+`struct animation::JointRotation` — defined in `engine/animation/components.h`
+
+```cpp
+struct JointRotation { ... }
+```
+
+One rotation a host adds to a joint.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `joint` {#animation-jointrotation-joint}
+
+`variable animation::JointRotation::joint` — defined in `engine/animation/components.h`
+
+```cpp
+u32 joint;
+```
+
+The joint's index in the skeleton.
+
+### `rotation` {#animation-jointrotation-rotation}
+
+`variable animation::JointRotation::rotation` — defined in `engine/animation/components.h`
+
+```cpp
+Array<f32, 4> rotation;
+```
+
+A unit quaternion (x, y, z, w), never the identity.
+
+## `JointRotations` {#animation-jointrotations}
+
+`struct animation::JointRotations` — defined in `engine/animation/components.h`
+
+```cpp
+struct JointRotations { ... }
+```
+
+Rotations a host adds to joints of a playing skeleton (a head that follows where the player looks), kept in order of joint, at most one per joint.
+
+After the entity's clips are sampled and blended, each joint's local rotation becomes the pose's rotation composed with this one (`pose * added`, so the rotation is about the joint's own axes whatever the clip does). The entity need not play a clip: the bind pose gets the rotations. Present on entities that have a [`animation::SkeletonInstance`](#animation-skeletoninstance); derived (not saved).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible; the system reads it from a job that owns the entity's chunk. |
+
+### `list` {#animation-jointrotations-list}
+
+`variable animation::JointRotations::list` — defined in `engine/animation/components.h`
+
+```cpp
+Vector<JointRotation> list;
+```
+
+Ordered by joint.
 
 ## `RootMotion` {#animation-rootmotion}
 
@@ -850,6 +911,22 @@ Applies an additive pose to `base` in place. The additive pose stores difference
 |---|---|
 | Parameter `weight` | in [0, 1]. |
 | Aborts | the joint counts differ or `weight` is not in [0, 1]. |
+| Ownership | borrows its arguments for the call. |
+
+## `ComposeJointRotation(LocalPose*,u32,const Array<f32,4>&)` {#animation-composejointrotation-localpose-star-u32-const-array-lt-f32-4-gt-amp}
+
+`function animation::ComposeJointRotation` — defined in `engine/animation/pose.h`
+
+```cpp
+void ComposeJointRotation(LocalPose* pose, u32 joint, const Array<f32, 4>& rotation);
+```
+
+Composes `rotation` onto joint `joint`'s local rotation: the joint's rotation becomes `old * rotation`, so the added rotation turns about the joint's own axes.
+
+| Field | Value |
+|---|---|
+| Parameter `rotation` | a unit quaternion (x, y, z, w). |
+| Aborts | `joint` is not below the joint count of `pose`. |
 | Ownership | borrows its arguments for the call. |
 
 ## `ModelFromLocal(const asset::SkeletonView&,const LocalPose&,ModelPose*)` {#animation-modelfromlocal-const-asset-skeletonview-amp-const-localpose-amp-modelpose-star}

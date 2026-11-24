@@ -643,6 +643,12 @@ public:
     {
         return Api()->skeleton_joint_transform(Get(), key, joint, matrix);
     }
+    /// Adds a rotation (x, y, z, w; unit) to a joint of the skeleton `key` is drawn with, about the joint's own axes,
+    /// on top of whatever clip plays; the identity takes it away (`animation_set_joint_rotation`).
+    Status SetJointRotation(uint64_t key, uint32_t joint, const float quaternion[4]) const
+    {
+        return Api()->animation_set_joint_rotation(Get(), key, joint, quaternion);
+    }
     Status AttachToJoint(uint64_t key, uint64_t skeleton_key, uint32_t joint) const
     {
         return Api()->entity_attach_to_joint(Get(), key, skeleton_key, joint);

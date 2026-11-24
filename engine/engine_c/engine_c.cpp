@@ -915,6 +915,7 @@ extern "C"
             &engine_c::InstanceDestroyFn,
             &engine_c::WorldSetSkyCubeFn,
             &engine_c::TextureFormatSupportFn,
+            &engine_c::AnimationSetJointRotationFn,
         };
         *out = &table;
         return ENGINE_OK;

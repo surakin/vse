@@ -2802,6 +2802,20 @@ extern "C"
          */
         engine_status (*texture_format_support)(engine_handle engine, uint32_t flags, uint32_t* out_support);
 
+        /* ---- Joint rotations (maintenance) ---- */
+
+        /* Adds a rotation to one joint of the skeleton `key` is drawn with: after the entity's clips are sampled and
+         * blended (a clip, a cross-fade, or none: then the bind pose), the joint's local rotation becomes the pose's
+         * rotation composed with `quaternion` (x, y, z, w; `pose * quaternion`, so the turn is about the joint's own
+         * axes whatever the clip does: a nod is a turn about the joint's local X). The joints below it follow, and
+         * every surface that draws the entity shows it. It stays until set again; the identity takes it away. `joint`
+         * comes from skeleton_find_joint. Setting it costs a write to one component, so a host may set it only when the
+         * angle changes. Fails with: STALE_HANDLE, TYPE_MISMATCH (not an entity), NOT_FOUND (the entity has no skeleton
+         * instance), INVALID_ARGUMENT (NULL `quaternion`, a joint the skeleton does not have, a rotation that is not
+         * finite or whose length is not 1 within 0.1%). */
+        engine_status (*animation_set_joint_rotation)(engine_handle world, uint64_t key, uint32_t joint,
+                                                      const float* quaternion);
+
     } engine_api;
 
     /* Returns the function table.

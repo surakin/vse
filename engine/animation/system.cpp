@@ -12,6 +12,7 @@ namespace
 {
 
 using ecs::ChunkView;
+using ecs::Optional;
 using ecs::OptionalWrite;
 using ecs::Read;
 using ecs::Write;
@@ -65,6 +66,31 @@ bool SysBound(const asset::ClipView& clip, const asset::SkeletonView& skeleton)
     return clip.Bind(skeleton).Ok();
 }
 
+// Adds the host's rotations to a pose (a joint beyond the pose is skipped: the host may have set it for another
+// skeleton).
+void ApplyJointRotations(const JointRotations& rotations, LocalPose* pose)
+{
+    for (usize k = 0; k < rotations.list.Size(); ++k)
+    {
+        if (rotations.list[k].joint < pose->joint_count)
+        {
+            ComposeJointRotation(pose, rotations.list[k].joint, rotations.list[k].rotation);
+        }
+    }
+}
+
+// Writes the palette of the bind pose with the host's rotations.
+void WriteBindPalette(const asset::SkeletonView& skeleton, const JointRotations& rotations, SkeletonInstance* inst)
+{
+    LocalPose pose;
+    SetBindPose(skeleton, &pose);
+    ApplyJointRotations(rotations, &pose);
+    ModelPose model;
+    ModelFromLocal(skeleton, pose, &model);
+    inst->palette.Resize(pose.joint_count);
+    SkinningMatrices(skeleton, model, Span<Mat3x4>(inst->palette.Data(), inst->palette.Size()));
+}
+
 }  // namespace
 
 storage::Status RegisterAnimationComponents(storage::ComponentRegistry* registry)
@@ -85,6 +111,8 @@ storage::Status RegisterAnimationComponents(storage::ComponentRegistry* registry
              "skeleton", storage::FieldOptions::Reference(storage::ResourceTag('S', 'K', 'E', 'L'), false))}}));
     ENGINE_TRY(registry->Register<RootMotion>(
         {.id = kRootMotionId, .name = "root_motion", .flags = storage::kComponentDerived}));
+    ENGINE_TRY(registry->Register<JointRotations>(
+        {.id = kJointRotationsId, .name = "joint_rotations", .flags = storage::kComponentDerived}));
     ENGINE_TRY(registry->Register<MorphWeights>({.id = kMorphWeightsId,
                                                  .name = "morph_weights",
                                                  .fields = {storage::Field<&MorphWeights::count>("count"),
@@ -98,7 +126,7 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
     SysCounts counts;
     const AnimationResolver* resolver = resolver_;
     auto query = world->Query<Write<AnimationPlayer>, Write<SkeletonInstance>, OptionalWrite<RootMotion>,
-                              OptionalWrite<MorphWeights>>();
+                              OptionalWrite<MorphWeights>, Optional<JointRotations>>();
     query.ForEachChunkParallel(
         scheduler,
         [&](ChunkView& view)
@@ -107,6 +135,7 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
             Span<SkeletonInstance> instances = view.Write<SkeletonInstance>();
             Span<RootMotion> roots = view.Write<RootMotion>();
             Span<MorphWeights> morphs = view.Write<MorphWeights>();
+            Span<const JointRotations> rotations = view.Read<JointRotations>();
             for (usize i = 0; i < players.Size(); ++i)
             {
                 AnimationPlayer& p = players[i];
@@ -122,11 +151,22 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                     const TimeAdvance advance = StepPlayer(&p, *clip, dt);
                     LocalPose bind;
                     SetBindPose(*skeleton, &bind);
+                    if (!rotations.Empty())
+                    {
+                        ApplyJointRotations(rotations[i], &bind);
+                    }
                     ModelPose model;
                     ModelFromLocal(*skeleton, bind, &model);
                     inst.palette.Resize(bind.joint_count);
                     SkinningMatrices(*skeleton, model, Span<Mat3x4>(inst.palette.Data(), inst.palette.Size()));
                     SampleMorphWeights(*clip, advance.time, &morphs[i]);
+                    counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
+                    continue;
+                }
+                if (skeleton != nullptr && p.clip == 0 && !rotations.Empty() && skeleton->JointCount() != 0 &&
+                    skeleton->JointCount() <= kMaxPoseJoints)
+                {  // no clip: the bind pose with the host's rotations
+                    WriteBindPalette(*skeleton, rotations[i], &inst);
                     counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
                     continue;
                 }
@@ -172,6 +212,10 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                         }
                     }
                 }
+                if (!rotations.Empty())
+                {
+                    ApplyJointRotations(rotations[i], &pose);
+                }
                 ModelPose model;
                 ModelFromLocal(*skeleton, pose, &model);
                 inst.palette.Resize(pose.joint_count);
@@ -187,6 +231,24 @@ AnimationStats AnimationSystem::Update(ecs::World* world, jobs::Scheduler* sched
                 counts.updated.FetchAdd(1, MemoryOrder::Relaxed);
             }
         });
+    // A skeleton that plays nothing but has host rotations: the bind pose with them.
+    auto bare = world->Query<Write<SkeletonInstance>, Read<JointRotations>, ecs::Without<AnimationPlayer>>();
+    bare.ForEachChunkParallel(scheduler,
+                              [&](ChunkView& view)
+                              {
+                                  Span<SkeletonInstance> instances = view.Write<SkeletonInstance>();
+                                  Span<const JointRotations> rotations = view.Read<JointRotations>();
+                                  for (usize i = 0; i < instances.Size(); ++i)
+                                  {
+                                      const asset::SkeletonView* skeleton = resolver->FindSkeleton(
+                                          asset::ResourceId::FromValue(instances[i].skeleton));
+                                      if (skeleton != nullptr && skeleton->JointCount() != 0 &&
+                                          skeleton->JointCount() <= kMaxPoseJoints)
+                                      {
+                                          WriteBindPalette(*skeleton, rotations[i], &instances[i]);
+                                      }
+                                  }
+                              });
     // Clips of morph weights only (glTF coverage Day 9): an entity with no skeleton plays its clip into its weights.
     auto weights_only = world->Query<Write<AnimationPlayer>, Write<MorphWeights>, ecs::Without<SkeletonInstance>>();
     weights_only.ForEachChunkParallel(scheduler,

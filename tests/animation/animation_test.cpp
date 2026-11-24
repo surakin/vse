@@ -800,6 +800,48 @@ TEST_CASE("animation: root motion is the root's movement over the step, and the 
     CHECK(Abs(w.world.Get<RootMotion>(w.entities[0])->delta.translation[0] - 0.5f) < 1e-3f);
 }
 
+static bool AnQuatSame(const Array<f32, 4>& a, const Array<f32, 4>& b)
+{
+    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3];
+}
+
+TEST_CASE("animation: a host rotation composes onto a joint's own rotation and the bind pose takes it", "[animation]")
+{
+    AnSkeleton skeleton;
+    skeleton.Make(0xb0, 6);
+    LocalPose bind;
+    SetBindPose(skeleton.view, &bind);
+    LocalPose turned = bind;
+    const Array<f32, 4> quarter = {{0.0f, 0.0f, 0.70710678f, 0.70710678f}};  // 90 degrees about Z
+    ComposeJointRotation(&turned, 2, quarter);
+    for (u32 j = 0; j < 6; ++j)
+    {
+        if (j == 2)
+        {
+            continue;
+        }
+        CHECK(AnQuatSame(turned.rotation[j], bind.rotation[j]));  // the other joints are untouched
+    }
+    CHECK_FALSE(AnQuatSame(turned.rotation[2], bind.rotation[2]));
+    const f32 l = turned.rotation[2][0] * turned.rotation[2][0] + turned.rotation[2][1] * turned.rotation[2][1] +
+                  turned.rotation[2][2] * turned.rotation[2][2] + turned.rotation[2][3] * turned.rotation[2][3];
+    CHECK(Abs(l - 1.0f) < 1e-5f);
+    // `old * added`: a rotation of the bind pose's own, then the added one
+    LocalPose twice = turned;
+    ComposeJointRotation(&twice, 2, quarter);
+    LocalPose half = bind;
+    const Array<f32, 4> half_turn = {{0.0f, 0.0f, 1.0f, 0.0f}};
+    ComposeJointRotation(&half, 2, half_turn);
+    for (u32 c = 0; c < 4; ++c)
+    {
+        CHECK(Abs(twice.rotation[2][c] - half.rotation[2][c]) < 1e-5f);
+    }
+    storage::ComponentRegistry registry;
+    REQUIRE(storage::RegisterBuiltinComponents(&registry).Ok());
+    REQUIRE(RegisterAnimationComponents(&registry).Ok());
+    CHECK(registry.FindByName("joint_rotations") != nullptr);
+}
+
 TEST_CASE("animation: the components register with the storage registry", "[animation]")
 {
     storage::ComponentRegistry registry;

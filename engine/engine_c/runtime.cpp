@@ -2300,6 +2300,93 @@ engine_status AnimationTimeFn(engine_handle world, u64 key, double* seconds)
                      });
 }
 
+engine_status AnimationSetJointRotationFn(engine_handle world, u64 key, u32 joint, const float* quaternion)
+{
+    if (quaternion == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`quaternion` is NULL");
+    }
+    Array<f32, 4> q;
+    f32 length_squared = 0.0f;
+    for (u32 c = 0; c < 4; ++c)
+    {
+        q[c] = quaternion[c];
+        if (!Finite(q[c]))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation is not finite");
+        }
+        length_squared += q[c] * q[c];
+    }
+    if (!(length_squared > 0.998f && length_squared < 1.002f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation is not a unit quaternion");
+    }
+    const f32 inv = 1.0f / Sqrt(length_squared);
+    for (u32 c = 0; c < 4; ++c)
+    {
+        q[c] *= inv;
+    }
+    // The identity (either sign) takes the joint's rotation away.
+    const bool identity = Abs(q[0]) < 1e-6f && Abs(q[1]) < 1e-6f && Abs(q[2]) < 1e-6f;
+    return WithWorld(
+        world, true, key,
+        [&](WorldObject& object, ecs::Entity entity)
+        {
+            const animation::SkeletonInstance* instance = object.world.Peek<animation::SkeletonInstance>(entity);
+            if (instance == nullptr)
+            {
+                return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no skeleton instance");
+            }
+            ResourceHost* resources = CurrentRuntime()->ResourcesIfCreated();
+            const asset::SkeletonView* skeleton = resources == nullptr
+                                                      ? nullptr
+                                                      : resources->Animation().FindSkeleton(
+                                                            asset::ResourceId::FromValue(instance->skeleton));
+            if (skeleton == nullptr || joint >= skeleton->JointCount() || joint >= animation::kMaxPoseJoints)
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the joint does not exist");
+            }
+            animation::JointRotations* have = object.world.Poke<animation::JointRotations>(entity);
+            if (have == nullptr)
+            {
+                if (identity)
+                {
+                    return ENGINE_OK;  // nothing to take away
+                }
+                animation::JointRotations fresh;
+                animation::JointRotation entry;
+                entry.joint = joint;
+                entry.rotation = q;
+                fresh.list.Push(entry);
+                return SetOrAdd(object.world, entity, Move(fresh));
+            }
+            usize at = 0;
+            while (at < have->list.Size() && have->list[at].joint < joint)
+            {
+                ++at;
+            }
+            const bool present = at < have->list.Size() && have->list[at].joint == joint;
+            if (identity)
+            {
+                if (present)
+                {
+                    have->list.Remove(at);
+                }
+                return ENGINE_OK;
+            }
+            if (present)
+            {
+                have->list[at].rotation = q;
+                return ENGINE_OK;
+            }
+            animation::JointRotation entry;
+            entry.joint = joint;
+            entry.rotation = q;
+            have->list.Insert(at, entry);
+            return ENGINE_OK;
+        });
+}
+
 engine_status SkeletonFindJointFn(engine_handle world, u64 key, engine_string name, u32* index)
 {
     if (index == nullptr)

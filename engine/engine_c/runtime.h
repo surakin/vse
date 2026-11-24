@@ -521,6 +521,7 @@ engine_status AnimationPlayFn(engine_handle world, u64 key, u64 clip, const engi
 engine_status AnimationSetSpeedFn(engine_handle world, u64 key, float speed);
 engine_status AnimationStopFn(engine_handle world, u64 key);
 engine_status AnimationTimeFn(engine_handle world, u64 key, double* seconds);
+engine_status AnimationSetJointRotationFn(engine_handle world, u64 key, u32 joint, const float* quaternion);
 engine_status SkeletonFindJointFn(engine_handle world, u64 key, engine_string name, u32* index);
 engine_status SkeletonJointTransformFn(engine_handle world, u64 key, u32 joint, float* matrix);
 engine_status EntityAttachToJointFn(engine_handle world, u64 key, u64 skeleton_key, u32 joint);

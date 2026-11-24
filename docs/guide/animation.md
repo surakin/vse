@@ -43,6 +43,10 @@ scheduler, dt)` advances and samples every entity with a player and an instance 
 publishes the events into the world's `AnimationEvents` resource (when it exists) in entity order. Each entity's result
 depends only on its own components, so the palettes are the same at one worker or eight.
 
+`JointRotations` (id 44, derived, not saved) holds rotations a host adds to joints: after the clips are sampled and
+blended, `ComposeJointRotation(&pose, joint, q)` makes each joint's rotation `old * q`, about the joint's own axes. An
+entity with the component and no clip (no player, or a player with clip 0) gets the bind pose with the rotations.
+
 The system resolves ids through an `AnimationResolver` (the resource manager's animation adapter, or a test). An entity whose
 skeleton or clip is not loaded, or whose clip was made for another skeleton (`ClipView::Bind` refuses the id, the hash
 or the joint count), is skipped and counted in `AnimationStats::refused`, with one warning line per update; nothing is

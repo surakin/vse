@@ -140,6 +140,23 @@ void BlendMasked(LocalPose* a, const LocalPose& b, f32 weight, const JointMask& 
     }
 }
 
+void ComposeJointRotation(LocalPose* pose, u32 joint, const Array<f32, 4>& rotation)
+{
+    ENGINE_ASSERT(joint < pose->joint_count, "ComposeJointRotation: the joint is not in the pose");
+    Array<f32, 4> q = PoseMultiply(pose->rotation[joint], rotation);
+    f32 length_squared = 0.0f;
+    for (u32 c = 0; c < 4; ++c)
+    {
+        length_squared += q[c] * q[c];
+    }
+    const f32 inv = length_squared > 0.0f ? 1.0f / Sqrt(length_squared) : 1.0f;
+    for (u32 c = 0; c < 4; ++c)
+    {
+        q[c] *= inv;
+    }
+    pose->rotation[joint] = q;
+}
+
 void AddAdditive(LocalPose* base, const LocalPose& additive, f32 weight)
 {
     ENGINE_ASSERT(base->joint_count == additive.joint_count, "AddAdditive: the poses have different joint counts");

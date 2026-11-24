@@ -513,6 +513,7 @@ int main(void)
     FIELD(engine_api, terrain_height);
     FIELD(engine_api, world_set_sky_cube);
     FIELD(engine_api, texture_format_support);
+    FIELD(engine_api, animation_set_joint_rotation);
     STRUCT(engine_audio_info);
     FIELD(engine_audio_info, struct_size);
     FIELD(engine_audio_info, sample_rate);

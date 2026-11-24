@@ -25,6 +25,7 @@ enum ComponentIds : u32
     kSkeletonInstanceId = 41,  ///< [[animation::SkeletonInstance]]: stored (the skeleton id only).
     kRootMotionId = 42,        ///< [[animation::RootMotion]]: derived.
     kMorphWeightsId = 43,      ///< [[animation::MorphWeights]]: stored.
+    kJointRotationsId = 44,    ///< [[animation::JointRotations]]: derived (a host sets it each run).
 };
 
 /// Most morph weights of one entity: the mesh blob's limit on morph targets.
@@ -80,6 +81,29 @@ struct SkeletonInstance
 {
     u64 skeleton = 0;        ///< The skeleton's resource id (`asset::ResourceId::Value()`).
     Vector<Mat3x4> palette;  ///< Set by the system; one 48-byte matrix per joint, the GPU palette layout.
+};
+
+/// One rotation a host adds to a joint.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct JointRotation
+{
+    u32 joint = 0;                                        ///< The joint's index in the skeleton.
+    Array<f32, 4> rotation = {{0.0f, 0.0f, 0.0f, 1.0f}};  ///< A unit quaternion (x, y, z, w), never the identity.
+};
+
+/// Rotations a host adds to joints of a playing skeleton (a head that follows where the player looks), kept in order
+/// of joint, at most one per joint.
+///
+/// After the entity's clips are sampled and blended, each joint's local rotation becomes the pose's rotation composed
+/// with this one (`pose * added`, so the rotation is about the joint's own axes whatever the clip does). The entity
+/// need not play a clip: the bind pose gets the rotations. Present on entities that have a
+/// [[animation::SkeletonInstance]]; derived (not saved).
+///
+/// - Thread-safety: thread-compatible; the system reads it from a job that owns the entity's chunk.
+struct JointRotations
+{
+    Vector<JointRotation> list;  ///< Ordered by joint.
 };
 
 /// The root joint's movement over the last update, for a clip flagged root motion: the game applies it. Present only

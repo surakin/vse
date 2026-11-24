@@ -87,6 +87,14 @@ void BlendMasked(LocalPose* a, const LocalPose& b, f32 weight, const JointMask& 
 /// - Ownership: borrows its arguments for the call.
 void AddAdditive(LocalPose* base, const LocalPose& additive, f32 weight);
 
+/// Composes `rotation` onto joint `joint`'s local rotation: the joint's rotation becomes `old * rotation`, so the added
+/// rotation turns about the joint's own axes.
+///
+/// - Param rotation: a unit quaternion (x, y, z, w).
+/// - Aborts: `joint` is not below the joint count of `pose`.
+/// - Ownership: borrows its arguments for the call.
+void ComposeJointRotation(LocalPose* pose, u32 joint, const Array<f32, 4>& rotation);
+
 /// Walks the parent-first joint table once and writes each joint's model matrix.
 ///
 /// - Aborts: `pose.joint_count` differs from the skeleton's.

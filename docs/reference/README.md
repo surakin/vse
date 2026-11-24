@@ -33,7 +33,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Networking](net.md) | 31 | 730 |
 | [Assets and resources](asset.md) | 42 | 1496 |
 | [glTF importer](asset_import.md) | 19 | 321 |
-| [Animation runtime](animation.md) | 4 | 90 |
+| [Animation runtime](animation.md) | 4 | 97 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 18 | 430 |
 | [Scene bridge](scene.md) | 5 | 113 |
