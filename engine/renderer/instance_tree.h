@@ -220,18 +220,28 @@ public:
     /// - Fails: never.
     bool NeedsUpdate() const { return !dirty_nodes_.Empty(); }
 
-    /// Moves the subtree of `node` under `parent`, as its last child, keeping the node's local transform. Costs a
-    /// pass over the array. Updates the world transforms first when something is marked.
+    /// Moves the subtree of `node` under `parent`, as its last child, keeping the node's local transform. Costs the
+    /// records between the old and the new place (`LastEditCost`). Updates the world transforms first when something is
+    /// marked.
     ///
     /// - Fails: `UnknownNode`; `Cycle` when `parent` is the node or inside its subtree; `TooDeep`.
     TreeStatus Attach(TreeNodeId node, TreeNodeId parent);
 
     /// Makes the node a root that stays where it is in the world (its world position, rotation and scale become its
-    /// own); a root is left as it is. Costs a pass over the array. Updates the world transforms first when something
-    /// is marked.
+    /// own); a root is left as it is. Costs the records between the old and the new place (`LastEditCost`). Updates the
+    /// world transforms first when something is marked.
     ///
     /// - Fails: `UnknownNode`.
     TreeStatus Detach(TreeNodeId node);
+
+    /// The records `Attach` or `Detach` last touched: the span between the old and the new place of the moved
+    /// subtree plus the ancestors of both places (their sizes, flags and bounds are repaired, not the whole array).
+    /// - Fails: never.
+    u32 LastEditCost() const { return last_edit_cost_; }
+
+    /// A number no other tree built in this process has: what a [[renderer::TreeLodState]] remembers its tree by.
+    /// - Fails: never.
+    u64 Identity() const { return identity_; }
 
     /// Checks every invariant of the array: depth-first order, parent and `subtree_size` agreeing with the depths,
     /// the id map, the root list, and the limits.
@@ -252,7 +262,10 @@ private:
     friend class InstanceTreeBuilder;
 
     void Relink();
-    void MoveRange(u32 first, u32 count, u32 to);
+    void MoveRange(u32 first, u32 count, u32 to, u32* lo, u32* hi);
+    void AncestorIds(u32 index, bool include_self, Vector<u32>* out) const;
+    void FinishMove(u32 moved_id, const Vector<u32>& old_chain, const Vector<u32>& new_chain, u32 count, u32 lo, u32 hi,
+                    bool had_lod);
     void RecomputeBoundsOf(u32 index);
     void UpdateGroup(u32 lo, u32 hi);
     static Aabb OwnBounds(const TreeMeshInfo* meshes, u32 mesh_count, const InstanceTreeNode& node);
@@ -263,6 +276,8 @@ private:
     Vector<TreeMeshInfo> meshes_;
     Vector<TreeLod> lods_;
     Vector<u32> dirty_nodes_;
+    u32 last_edit_cost_ = 0;
+    u64 identity_ = 0;
 };
 
 /// Makes a tree from nodes added under their parents.

@@ -9,6 +9,7 @@
 #include "lang/scalar.h"
 #include "math/transform.h"
 #include "renderer/instance_tree.h"
+#include "renderer/instance_tree_cull.h"
 
 namespace vse::renderer
 {
@@ -531,6 +532,184 @@ TEST_CASE("Instance tree: a stand-in beyond the cull distance is refused", "[ins
     CHECK(builder.AddRoot(d, &id) == TreeStatus::InvalidValue);
     d.lod.standin_distance = 50.0f;
     CHECK(builder.AddRoot(d, &id) == TreeStatus::Ok);
+}
+
+}  // namespace vse::renderer
+
+namespace vse::renderer
+{
+
+namespace
+{
+
+// Every node's subtree box is the union of its own box and its children's, and its size counts its descendants.
+bool TrBoundsAreBruteForce(const InstanceTree& tree)
+{
+    for (u32 i = tree.NodeCount(); i > 0; --i)
+    {
+        const InstanceTreeNode& n = tree.Node(i - 1);
+        Aabb box = n.bounds;
+        u32 size = 1;
+        for (u32 c = i; c < i - 1 + n.subtree_size; c += tree.Node(c).subtree_size)
+        {
+            box = Union(box, tree.Node(c).subtree_bounds);
+            size += tree.Node(c).subtree_size;
+        }
+        if (!TrSameBox(box, n.subtree_bounds) || size != n.subtree_size)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+}  // namespace
+
+TEST_CASE("Instance tree: after Detach and Attach every ancestor's subtree box is the union of its children",
+          "[instance_tree]")
+{
+    TrModel model;
+    InstanceTreePtr tree = TrBuild(&model, 3, 3, 4, 41, nullptr);
+    TrGen g(42);
+    REQUIRE(TrBoundsAreBruteForce(*tree));
+    for (u32 round = 0; round < 120; ++round)
+    {
+        TreeNodeId node;
+        node.value = g.Next() % static_cast<u32>(model.parent.Size());
+        if (g.Next() % 2 == 0)
+        {
+            REQUIRE(tree->Detach(node) == TreeStatus::Ok);
+        }
+        else
+        {
+            TreeNodeId parent;
+            parent.value = g.Next() % static_cast<u32>(model.parent.Size());
+            static_cast<void>(tree->Attach(node, parent));
+        }
+        REQUIRE(tree->Validate());
+        REQUIRE(TrBoundsAreBruteForce(*tree));
+        bool lods_ok = true;
+        for (u32 i = tree->NodeCount(); i > 0; --i)
+        {
+            const InstanceTreeNode& n = tree->Node(i - 1);
+            bool any = n.lod != kTreeNone;
+            for (u32 c = i; c < i - 1 + n.subtree_size; c += tree->Node(c).subtree_size)
+            {
+                any = any || tree->Node(c).lod_in_subtree;
+            }
+            lods_ok = lods_ok && any == n.lod_in_subtree;
+        }
+        REQUIRE(lods_ok);
+    }
+}
+
+TEST_CASE("Instance tree: moving a small subtree in a 100,000-node tree touches its range, not the array",
+          "[instance_tree]")
+{
+    TrModel model;
+    InstanceTreePtr tree = TrBuild(&model, 20, 8, 5, 3, nullptr);
+    REQUIRE(tree->NodeCount() > 90000);
+    // A leaf of the first root moves under the last root: the records between are shifted, nothing else.
+    u32 leaf = 0;
+    for (u32 i = 1; i < tree->NodeCount(); ++i)
+    {
+        if (tree->Node(i).subtree_size == 1 && tree->Node(i).depth == 4)
+        {
+            leaf = i;
+            break;
+        }
+    }
+    REQUIRE(leaf != 0);
+    TreeNodeId id;
+    id.value = tree->Node(leaf).id;
+    TreeNodeId near_parent;
+    near_parent.value = tree->Node(tree->Parent(leaf)).id;
+    // Re-attaching a leaf to its own parent's end: the span is the leaf's siblings after it.
+    REQUIRE(tree->Attach(id, near_parent) == TreeStatus::Ok);
+    CHECK(tree->LastEditCost() < 64);
+    REQUIRE(tree->Detach(id) == TreeStatus::Ok);
+    // The detached leaf goes to the end of the array: the span is everything after it (the rest of the array here, so
+    // it is large), but a leaf already near the end costs little.
+    const u32 last_root = tree->RootIndex(19);
+    const u32 inner = last_root + 5;
+    TreeNodeId deep;
+    deep.value = tree->Node(inner).id;
+    REQUIRE(tree->Detach(deep) == TreeStatus::Ok);
+    // A node of the last root: the span is that root's records (4,681), not the 100,000 of the array.
+    CHECK(tree->LastEditCost() <= 4681u + 8u);
+    CHECK(tree->Validate());
+}
+
+TEST_CASE("Instance tree: two marks far apart in one root recompose their own subtrees only", "[instance_tree]")
+{
+    TrModel model;
+    InstanceTreePtr tree = TrBuild(&model, 1, 8, 5, 7, nullptr);
+    // The first and the last leaf-parent of the one root are thousands of nodes apart.
+    const u32 first = 2;
+    u32 last = tree->NodeCount() - 1;
+    while (tree->Node(last).depth > 3)
+    {
+        --last;
+    }
+    TreeNodeId a;
+    a.value = tree->Node(first).id;
+    TreeNodeId b;
+    b.value = tree->Node(last).id;
+    const InstanceTreeNode na = tree->Node(first);
+    const InstanceTreeNode nb = tree->Node(last);
+    REQUIRE(tree->SetLocal(a, Vec3d(1, 2, 3), na.local.rotation, na.local.scale) == TreeStatus::Ok);
+    REQUIRE(tree->SetLocal(b, Vec3d(4, 5, 6), nb.local.rotation, nb.local.scale) == TreeStatus::Ok);
+    const u32 touched = tree->UpdateWorldTransforms(nullptr);
+    CHECK(touched == na.subtree_size + nb.subtree_size);
+    CHECK(TrBoundsAreBruteForce(*tree));
+    CHECK(tree->Validate());
+}
+
+TEST_CASE("Instance tree: a coarser level or a stand-in larger than the node's own box is refused", "[instance_tree]")
+{
+    Vector<TreeMeshInfo> meshes = TrMeshes();  // mesh 0 is the smallest, mesh 2 the largest
+    InstanceTreeBuilder builder(Span<const TreeMeshInfo>(meshes.Data(), meshes.Size()));
+    TreeNodeDesc d;
+    d.mesh = 0;
+    d.has_lod = true;
+    d.lod.level_count = 2;
+    d.lod.mesh[0] = 0;
+    d.lod.mesh[1] = 2;  // sticks out of mesh 0's box: culling by that box could remove it while it is visible
+    d.lod.switch_distance[0] = 10.0f;
+    TreeNodeId id;
+    CHECK(builder.AddRoot(d, &id) == TreeStatus::InvalidValue);
+    d.mesh = 2;  // now the level fits inside the node's own, larger box
+    d.lod.mesh[0] = 2;
+    d.lod.mesh[1] = 0;
+    CHECK(builder.AddRoot(d, &id) == TreeStatus::Ok);
+    d.lod.level_count = 1;
+    d.lod.standin_mesh = 0;
+    d.lod.standin_distance = 50.0f;
+    d.mesh = 0;
+    d.lod.mesh[0] = 0;
+    meshes.Clear();
+    CHECK(builder.AddRoot(d, &id) == TreeStatus::Ok);
+}
+
+TEST_CASE("Instance tree: a level state made for one tree is reset when another tree is culled with it",
+          "[instance_tree]")
+{
+    TrModel m1;
+    TrModel m2;
+    InstanceTreePtr a = TrBuild(&m1, 2, 2, 3, 61, nullptr);
+    InstanceTreePtr b = TrBuild(&m2, 2, 2, 3, 62, nullptr);
+    CHECK(a->Identity() != b->Identity());
+    TreeLodState state;
+    CHECK(state.IsFor(a->Identity()));  // a fresh state is for any tree
+    TreeCullParams params;
+    params.frustum = Frustum::FromViewProjection(Mat4::Identity());
+    params.camera_position = Vec3(0, 0, 0);
+    TreeCullResult out;
+    CullInstanceTree(*a, params, &state, nullptr, &out);
+    CHECK(state.IsFor(a->Identity()));
+    CHECK_FALSE(state.IsFor(b->Identity()));
+    CullInstanceTree(*b, params, &state, nullptr, &out);  // reset, warned, then adopted
+    CHECK(state.IsFor(b->Identity()));
 }
 
 }  // namespace vse::renderer

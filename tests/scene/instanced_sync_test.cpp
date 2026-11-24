@@ -39,7 +39,7 @@ struct InstancedRig
     ecs::Schedule schedule;
     renderer::GpuMeshPtr mesh;
 
-    InstancedRig() : render_scene(renderer::RenderSceneDesc{16, 4, 2, 2})
+    explicit InstancedRig(u32 max_instanced = 2) : render_scene(renderer::RenderSceneDesc{16, 4, 2, max_instanced})
     {
         mesh = MakeMesh(device.Get());
         world.SetResource(ecs::TransformReport{});
@@ -342,4 +342,28 @@ TEST_CASE("Scatter is deterministic, stays in its rectangle and follows a height
     rule.max_x = -1.0;
     CHECK(renderer::Scatter(flat.Get(), rule, nullptr, nullptr, nullptr).status ==
           renderer::InstanceStatus::InvalidValue);
+}
+
+TEST_CASE("Instanced sync: 100,000 entities created in one frame sync, and their removal releases the meshes",
+          "[scene][instancing]")
+{
+    // The system's table of held meshes is indexed by the scene's slot, so adding and dropping 100,000 entries is
+    // linear; a scan per entry would be 5e9 comparisons here and the test would not finish.
+    constexpr u32 kCount = 100000;
+    InstancedRig rig(kCount);
+    const renderer::InstanceSetPtr set = MakeSetOf(2);
+    Vector<ecs::Entity> entities;
+    for (u32 i = 0; i < kCount; ++i)
+    {
+        entities.Push(rig.Spawn(Vec3(static_cast<f32>(i % 1000), 0.0f, static_cast<f32>(i / 1000)), set));
+    }
+    rig.Frame();
+    CHECK(rig.render_scene.InstancedCount() == kCount);
+    CHECK(rig.Report().refused_full == 0);
+    for (u32 i = 0; i < kCount; ++i)
+    {
+        rig.world.Destroy(entities[i]);
+    }
+    rig.Frame();
+    CHECK(rig.render_scene.InstancedCount() == 0);
 }

@@ -339,12 +339,21 @@ engine_status InstanceSetSetTransformFn(engine_handle world, u64 set, u64 instan
                                      return Fail(ENGINE_ERROR_NOT_FOUND, "no such set");
                                  }
                                  const renderer::InstanceId id = UnpackId(instance);
+                                 // The call applies both or neither: the id is checked first, and a set made without
+                                 // per-instance data has none to set (the transform alone is applied).
+                                 renderer::InstanceTransform current;
+                                 const engine_status found = MapSetStatus(entry->set->Get(id, &current));
+                                 if (found != ENGINE_OK)
+                                 {
+                                     return found;
+                                 }
                                  const engine_status moved = MapSetStatus(entry->set->SetTransform(id, t));
                                  if (moved != ENGINE_OK)
                                  {
                                      return moved;
                                  }
-                                 return MapSetStatus(entry->set->SetData(id, extra));
+                                 return entry->set->HasData() ? MapSetStatus(entry->set->SetData(id, extra))
+                                                              : ENGINE_OK;
                              });
 }
 

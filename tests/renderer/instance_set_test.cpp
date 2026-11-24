@@ -563,3 +563,87 @@ TEST_CASE("Instance set: a scatter with a hostile rule places nothing and return
 }
 
 }  // namespace vse::renderer
+
+namespace vse::renderer
+{
+
+TEST_CASE("Instance set: instances a key cell apart stop at the chunk cap with Full", "[instance_set]")
+{
+    InstanceSetDesc d;
+    d.max_chunks = 8;
+    d.key_cell_size = 4.0;
+    InstanceSetPtr set = InstanceSet::Create(d);
+    REQUIRE(set.Get() != nullptr);
+    u32 added = 0;
+    InstanceStatus last = InstanceStatus::Ok;
+    for (u32 i = 0; i < 65536 && last == InstanceStatus::Ok; ++i)
+    {
+        InstanceTransform t;
+        t.position = Vec3d(static_cast<f64>(i) * 4000.0, 0.0, 0.0);  // far beyond one chunk's reach each
+        last = set->Add(t, nullptr, nullptr);
+        added += last == InstanceStatus::Ok ? 1u : 0u;
+    }
+    CHECK(last == InstanceStatus::Full);
+    CHECK(added == 8);
+    CHECK(set->Count() == 8);
+}
+
+TEST_CASE("Instance set: a distant instance opens its own chunk and does not stretch a neighbour's box",
+          "[instance_set]")
+{
+    InstanceSetPtr set = InstanceSet::Create(InstanceSetDesc());
+    REQUIRE(set.Get() != nullptr);
+    InstanceTransform t;
+    t.position = Vec3d(0.0, 0.0, 0.0);
+    REQUIRE(set->Add(t, nullptr, nullptr) == InstanceStatus::Ok);
+    t.position = Vec3d(50000.0, 0.0, 0.0);
+    REQUIRE(set->Add(t, nullptr, nullptr) == InstanceStatus::Ok);
+    CHECK(set->ChunkCount() == 2);
+    for (u32 c = 0; c < set->ChunkCount(); ++c)
+    {
+        const InstanceChunkInfo info = set->Chunk(c);
+        CHECK(info.box.max.x - info.box.min.x < 1.0f);
+    }
+}
+
+TEST_CASE("Instance set: rebuilding a hundred times moves no instance", "[instance_set]")
+{
+    InstanceSetDesc d;
+    InstanceSetPtr set = InstanceSet::Create(d);
+    REQUIRE(set.Get() != nullptr);
+    Vector<InstanceId> ids;
+    for (u32 i = 0; i < 3000; ++i)
+    {
+        InstanceTransform t;
+        t.position = Vec3d(1.0e7 + static_cast<f64>(i % 50) * 0.37 + 1.0e-3,
+                           1.5 + static_cast<f64>(i % 7) * 0.01,  // off every key cell's edge
+
+                           1.0e7 + static_cast<f64>(i / 50) * 0.41);
+        InstanceId id;
+        REQUIRE(set->Add(t, nullptr, &id) == InstanceStatus::Ok);
+        ids.Push(id);
+    }
+    set->Rebuild();
+    Vector<Vec3d> first;
+    for (usize i = 0; i < ids.Size(); ++i)
+    {
+        InstanceTransform t;
+        REQUIRE(set->Get(ids[i], &t) == InstanceStatus::Ok);
+        first.Push(t.position);
+    }
+    for (u32 round = 0; round < 100; ++round)
+    {
+        set->Rebuild();
+        u32 moved = 0;
+        for (usize i = 0; i < ids.Size(); ++i)
+        {
+            InstanceTransform t;
+            REQUIRE(set->Get(ids[i], &t) == InstanceStatus::Ok);
+            moved += t.position.x == first[i].x && t.position.y == first[i].y && t.position.z == first[i].z ? 0u : 1u;
+        }
+        INFO("round " << round);
+        REQUIRE(moved == 0);
+    }
+}
+
+}  // namespace vse::renderer

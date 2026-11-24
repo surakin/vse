@@ -3856,7 +3856,7 @@ What an edit of a set returned.
 | Enumerator | Value | Description |
 |---|---|---|
 | <a id="renderer-instancestatus-ok"></a>`Ok` |  | Done. |
-| <a id="renderer-instancestatus-full"></a>`Full` |  | The set holds its most instances. |
+| <a id="renderer-instancestatus-full"></a>`Full` |  | The set holds its most instances, or its most chunks (`InstanceSetDesc::max_chunks`), or the memory for another chunk was refused. |
 | <a id="renderer-instancestatus-staleid"></a>`StaleId` |  | The id names an instance that was removed, or was never made by this set. |
 | <a id="renderer-instancestatus-nodata"></a>`NoData` |  | The set was made without per-instance data. |
 | <a id="renderer-instancestatus-invalidvalue"></a>`InvalidValue` |  | A value is not finite, a coordinate is beyond `kMaxInstanceCoordinate`, or a scale is not above 0. |
@@ -4090,6 +4090,16 @@ f32 move_threshold;
 ```
 
 How far, in metres, an instance may move outside its chunk's box before it changes chunk; finite, not below 0.
+
+### `max_chunks` {#renderer-instancesetdesc-max-chunks}
+
+`variable renderer::InstanceSetDesc::max_chunks` — defined in `engine/renderer/instance_set.h`
+
+```cpp
+u32 max_chunks;
+```
+
+The most chunks the set may hold; 0 means four times the chunks its `max_instances` fill. A chunk is 256 slots whatever it holds, so instances scattered far apart (each opening a chunk) stop at this many chunks and the next `Add` is `Full`.
 
 ## `InstanceChunkInfo` {#renderer-instancechunkinfo}
 
@@ -5378,7 +5388,7 @@ Returns whether some node is marked for the next update.
 TreeStatus Attach(TreeNodeId node, TreeNodeId parent);
 ```
 
-Moves the subtree of `node` under `parent`, as its last child, keeping the node's local transform. Costs a pass over the array. Updates the world transforms first when something is marked.
+Moves the subtree of `node` under `parent`, as its last child, keeping the node's local transform. Costs the records between the old and the new place (`LastEditCost`). Updates the world transforms first when something is marked.
 
 | Field | Value |
 |---|---|
@@ -5392,11 +5402,39 @@ Moves the subtree of `node` under `parent`, as its last child, keeping the node'
 TreeStatus Detach(TreeNodeId node);
 ```
 
-Makes the node a root that stays where it is in the world (its world position, rotation and scale become its own); a root is left as it is. Costs a pass over the array. Updates the world transforms first when something is marked.
+Makes the node a root that stays where it is in the world (its world position, rotation and scale become its own); a root is left as it is. Costs the records between the old and the new place (`LastEditCost`). Updates the world transforms first when something is marked.
 
 | Field | Value |
 |---|---|
 | Fails | `UnknownNode`. |
+
+### `LastEditCost()` {#renderer-instancetree-lasteditcost-const}
+
+`method renderer::InstanceTree::LastEditCost` — defined in `engine/renderer/instance_tree.h`
+
+```cpp
+u32 LastEditCost() const;
+```
+
+The records `Attach` or `Detach` last touched: the span between the old and the new place of the moved subtree plus the ancestors of both places (their sizes, flags and bounds are repaired, not the whole array).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `Identity()` {#renderer-instancetree-identity-const}
+
+`method renderer::InstanceTree::Identity` — defined in `engine/renderer/instance_tree.h`
+
+```cpp
+u64 Identity() const;
+```
+
+A number no other tree built in this process has: what a [`renderer::TreeLodState`](#renderer-treelodstate) remembers its tree by.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `Validate()` {#renderer-instancetree-validate-const}
 
@@ -5604,6 +5642,20 @@ void Reset();
 ```
 
 Forgets everything (every node starts at level 0).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `IsFor(u64)` {#renderer-treelodstate-isfor-u64-const}
+
+`method renderer::TreeLodState::IsFor` — defined in `engine/renderer/instance_tree_cull.h`
+
+```cpp
+bool IsFor(u64 tree_identity) const;
+```
+
+Whether the state was made for the tree with this [`renderer::InstanceTree::Identity`](#renderer-instancetree-identity-const) (a fresh state is for none, and the next cull adopts it).
 
 | Field | Value |
 |---|---|
@@ -5859,7 +5911,7 @@ Finds the visible nodes of a tree and the mesh each draws.
 |---|---|
 | Parameter `tree` | the tree; its world transforms must be current ([`renderer::InstanceTree::UpdateWorldTransforms`](#renderer-instancetree-updateworldtransforms-jobs-scheduler-star)); not edited during the call. |
 | Parameter `params` | the view. |
-| Parameter `state` | remembers levels between calls for hysteresis, or null for the plain distance rule. |
+| Parameter `state` | remembers levels between calls for hysteresis, or null for the plain distance rule. A state last used with another tree is reset and a warning is logged. |
 | Parameter `scheduler` | runs groups of roots in parallel and joins them in root order, or null for the calling thread. Called from the main thread, outside any job, like `jobs::ParallelForBlocking`. |
 | Parameter `out` | receives the nodes, runs and counters; its storage is reused. |
 | Fails | never. |

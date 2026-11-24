@@ -249,15 +249,25 @@ u32 InstanceSet::NewChunk(u64 key, const Vec3d& origin)
     }
     else
     {
-        index = static_cast<u32>(chunks_.Size());
-        chunks_.Push(Chunk_());
-        const usize total = chunks_.Size() * kInstanceChunkSize;
-        records_.Resize(total);
-        handles_.Resize(total);
-        if (desc_.has_data)
+        if (chunks_.Size() >= ChunkCap())
         {
-            extras_.Resize(total);
+            return kNoInstance;
         }
+        index = static_cast<u32>(chunks_.Size());
+        const usize total = (chunks_.Size() + 1) * kInstanceChunkSize;
+        if (!records_.TryResize(total) || !handles_.TryResize(total) || (desc_.has_data && !extras_.TryResize(total)))
+        {
+            // Put the arrays back to the chunks held: a half-grown set would index past its chunk table.
+            const usize held = chunks_.Size() * kInstanceChunkSize;
+            records_.Resize(held);
+            handles_.Resize(held);
+            if (desc_.has_data)
+            {
+                extras_.Resize(held);
+            }
+            return kNoInstance;
+        }
+        chunks_.Push(Chunk_());
     }
     Chunk_& c = chunks_[index];
     c.origin = origin;
@@ -285,17 +295,44 @@ void InstanceSet::FreeChunk(u32 chunk)
     free_chunks_.Push(chunk);
 }
 
+u32 InstanceSet::ChunkCap() const
+{
+    if (desc_.max_chunks != 0)
+    {
+        return desc_.max_chunks;
+    }
+    const u64 fill = (static_cast<u64>(desc_.max_instances) + kInstanceChunkSize - 1) / kInstanceChunkSize;
+    return static_cast<u32>(Min<u64>(fill * 4u, 0xFFFFFFFFull));
+}
+
+// A chunk takes an instance only when it is near: a neighbour in key order can be far away (a gap in the scatter), and
+// joining it would stretch its box over the gap and make culling and the upload test the whole stretch.
+bool InstanceSet::Near(u32 chunk, const Vec3d& position) const
+{
+    const Chunk_& c = chunks_[chunk];
+    if (c.count == 0)
+    {
+        return true;
+    }
+    const f64 limit = 64.0 * desc_.key_cell_size + static_cast<f64>(desc_.move_threshold);
+    const Vec3d low = c.origin + Vec3d(c.box.min);
+    const Vec3d high = c.origin + Vec3d(c.box.max);
+    return position.x >= low.x - limit && position.x <= high.x + limit && position.y >= low.y - limit &&
+           position.y <= high.y + limit && position.z >= low.z - limit && position.z <= high.z + limit;
+}
+
 u32 InstanceSet::ChooseChunk(u64 key, const Vec3d& position)
 {
     if (!order_.Empty())
     {
         const u32 after = OrderLowerBound(key, kNoInstance);
         const u32 nearest = after > 0 ? after - 1 : 0;
-        if (chunks_[order_[nearest]].count < kInstanceChunkSize)
+        if (chunks_[order_[nearest]].count < kInstanceChunkSize && Near(order_[nearest], position))
         {
             return order_[nearest];
         }
-        if (nearest + 1 < order_.Size() && chunks_[order_[nearest + 1]].count < kInstanceChunkSize)
+        if (nearest + 1 < order_.Size() && chunks_[order_[nearest + 1]].count < kInstanceChunkSize &&
+            Near(order_[nearest + 1], position))
         {
             return order_[nearest + 1];
         }
@@ -390,6 +427,11 @@ InstanceStatus InstanceSet::Add(const InstanceTransform& transform, const Instan
     {
         return InstanceStatus::Full;
     }
+    const u32 chunk = ChooseChunk(KeyOf(transform.position), transform.position);
+    if (chunk == kNoInstance)
+    {
+        return InstanceStatus::Full;
+    }
     u32 handle = 0;
     if (free_slot_ != kNoInstance)
     {
@@ -401,7 +443,6 @@ InstanceStatus InstanceSet::Add(const InstanceTransform& transform, const Instan
         handle = static_cast<u32>(slots_.Size());
         slots_.Push(Slot());
     }
-    const u32 chunk = ChooseChunk(KeyOf(transform.position), transform.position);
     Attach(chunk, handle, transform, extra);
     ++count_;
     if (out != nullptr)
@@ -456,7 +497,11 @@ InstanceStatus InstanceSet::SetTransform(InstanceId id, const InstanceTransform&
             extra = extras_[at];
         }
         Detach(chunk, pos);
-        const u32 target = ChooseChunk(KeyOf(transform.position), transform.position);
+        u32 target = ChooseChunk(KeyOf(transform.position), transform.position);
+        if (target == kNoInstance)
+        {
+            target = chunk;  // no room for another chunk: it stays where it was, whose room it just left
+        }
         Attach(target, id.index, transform, extra);
         return InstanceStatus::Ok;
     }
@@ -616,7 +661,11 @@ void InstanceSet::Rebuild()
         Chunk_& c = chunks[ci];
         const usize at = ci * kInstanceChunkSize + c.count;
         InstanceRecord& r = records[at];
-        r.position = (world - c.origin).Narrow();
+        // The same origin as before keeps the stored offset as it is (rebuilding twice moves nothing); another origin
+        // rounds once from the exact sum.
+        r.position = c.origin.x == oc.origin.x && c.origin.y == oc.origin.y && c.origin.z == oc.origin.z
+                         ? old.position
+                         : (world - c.origin).Narrow();
         r.rotation = old.rotation;
         r.scale = old.scale;
         handles[at] = e.handle;

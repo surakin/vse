@@ -41,12 +41,22 @@ class TreeLodState
 public:
     /// Forgets everything (every node starts at level 0).
     /// - Fails: never.
-    void Reset() { levels_.Clear(); }
+    void Reset()
+    {
+        levels_.Clear();
+        tree_ = 0;
+    }
+
+    /// Whether the state was made for the tree with this [[renderer::InstanceTree::Identity]] (a fresh state is for
+    /// none, and the next cull adopts it).
+    /// - Fails: never.
+    bool IsFor(u64 tree_identity) const { return tree_ == 0 || tree_ == tree_identity; }
 
 private:
     friend void CullInstanceTree(const InstanceTree&, const TreeCullParams&, TreeLodState*, jobs::Scheduler*,
                                  struct TreeCullResult*);
     Vector<u8> levels_;
+    u64 tree_ = 0;
 };
 
 /// One node the cull emitted.
@@ -101,7 +111,8 @@ struct TreeCullResult
 /// - Param tree: the tree; its world transforms must be current ([[renderer::InstanceTree::UpdateWorldTransforms]]);
 ///   not edited during the call.
 /// - Param params: the view.
-/// - Param state: remembers levels between calls for hysteresis, or null for the plain distance rule.
+/// - Param state: remembers levels between calls for hysteresis, or null for the plain distance rule. A state last
+///   used with another tree is reset and a warning is logged.
 /// - Param scheduler: runs groups of roots in parallel and joins them in root order, or null for the calling thread.
 ///   Called from the main thread, outside any job, like `jobs::ParallelForBlocking`.
 /// - Param out: receives the nodes, runs and counters; its storage is reused.

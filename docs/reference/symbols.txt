@@ -12847,68 +12847,69 @@ renderer::kMaxInstanceCoordinate	variable	renderer	renderer-kmaxinstancecoordina
 renderer::InstanceStatus	enum	renderer	renderer-instancestatus	renderer.md	engine/renderer/instance_set.h:39
 renderer::InstanceStatus::Ok	enumerator	renderer	renderer-instancestatus-ok	renderer.md	engine/renderer/instance_set.h:41
 renderer::InstanceStatus::Full	enumerator	renderer	renderer-instancestatus-full	renderer.md	engine/renderer/instance_set.h:42
-renderer::InstanceStatus::StaleId	enumerator	renderer	renderer-instancestatus-staleid	renderer.md	engine/renderer/instance_set.h:43
-renderer::InstanceStatus::NoData	enumerator	renderer	renderer-instancestatus-nodata	renderer.md	engine/renderer/instance_set.h:44
-renderer::InstanceStatus::InvalidValue	enumerator	renderer	renderer-instancestatus-invalidvalue	renderer.md	engine/renderer/instance_set.h:45
-renderer::InstanceId	struct	renderer	renderer-instanceid	renderer.md	engine/renderer/instance_set.h:52
-renderer::InstanceId::index	variable	renderer	renderer-instanceid-index	renderer.md	engine/renderer/instance_set.h:54
-renderer::InstanceId::generation	variable	renderer	renderer-instanceid-generation	renderer.md	engine/renderer/instance_set.h:55
-renderer::InstanceId::operator==(const InstanceId&) const	function	renderer	renderer-instanceid-operator-eq-eq-const-instanceid-amp-const	renderer.md	engine/renderer/instance_set.h:58
-renderer::InstanceId::operator!=(const InstanceId&) const	function	renderer	renderer-instanceid-operator-not-eq-const-instanceid-amp-const	renderer.md	engine/renderer/instance_set.h:60
-renderer::InstanceTransform	struct	renderer	renderer-instancetransform	renderer.md	engine/renderer/instance_set.h:66
-renderer::InstanceTransform::position	variable	renderer	renderer-instancetransform-position	renderer.md	engine/renderer/instance_set.h:68
-renderer::InstanceTransform::rotation	variable	renderer	renderer-instancetransform-rotation	renderer.md	engine/renderer/instance_set.h:69
-renderer::InstanceTransform::scale	variable	renderer	renderer-instancetransform-scale	renderer.md	engine/renderer/instance_set.h:70
-renderer::InstanceRecord	struct	renderer	renderer-instancerecord	renderer.md	engine/renderer/instance_set.h:77
-renderer::InstanceRecord::position	variable	renderer	renderer-instancerecord-position	renderer.md	engine/renderer/instance_set.h:79
-renderer::InstanceRecord::rotation	variable	renderer	renderer-instancerecord-rotation	renderer.md	engine/renderer/instance_set.h:80
-renderer::InstanceRecord::scale	variable	renderer	renderer-instancerecord-scale	renderer.md	engine/renderer/instance_set.h:81
-renderer::InstanceExtra	struct	renderer	renderer-instanceextra	renderer.md	engine/renderer/instance_set.h:88
-renderer::InstanceExtra::tint	variable	renderer	renderer-instanceextra-tint	renderer.md	engine/renderer/instance_set.h:90
-renderer::InstanceExtra::custom	variable	renderer	renderer-instanceextra-custom	renderer.md	engine/renderer/instance_set.h:91
-renderer::InstanceSetDesc	struct	renderer	renderer-instancesetdesc	renderer.md	engine/renderer/instance_set.h:98
-renderer::InstanceSetDesc::has_data	variable	renderer	renderer-instancesetdesc-has-data	renderer.md	engine/renderer/instance_set.h:101
-renderer::InstanceSetDesc::max_instances	variable	renderer	renderer-instancesetdesc-max-instances	renderer.md	engine/renderer/instance_set.h:103
-renderer::InstanceSetDesc::key_cell_size	variable	renderer	renderer-instancesetdesc-key-cell-size	renderer.md	engine/renderer/instance_set.h:105
-renderer::InstanceSetDesc::move_threshold	variable	renderer	renderer-instancesetdesc-move-threshold	renderer.md	engine/renderer/instance_set.h:107
-renderer::InstanceChunkInfo	struct	renderer	renderer-instancechunkinfo	renderer.md	engine/renderer/instance_set.h:113
-renderer::InstanceChunkInfo::origin	variable	renderer	renderer-instancechunkinfo-origin	renderer.md	engine/renderer/instance_set.h:115
-renderer::InstanceChunkInfo::box	variable	renderer	renderer-instancechunkinfo-box	renderer.md	engine/renderer/instance_set.h:116
-renderer::InstanceChunkInfo::max_scale	variable	renderer	renderer-instancechunkinfo-max-scale	renderer.md	engine/renderer/instance_set.h:117
-renderer::InstanceChunkInfo::count	variable	renderer	renderer-instancechunkinfo-count	renderer.md	engine/renderer/instance_set.h:118
-renderer::InstanceChunkInfo::first	variable	renderer	renderer-instancechunkinfo-first	renderer.md	engine/renderer/instance_set.h:119
-renderer::InstanceChunkInfo::version	variable	renderer	renderer-instancechunkinfo-version	renderer.md	engine/renderer/instance_set.h:120
-renderer::InstanceChunkSource	struct	renderer	renderer-instancechunksource	renderer.md	engine/renderer/instance_set.h:127
-renderer::InstanceChunkSource::origin	variable	renderer	renderer-instancechunksource-origin	renderer.md	engine/renderer/instance_set.h:129
-renderer::InstanceChunkSource::records	variable	renderer	renderer-instancechunksource-records	renderer.md	engine/renderer/instance_set.h:130
-renderer::InstanceChunkSource::extras	variable	renderer	renderer-instancechunksource-extras	renderer.md	engine/renderer/instance_set.h:131
-renderer::InstanceSetPtr	alias	renderer	renderer-instancesetptr	renderer.md	engine/renderer/instance_set.h:137
-renderer::InstanceSetConstPtr	alias	renderer	renderer-instancesetconstptr	renderer.md	engine/renderer/instance_set.h:139
-renderer::InstanceSet	class	renderer	renderer-instanceset	renderer.md	engine/renderer/instance_set.h:146
-renderer::InstanceSet::Create(const InstanceSetDesc&)	function	renderer	renderer-instanceset-create-const-instancesetdesc-amp	renderer.md	engine/renderer/instance_set.h:154
-renderer::InstanceSet::FromChunks(const InstanceSetDesc&,Span<const InstanceChunkSource>)	function	renderer	renderer-instanceset-fromchunks-const-instancesetdesc-amp-span-lt-const-instancechunksource-gt	renderer.md	engine/renderer/instance_set.h:169
-renderer::InstanceSet::Add(const InstanceTransform&,const InstanceExtra*,InstanceId*)	function	renderer	renderer-instanceset-add-const-instancetransform-amp-const-instanceextra-star-instanceid-star	renderer.md	engine/renderer/instance_set.h:179
-renderer::InstanceSet::Remove(InstanceId)	function	renderer	renderer-instanceset-remove-instanceid	renderer.md	engine/renderer/instance_set.h:184
-renderer::InstanceSet::SetTransform(InstanceId,const InstanceTransform&)	function	renderer	renderer-instanceset-settransform-instanceid-const-instancetransform-amp	renderer.md	engine/renderer/instance_set.h:192
-renderer::InstanceSet::SetData(InstanceId,const InstanceExtra&)	function	renderer	renderer-instanceset-setdata-instanceid-const-instanceextra-amp	renderer.md	engine/renderer/instance_set.h:197
-renderer::InstanceSet::Get(InstanceId,InstanceTransform*) const	function	renderer	renderer-instanceset-get-instanceid-instancetransform-star-const	renderer.md	engine/renderer/instance_set.h:203
-renderer::InstanceSet::GetData(InstanceId,InstanceExtra*) const	function	renderer	renderer-instanceset-getdata-instanceid-instanceextra-star-const	renderer.md	engine/renderer/instance_set.h:209
-renderer::InstanceSet::Contains(InstanceId) const	function	renderer	renderer-instanceset-contains-instanceid-const	renderer.md	engine/renderer/instance_set.h:214
-renderer::InstanceSet::Clear()	function	renderer	renderer-instanceset-clear	renderer.md	engine/renderer/instance_set.h:217
-renderer::InstanceSet::Rebuild()	function	renderer	renderer-instanceset-rebuild	renderer.md	engine/renderer/instance_set.h:223
-renderer::InstanceSet::Count() const	function	renderer	renderer-instanceset-count-const	renderer.md	engine/renderer/instance_set.h:226
-renderer::InstanceSet::Capacity() const	function	renderer	renderer-instanceset-capacity-const	renderer.md	engine/renderer/instance_set.h:228
-renderer::InstanceSet::HasData() const	function	renderer	renderer-instanceset-hasdata-const	renderer.md	engine/renderer/instance_set.h:232
-renderer::InstanceSet::ChunkCount() const	function	renderer	renderer-instanceset-chunkcount-const	renderer.md	engine/renderer/instance_set.h:234
-renderer::InstanceSet::Chunk(u32) const	function	renderer	renderer-instanceset-chunk-u32-const	renderer.md	engine/renderer/instance_set.h:238
-renderer::InstanceSet::Records(u32) const	function	renderer	renderer-instanceset-records-u32-const	renderer.md	engine/renderer/instance_set.h:242
-renderer::InstanceSet::Extras(u32) const	function	renderer	renderer-instanceset-extras-u32-const	renderer.md	engine/renderer/instance_set.h:246
-renderer::InstanceSet::IdAt(u32,u32) const	function	renderer	renderer-instanceset-idat-u32-u32-const	renderer.md	engine/renderer/instance_set.h:251
-renderer::InstanceSet::ChunkVolumeSum() const	function	renderer	renderer-instanceset-chunkvolumesum-const	renderer.md	engine/renderer/instance_set.h:253
-renderer::InstanceSet::MemoryBytes() const	function	renderer	renderer-instanceset-memorybytes-const	renderer.md	engine/renderer/instance_set.h:255
-renderer::InstanceSet::Version() const	function	renderer	renderer-instanceset-version-const	renderer.md	engine/renderer/instance_set.h:257
-renderer::InstanceSet::AddCalls() const	function	renderer	renderer-instanceset-addcalls-const	renderer.md	engine/renderer/instance_set.h:259
-renderer::InstanceSet::InstanceSet(const InstanceSetDesc&)	function	renderer	renderer-instanceset-instanceset-const-instancesetdesc-amp	renderer.md	engine/renderer/instance_set.h:282
+renderer::InstanceStatus::StaleId	enumerator	renderer	renderer-instancestatus-staleid	renderer.md	engine/renderer/instance_set.h:44
+renderer::InstanceStatus::NoData	enumerator	renderer	renderer-instancestatus-nodata	renderer.md	engine/renderer/instance_set.h:45
+renderer::InstanceStatus::InvalidValue	enumerator	renderer	renderer-instancestatus-invalidvalue	renderer.md	engine/renderer/instance_set.h:46
+renderer::InstanceId	struct	renderer	renderer-instanceid	renderer.md	engine/renderer/instance_set.h:53
+renderer::InstanceId::index	variable	renderer	renderer-instanceid-index	renderer.md	engine/renderer/instance_set.h:55
+renderer::InstanceId::generation	variable	renderer	renderer-instanceid-generation	renderer.md	engine/renderer/instance_set.h:56
+renderer::InstanceId::operator==(const InstanceId&) const	function	renderer	renderer-instanceid-operator-eq-eq-const-instanceid-amp-const	renderer.md	engine/renderer/instance_set.h:59
+renderer::InstanceId::operator!=(const InstanceId&) const	function	renderer	renderer-instanceid-operator-not-eq-const-instanceid-amp-const	renderer.md	engine/renderer/instance_set.h:61
+renderer::InstanceTransform	struct	renderer	renderer-instancetransform	renderer.md	engine/renderer/instance_set.h:67
+renderer::InstanceTransform::position	variable	renderer	renderer-instancetransform-position	renderer.md	engine/renderer/instance_set.h:69
+renderer::InstanceTransform::rotation	variable	renderer	renderer-instancetransform-rotation	renderer.md	engine/renderer/instance_set.h:70
+renderer::InstanceTransform::scale	variable	renderer	renderer-instancetransform-scale	renderer.md	engine/renderer/instance_set.h:71
+renderer::InstanceRecord	struct	renderer	renderer-instancerecord	renderer.md	engine/renderer/instance_set.h:78
+renderer::InstanceRecord::position	variable	renderer	renderer-instancerecord-position	renderer.md	engine/renderer/instance_set.h:80
+renderer::InstanceRecord::rotation	variable	renderer	renderer-instancerecord-rotation	renderer.md	engine/renderer/instance_set.h:81
+renderer::InstanceRecord::scale	variable	renderer	renderer-instancerecord-scale	renderer.md	engine/renderer/instance_set.h:82
+renderer::InstanceExtra	struct	renderer	renderer-instanceextra	renderer.md	engine/renderer/instance_set.h:89
+renderer::InstanceExtra::tint	variable	renderer	renderer-instanceextra-tint	renderer.md	engine/renderer/instance_set.h:91
+renderer::InstanceExtra::custom	variable	renderer	renderer-instanceextra-custom	renderer.md	engine/renderer/instance_set.h:92
+renderer::InstanceSetDesc	struct	renderer	renderer-instancesetdesc	renderer.md	engine/renderer/instance_set.h:99
+renderer::InstanceSetDesc::has_data	variable	renderer	renderer-instancesetdesc-has-data	renderer.md	engine/renderer/instance_set.h:102
+renderer::InstanceSetDesc::max_instances	variable	renderer	renderer-instancesetdesc-max-instances	renderer.md	engine/renderer/instance_set.h:104
+renderer::InstanceSetDesc::key_cell_size	variable	renderer	renderer-instancesetdesc-key-cell-size	renderer.md	engine/renderer/instance_set.h:106
+renderer::InstanceSetDesc::move_threshold	variable	renderer	renderer-instancesetdesc-move-threshold	renderer.md	engine/renderer/instance_set.h:108
+renderer::InstanceSetDesc::max_chunks	variable	renderer	renderer-instancesetdesc-max-chunks	renderer.md	engine/renderer/instance_set.h:112
+renderer::InstanceChunkInfo	struct	renderer	renderer-instancechunkinfo	renderer.md	engine/renderer/instance_set.h:118
+renderer::InstanceChunkInfo::origin	variable	renderer	renderer-instancechunkinfo-origin	renderer.md	engine/renderer/instance_set.h:120
+renderer::InstanceChunkInfo::box	variable	renderer	renderer-instancechunkinfo-box	renderer.md	engine/renderer/instance_set.h:121
+renderer::InstanceChunkInfo::max_scale	variable	renderer	renderer-instancechunkinfo-max-scale	renderer.md	engine/renderer/instance_set.h:122
+renderer::InstanceChunkInfo::count	variable	renderer	renderer-instancechunkinfo-count	renderer.md	engine/renderer/instance_set.h:123
+renderer::InstanceChunkInfo::first	variable	renderer	renderer-instancechunkinfo-first	renderer.md	engine/renderer/instance_set.h:124
+renderer::InstanceChunkInfo::version	variable	renderer	renderer-instancechunkinfo-version	renderer.md	engine/renderer/instance_set.h:125
+renderer::InstanceChunkSource	struct	renderer	renderer-instancechunksource	renderer.md	engine/renderer/instance_set.h:132
+renderer::InstanceChunkSource::origin	variable	renderer	renderer-instancechunksource-origin	renderer.md	engine/renderer/instance_set.h:134
+renderer::InstanceChunkSource::records	variable	renderer	renderer-instancechunksource-records	renderer.md	engine/renderer/instance_set.h:135
+renderer::InstanceChunkSource::extras	variable	renderer	renderer-instancechunksource-extras	renderer.md	engine/renderer/instance_set.h:136
+renderer::InstanceSetPtr	alias	renderer	renderer-instancesetptr	renderer.md	engine/renderer/instance_set.h:142
+renderer::InstanceSetConstPtr	alias	renderer	renderer-instancesetconstptr	renderer.md	engine/renderer/instance_set.h:144
+renderer::InstanceSet	class	renderer	renderer-instanceset	renderer.md	engine/renderer/instance_set.h:151
+renderer::InstanceSet::Create(const InstanceSetDesc&)	function	renderer	renderer-instanceset-create-const-instancesetdesc-amp	renderer.md	engine/renderer/instance_set.h:159
+renderer::InstanceSet::FromChunks(const InstanceSetDesc&,Span<const InstanceChunkSource>)	function	renderer	renderer-instanceset-fromchunks-const-instancesetdesc-amp-span-lt-const-instancechunksource-gt	renderer.md	engine/renderer/instance_set.h:174
+renderer::InstanceSet::Add(const InstanceTransform&,const InstanceExtra*,InstanceId*)	function	renderer	renderer-instanceset-add-const-instancetransform-amp-const-instanceextra-star-instanceid-star	renderer.md	engine/renderer/instance_set.h:184
+renderer::InstanceSet::Remove(InstanceId)	function	renderer	renderer-instanceset-remove-instanceid	renderer.md	engine/renderer/instance_set.h:189
+renderer::InstanceSet::SetTransform(InstanceId,const InstanceTransform&)	function	renderer	renderer-instanceset-settransform-instanceid-const-instancetransform-amp	renderer.md	engine/renderer/instance_set.h:197
+renderer::InstanceSet::SetData(InstanceId,const InstanceExtra&)	function	renderer	renderer-instanceset-setdata-instanceid-const-instanceextra-amp	renderer.md	engine/renderer/instance_set.h:202
+renderer::InstanceSet::Get(InstanceId,InstanceTransform*) const	function	renderer	renderer-instanceset-get-instanceid-instancetransform-star-const	renderer.md	engine/renderer/instance_set.h:208
+renderer::InstanceSet::GetData(InstanceId,InstanceExtra*) const	function	renderer	renderer-instanceset-getdata-instanceid-instanceextra-star-const	renderer.md	engine/renderer/instance_set.h:214
+renderer::InstanceSet::Contains(InstanceId) const	function	renderer	renderer-instanceset-contains-instanceid-const	renderer.md	engine/renderer/instance_set.h:219
+renderer::InstanceSet::Clear()	function	renderer	renderer-instanceset-clear	renderer.md	engine/renderer/instance_set.h:222
+renderer::InstanceSet::Rebuild()	function	renderer	renderer-instanceset-rebuild	renderer.md	engine/renderer/instance_set.h:228
+renderer::InstanceSet::Count() const	function	renderer	renderer-instanceset-count-const	renderer.md	engine/renderer/instance_set.h:231
+renderer::InstanceSet::Capacity() const	function	renderer	renderer-instanceset-capacity-const	renderer.md	engine/renderer/instance_set.h:233
+renderer::InstanceSet::HasData() const	function	renderer	renderer-instanceset-hasdata-const	renderer.md	engine/renderer/instance_set.h:237
+renderer::InstanceSet::ChunkCount() const	function	renderer	renderer-instanceset-chunkcount-const	renderer.md	engine/renderer/instance_set.h:239
+renderer::InstanceSet::Chunk(u32) const	function	renderer	renderer-instanceset-chunk-u32-const	renderer.md	engine/renderer/instance_set.h:243
+renderer::InstanceSet::Records(u32) const	function	renderer	renderer-instanceset-records-u32-const	renderer.md	engine/renderer/instance_set.h:247
+renderer::InstanceSet::Extras(u32) const	function	renderer	renderer-instanceset-extras-u32-const	renderer.md	engine/renderer/instance_set.h:251
+renderer::InstanceSet::IdAt(u32,u32) const	function	renderer	renderer-instanceset-idat-u32-u32-const	renderer.md	engine/renderer/instance_set.h:256
+renderer::InstanceSet::ChunkVolumeSum() const	function	renderer	renderer-instanceset-chunkvolumesum-const	renderer.md	engine/renderer/instance_set.h:258
+renderer::InstanceSet::MemoryBytes() const	function	renderer	renderer-instanceset-memorybytes-const	renderer.md	engine/renderer/instance_set.h:260
+renderer::InstanceSet::Version() const	function	renderer	renderer-instanceset-version-const	renderer.md	engine/renderer/instance_set.h:262
+renderer::InstanceSet::AddCalls() const	function	renderer	renderer-instanceset-addcalls-const	renderer.md	engine/renderer/instance_set.h:264
+renderer::InstanceSet::InstanceSet(const InstanceSetDesc&)	function	renderer	renderer-instanceset-instanceset-const-instancesetdesc-amp	renderer.md	engine/renderer/instance_set.h:287
 renderer::kMaxTreeNodes	variable	renderer	renderer-kmaxtreenodes	renderer.md	engine/renderer/instance_tree.h:29
 renderer::kMaxTreeMeshes	variable	renderer	renderer-kmaxtreemeshes	renderer.md	engine/renderer/instance_tree.h:31
 renderer::kMaxTreeMaterialSlots	variable	renderer	renderer-kmaxtreematerialslots	renderer.md	engine/renderer/instance_tree.h:33
@@ -12986,48 +12987,51 @@ renderer::InstanceTree::WorldPosition(u32) const	function	renderer	renderer-inst
 renderer::InstanceTree::SetLocal(TreeNodeId,const Vec3d&,const Quaternion&,const Vec3&)	function	renderer	renderer-instancetree-setlocal-treenodeid-const-vec3d-amp-const-quaternion-amp-const-vec3-amp	renderer.md	engine/renderer/instance_tree.h:206
 renderer::InstanceTree::UpdateWorldTransforms(jobs::Scheduler*)	function	renderer	renderer-instancetree-updateworldtransforms-jobs-scheduler-star	renderer.md	engine/renderer/instance_tree.h:217
 renderer::InstanceTree::NeedsUpdate() const	function	renderer	renderer-instancetree-needsupdate-const	renderer.md	engine/renderer/instance_tree.h:221
-renderer::InstanceTree::Attach(TreeNodeId,TreeNodeId)	function	renderer	renderer-instancetree-attach-treenodeid-treenodeid	renderer.md	engine/renderer/instance_tree.h:227
-renderer::InstanceTree::Detach(TreeNodeId)	function	renderer	renderer-instancetree-detach-treenodeid	renderer.md	engine/renderer/instance_tree.h:234
-renderer::InstanceTree::Validate() const	function	renderer	renderer-instancetree-validate-const	renderer.md	engine/renderer/instance_tree.h:241
-renderer::InstanceTree::MemoryBytes() const	function	renderer	renderer-instancetree-memorybytes-const	renderer.md	engine/renderer/instance_tree.h:245
-renderer::InstanceTree::InstanceTree()	function	renderer	renderer-instancetree-instancetree	renderer.md	engine/renderer/instance_tree.h:249
-renderer::InstanceTreeBuilder	class	renderer	renderer-instancetreebuilder	renderer.md	engine/renderer/instance_tree.h:272
-renderer::InstanceTreeBuilder::InstanceTreeBuilder(Span<const TreeMeshInfo>)	function	renderer	renderer-instancetreebuilder-instancetreebuilder-span-lt-const-treemeshinfo-gt	renderer.md	engine/renderer/instance_tree.h:280
-renderer::InstanceTreeBuilder::AddRoot(const TreeNodeDesc&,TreeNodeId*)	function	renderer	renderer-instancetreebuilder-addroot-const-treenodedesc-amp-treenodeid-star	renderer.md	engine/renderer/instance_tree.h:288
-renderer::InstanceTreeBuilder::AddChild(TreeNodeId,const TreeNodeDesc&,TreeNodeId*)	function	renderer	renderer-instancetreebuilder-addchild-treenodeid-const-treenodedesc-amp-treenodeid-star	renderer.md	engine/renderer/instance_tree.h:298
-renderer::InstanceTreeBuilder::Count() const	function	renderer	renderer-instancetreebuilder-count-const	renderer.md	engine/renderer/instance_tree.h:302
-renderer::InstanceTreeBuilder::Finish(jobs::Scheduler*)	function	renderer	renderer-instancetreebuilder-finish-jobs-scheduler-star	renderer.md	engine/renderer/instance_tree.h:311
+renderer::InstanceTree::Attach(TreeNodeId,TreeNodeId)	function	renderer	renderer-instancetree-attach-treenodeid-treenodeid	renderer.md	engine/renderer/instance_tree.h:228
+renderer::InstanceTree::Detach(TreeNodeId)	function	renderer	renderer-instancetree-detach-treenodeid	renderer.md	engine/renderer/instance_tree.h:235
+renderer::InstanceTree::LastEditCost() const	function	renderer	renderer-instancetree-lasteditcost-const	renderer.md	engine/renderer/instance_tree.h:240
+renderer::InstanceTree::Identity() const	function	renderer	renderer-instancetree-identity-const	renderer.md	engine/renderer/instance_tree.h:244
+renderer::InstanceTree::Validate() const	function	renderer	renderer-instancetree-validate-const	renderer.md	engine/renderer/instance_tree.h:251
+renderer::InstanceTree::MemoryBytes() const	function	renderer	renderer-instancetree-memorybytes-const	renderer.md	engine/renderer/instance_tree.h:255
+renderer::InstanceTree::InstanceTree()	function	renderer	renderer-instancetree-instancetree	renderer.md	engine/renderer/instance_tree.h:259
+renderer::InstanceTreeBuilder	class	renderer	renderer-instancetreebuilder	renderer.md	engine/renderer/instance_tree.h:287
+renderer::InstanceTreeBuilder::InstanceTreeBuilder(Span<const TreeMeshInfo>)	function	renderer	renderer-instancetreebuilder-instancetreebuilder-span-lt-const-treemeshinfo-gt	renderer.md	engine/renderer/instance_tree.h:295
+renderer::InstanceTreeBuilder::AddRoot(const TreeNodeDesc&,TreeNodeId*)	function	renderer	renderer-instancetreebuilder-addroot-const-treenodedesc-amp-treenodeid-star	renderer.md	engine/renderer/instance_tree.h:303
+renderer::InstanceTreeBuilder::AddChild(TreeNodeId,const TreeNodeDesc&,TreeNodeId*)	function	renderer	renderer-instancetreebuilder-addchild-treenodeid-const-treenodedesc-amp-treenodeid-star	renderer.md	engine/renderer/instance_tree.h:313
+renderer::InstanceTreeBuilder::Count() const	function	renderer	renderer-instancetreebuilder-count-const	renderer.md	engine/renderer/instance_tree.h:317
+renderer::InstanceTreeBuilder::Finish(jobs::Scheduler*)	function	renderer	renderer-instancetreebuilder-finish-jobs-scheduler-star	renderer.md	engine/renderer/instance_tree.h:326
 renderer::TreeCullParams	struct	renderer	renderer-treecullparams	renderer.md	engine/renderer/instance_tree_cull.h:27
 renderer::TreeCullParams::frustum	variable	renderer	renderer-treecullparams-frustum	renderer.md	engine/renderer/instance_tree_cull.h:29
 renderer::TreeCullParams::render_origin	variable	renderer	renderer-treecullparams-render-origin	renderer.md	engine/renderer/instance_tree_cull.h:30
 renderer::TreeCullParams::camera_position	variable	renderer	renderer-treecullparams-camera-position	renderer.md	engine/renderer/instance_tree_cull.h:31
 renderer::TreeLodState	class	renderer	renderer-treelodstate	renderer.md	engine/renderer/instance_tree_cull.h:39
 renderer::TreeLodState::Reset()	function	renderer	renderer-treelodstate-reset	renderer.md	engine/renderer/instance_tree_cull.h:44
-renderer::TreeVisibleNode	struct	renderer	renderer-treevisiblenode	renderer.md	engine/renderer/instance_tree_cull.h:55
-renderer::TreeVisibleNode::node	variable	renderer	renderer-treevisiblenode-node	renderer.md	engine/renderer/instance_tree_cull.h:57
-renderer::TreeVisibleNode::mesh	variable	renderer	renderer-treevisiblenode-mesh	renderer.md	engine/renderer/instance_tree_cull.h:58
-renderer::TreeVisibleNode::material_slot	variable	renderer	renderer-treevisiblenode-material-slot	renderer.md	engine/renderer/instance_tree_cull.h:59
-renderer::TreeVisibleNode::level	variable	renderer	renderer-treevisiblenode-level	renderer.md	engine/renderer/instance_tree_cull.h:60
-renderer::TreeDrawRun	struct	renderer	renderer-treedrawrun	renderer.md	engine/renderer/instance_tree_cull.h:66
-renderer::TreeDrawRun::mesh	variable	renderer	renderer-treedrawrun-mesh	renderer.md	engine/renderer/instance_tree_cull.h:68
-renderer::TreeDrawRun::material_slot	variable	renderer	renderer-treedrawrun-material-slot	renderer.md	engine/renderer/instance_tree_cull.h:69
-renderer::TreeDrawRun::level	variable	renderer	renderer-treedrawrun-level	renderer.md	engine/renderer/instance_tree_cull.h:70
-renderer::TreeDrawRun::first	variable	renderer	renderer-treedrawrun-first	renderer.md	engine/renderer/instance_tree_cull.h:71
-renderer::TreeDrawRun::count	variable	renderer	renderer-treedrawrun-count	renderer.md	engine/renderer/instance_tree_cull.h:72
-renderer::TreeCullStats	struct	renderer	renderer-treecullstats	renderer.md	engine/renderer/instance_tree_cull.h:78
-renderer::TreeCullStats::nodes_looked_at	variable	renderer	renderer-treecullstats-nodes-looked-at	renderer.md	engine/renderer/instance_tree_cull.h:80
-renderer::TreeCullStats::subtrees_skipped	variable	renderer	renderer-treecullstats-subtrees-skipped	renderer.md	engine/renderer/instance_tree_cull.h:81
-renderer::TreeCullStats::subtrees_accepted	variable	renderer	renderer-treecullstats-subtrees-accepted	renderer.md	engine/renderer/instance_tree_cull.h:83
-renderer::TreeCullStats::nodes_emitted	variable	renderer	renderer-treecullstats-nodes-emitted	renderer.md	engine/renderer/instance_tree_cull.h:84
-renderer::TreeCullStats::standins	variable	renderer	renderer-treecullstats-standins	renderer.md	engine/renderer/instance_tree_cull.h:85
-renderer::TreeCullStats::runs	variable	renderer	renderer-treecullstats-runs	renderer.md	engine/renderer/instance_tree_cull.h:86
-renderer::TreeCullResult	struct	renderer	renderer-treecullresult	renderer.md	engine/renderer/instance_tree_cull.h:92
-renderer::TreeCullResult::nodes	variable	renderer	renderer-treecullresult-nodes	renderer.md	engine/renderer/instance_tree_cull.h:94
-renderer::TreeCullResult::runs	variable	renderer	renderer-treecullresult-runs	renderer.md	engine/renderer/instance_tree_cull.h:95
-renderer::TreeCullResult::stats	variable	renderer	renderer-treecullresult-stats	renderer.md	engine/renderer/instance_tree_cull.h:96
-renderer::CullInstanceTree(const InstanceTree&,const TreeCullParams&,TreeLodState*,jobs::Scheduler*,TreeCullResult*)	function	renderer	renderer-cullinstancetree-const-instancetree-amp-const-treecullparams-amp-treelodstate-star-jobs-scheduler-star-treecullresult-star	renderer.md	engine/renderer/instance_tree_cull.h:111
-renderer::TreeLevelForDistance(const TreeLod&,f32)	function	renderer	renderer-treelevelfordistance-const-treelod-amp-f32	renderer.md	engine/renderer/instance_tree_cull.h:120
-renderer::CompactTreeNodes(const InstanceTree&,Span<const TreeVisibleNode>,const Vec3d&,Vector<InstanceRecord>*,Vector<InstanceExtra>*)	function	renderer	renderer-compacttreenodes-const-instancetree-amp-span-lt-const-treevisiblenode-gt-const-vec3d-amp-vector-lt-instancerecord-gt-star-vector-lt-instanceextra-gt-star	renderer.md	engine/renderer/instance_tree_cull.h:132
+renderer::TreeLodState::IsFor(u64) const	function	renderer	renderer-treelodstate-isfor-u64-const	renderer.md	engine/renderer/instance_tree_cull.h:53
+renderer::TreeVisibleNode	struct	renderer	renderer-treevisiblenode	renderer.md	engine/renderer/instance_tree_cull.h:65
+renderer::TreeVisibleNode::node	variable	renderer	renderer-treevisiblenode-node	renderer.md	engine/renderer/instance_tree_cull.h:67
+renderer::TreeVisibleNode::mesh	variable	renderer	renderer-treevisiblenode-mesh	renderer.md	engine/renderer/instance_tree_cull.h:68
+renderer::TreeVisibleNode::material_slot	variable	renderer	renderer-treevisiblenode-material-slot	renderer.md	engine/renderer/instance_tree_cull.h:69
+renderer::TreeVisibleNode::level	variable	renderer	renderer-treevisiblenode-level	renderer.md	engine/renderer/instance_tree_cull.h:70
+renderer::TreeDrawRun	struct	renderer	renderer-treedrawrun	renderer.md	engine/renderer/instance_tree_cull.h:76
+renderer::TreeDrawRun::mesh	variable	renderer	renderer-treedrawrun-mesh	renderer.md	engine/renderer/instance_tree_cull.h:78
+renderer::TreeDrawRun::material_slot	variable	renderer	renderer-treedrawrun-material-slot	renderer.md	engine/renderer/instance_tree_cull.h:79
+renderer::TreeDrawRun::level	variable	renderer	renderer-treedrawrun-level	renderer.md	engine/renderer/instance_tree_cull.h:80
+renderer::TreeDrawRun::first	variable	renderer	renderer-treedrawrun-first	renderer.md	engine/renderer/instance_tree_cull.h:81
+renderer::TreeDrawRun::count	variable	renderer	renderer-treedrawrun-count	renderer.md	engine/renderer/instance_tree_cull.h:82
+renderer::TreeCullStats	struct	renderer	renderer-treecullstats	renderer.md	engine/renderer/instance_tree_cull.h:88
+renderer::TreeCullStats::nodes_looked_at	variable	renderer	renderer-treecullstats-nodes-looked-at	renderer.md	engine/renderer/instance_tree_cull.h:90
+renderer::TreeCullStats::subtrees_skipped	variable	renderer	renderer-treecullstats-subtrees-skipped	renderer.md	engine/renderer/instance_tree_cull.h:91
+renderer::TreeCullStats::subtrees_accepted	variable	renderer	renderer-treecullstats-subtrees-accepted	renderer.md	engine/renderer/instance_tree_cull.h:93
+renderer::TreeCullStats::nodes_emitted	variable	renderer	renderer-treecullstats-nodes-emitted	renderer.md	engine/renderer/instance_tree_cull.h:94
+renderer::TreeCullStats::standins	variable	renderer	renderer-treecullstats-standins	renderer.md	engine/renderer/instance_tree_cull.h:95
+renderer::TreeCullStats::runs	variable	renderer	renderer-treecullstats-runs	renderer.md	engine/renderer/instance_tree_cull.h:96
+renderer::TreeCullResult	struct	renderer	renderer-treecullresult	renderer.md	engine/renderer/instance_tree_cull.h:102
+renderer::TreeCullResult::nodes	variable	renderer	renderer-treecullresult-nodes	renderer.md	engine/renderer/instance_tree_cull.h:104
+renderer::TreeCullResult::runs	variable	renderer	renderer-treecullresult-runs	renderer.md	engine/renderer/instance_tree_cull.h:105
+renderer::TreeCullResult::stats	variable	renderer	renderer-treecullresult-stats	renderer.md	engine/renderer/instance_tree_cull.h:106
+renderer::CullInstanceTree(const InstanceTree&,const TreeCullParams&,TreeLodState*,jobs::Scheduler*,TreeCullResult*)	function	renderer	renderer-cullinstancetree-const-instancetree-amp-const-treecullparams-amp-treelodstate-star-jobs-scheduler-star-treecullresult-star	renderer.md	engine/renderer/instance_tree_cull.h:122
+renderer::TreeLevelForDistance(const TreeLod&,f32)	function	renderer	renderer-treelevelfordistance-const-treelod-amp-f32	renderer.md	engine/renderer/instance_tree_cull.h:131
+renderer::CompactTreeNodes(const InstanceTree&,Span<const TreeVisibleNode>,const Vec3d&,Vector<InstanceRecord>*,Vector<InstanceExtra>*)	function	renderer	renderer-compacttreenodes-const-instancetree-amp-span-lt-const-treevisiblenode-gt-const-vec3d-amp-vector-lt-instancerecord-gt-star-vector-lt-instanceextra-gt-star	renderer.md	engine/renderer/instance_tree_cull.h:143
 renderer::kLightAccumFormat	variable	renderer	renderer-klightaccumformat	renderer.md	engine/renderer/lighting.h:43
 renderer::SurfacePoint	struct	renderer	renderer-surfacepoint	renderer.md	engine/renderer/lighting.h:48
 renderer::SurfacePoint::albedo	variable	renderer	renderer-surfacepoint-albedo	renderer.md	engine/renderer/lighting.h:51

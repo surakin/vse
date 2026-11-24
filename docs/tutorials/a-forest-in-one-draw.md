@@ -116,7 +116,7 @@ int main()
 ```
 
 ```output
-rocks: 100000 placed, 30730 visible in 4265 runs; 304 of 583 chunks skipped whole
+rocks: 100000 placed, 30730 visible in 4174 runs; 319 of 568 chunks skipped whole
 trees: 600 nodes, 281 emitted, 290 looked at, 62 subtrees skipped, 190 subtrees taken whole
 far away: 100 emitted, 100 of them stand-ins
 moved a branch: 1 of 600 nodes recomposed

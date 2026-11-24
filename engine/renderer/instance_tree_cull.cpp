@@ -3,6 +3,7 @@
 #include "algorithm.h"
 #include "jobs/parallel_for.h"
 #include "lang/scalar.h"
+#include "renderer/renderer_log.h"
 
 namespace vse::renderer
 {
@@ -220,6 +221,12 @@ void CullInstanceTree(const InstanceTree& tree, const TreeCullParams& params, Tr
     u8* levels = nullptr;
     if (state != nullptr)
     {
+        if (!state->IsFor(tree.Identity()))
+        {
+            RenderLog(LogVerbosity::Warn, "CullInstanceTree: the level state belongs to another tree; it was reset");
+            state->Reset();
+        }
+        state->tree_ = tree.Identity();
         const usize n = tree.NodeCount();
         const usize old = state->levels_.Size();
         if (old != n)

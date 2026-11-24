@@ -4,12 +4,16 @@
 #include "jobs/parallel_for.h"
 #include "lang/scalar.h"
 #include "log/assert.h"
+#include "sync/atomic.h"
 
 namespace vse::renderer
 {
 
 namespace
 {
+
+// Each built tree takes the next number, so a state kept for one tree can tell it is shown another.
+Atomic<u64> g_next_tree_identity{1};
 
 bool TreeFiniteVec(const Vec3& v)
 {
@@ -40,8 +44,19 @@ Transform TreeLocalTransform(const Vec3d& position, const Quaternion& rotation, 
     return t;
 }
 
-bool LodValid(const TreeLod& lod, usize mesh_count)
+// A coarser level or a stand-in is culled by the node's own box (level 0), so its mesh must fit inside it, with a
+// small tolerance for a simplified mesh whose box differs in the last digits.
+bool FitsLevelZero(const TreeMeshInfo& coarse, const TreeMeshInfo& own)
 {
+    const Vec3 slack = (own.bounds.max - own.bounds.min) * 1.0e-3f + Vec3(1.0e-4f, 1.0e-4f, 1.0e-4f);
+    return coarse.bounds.min.x >= own.bounds.min.x - slack.x && coarse.bounds.min.y >= own.bounds.min.y - slack.y &&
+           coarse.bounds.min.z >= own.bounds.min.z - slack.z && coarse.bounds.max.x <= own.bounds.max.x + slack.x &&
+           coarse.bounds.max.y <= own.bounds.max.y + slack.y && coarse.bounds.max.z <= own.bounds.max.z + slack.z;
+}
+
+bool LodValid(const TreeLod& lod, Span<const TreeMeshInfo> meshes, u32 own_mesh)
+{
+    const usize mesh_count = meshes.Size();
     if (lod.level_count < 1 || lod.level_count > kMaxTreeLevels || !IsFinite(lod.hysteresis) || lod.hysteresis < 0.0f ||
         !IsFinite(lod.cull_distance) || lod.cull_distance < 0.0f || !IsFinite(lod.standin_distance) ||
         lod.standin_distance < 0.0f)
@@ -51,8 +66,9 @@ bool LodValid(const TreeLod& lod, usize mesh_count)
     f32 previous = 0.0f;
     for (u32 k = 1; k < lod.level_count; ++k)
     {
-        if (lod.mesh[k] >= mesh_count || !IsFinite(lod.switch_distance[k - 1]) ||
-            !(lod.switch_distance[k - 1] > previous))
+        if (lod.mesh[k] >= mesh_count ||
+            (own_mesh < mesh_count && !FitsLevelZero(meshes[lod.mesh[k]], meshes[own_mesh])) ||
+            !IsFinite(lod.switch_distance[k - 1]) || !(lod.switch_distance[k - 1] > previous))
         {
             return false;
         }
@@ -62,7 +78,9 @@ bool LodValid(const TreeLod& lod, usize mesh_count)
     {
         return false;
     }
-    if (lod.standin_mesh != kTreeNoMesh && (lod.standin_mesh >= mesh_count || !(lod.standin_distance > 0.0f)))
+    if (lod.standin_mesh != kTreeNoMesh &&
+        (lod.standin_mesh >= mesh_count || !(lod.standin_distance > 0.0f) ||
+         (own_mesh < mesh_count && !FitsLevelZero(meshes[lod.standin_mesh], meshes[own_mesh]))))
     {
         return false;
     }
@@ -110,7 +128,7 @@ TreeStatus InstanceTreeBuilder::Check(const TreeNodeDesc& desc, bool root) const
     {
         return TreeStatus::InvalidValue;
     }
-    if (desc.has_lod && !LodValid(desc.lod, meshes_.Size()))
+    if (desc.has_lod && !LodValid(desc.lod, Span<const TreeMeshInfo>(meshes_.Data(), meshes_.Size()), desc.mesh))
     {
         return TreeStatus::InvalidValue;
     }
@@ -245,6 +263,7 @@ InstanceTreePtr InstanceTreeBuilder::Finish(jobs::Scheduler* scheduler)
     }
     pending_.Clear();
     meshes_.Clear();
+    tree->identity_ = g_next_tree_identity.FetchAdd(1, MemoryOrder::Relaxed);
     tree->Relink();
     for (u32 i = 0; i < tree->NodeCount(); ++i)
     {
@@ -435,10 +454,6 @@ void InstanceTree::UpdateGroup(u32 lo, u32 hi)
     {
         RecomputeBoundsOf(i - 1);
     }
-    for (u32 a = nodes_[lo].parent; a != kTreeNone; a = nodes_[a].parent)
-    {
-        RecomputeBoundsOf(a);
-    }
     for (u32 i = lo; i < hi; ++i)
     {
         nodes_[i].dirty = 0;
@@ -457,22 +472,17 @@ u32 InstanceTree::UpdateWorldTransforms(jobs::Scheduler* scheduler)
         u32 lo;
         u32 hi;
     };
+    // One group per marked subtree that is not inside an earlier one: two marks far apart in a big tree recompose
+    // their own subtrees, not everything between them.
     Vector<Group> groups;
-    u32 root_end = 0;
     for (usize k = 0; k < dirty_nodes_.Size(); ++k)
     {
         const u32 idx = dirty_nodes_[k];
-        const u32 end = idx + nodes_[idx].subtree_size;
-        if (groups.Empty() || idx >= root_end)
+        if (!groups.Empty() && idx < groups[groups.Size() - 1].hi)
         {
-            const u32 root = RootOf(idx);
-            root_end = root + nodes_[root].subtree_size;
-            groups.Push(Group{idx, end});
+            continue;
         }
-        else if (end > groups[groups.Size() - 1].hi)
-        {
-            groups[groups.Size() - 1].hi = end;
-        }
+        groups.Push(Group{idx, idx + nodes_[idx].subtree_size});
     }
     u32 touched = 0;
     for (usize g = 0; g < groups.Size(); ++g)
@@ -497,37 +507,172 @@ u32 InstanceTree::UpdateWorldTransforms(jobs::Scheduler* scheduler)
             UpdateGroup(groups[g].lo, groups[g].hi);
         }
     }
+    // The ancestors' bounds, once every group is done: deepest first, each once (the groups ran apart, so the shared
+    // ancestors are recomputed here, in one fixed order).
+    Vector<u32> ancestors;
+    for (usize g = 0; g < groups.Size(); ++g)
+    {
+        for (u32 a = nodes_[groups[g].lo].parent; a != kTreeNone; a = nodes_[a].parent)
+        {
+            ancestors.Push(a);
+        }
+    }
+    Sort(Span<u32>(ancestors.Data(), ancestors.Size()));
+    for (usize k = ancestors.Size(); k > 0; --k)
+    {
+        if (k == ancestors.Size() || ancestors[k - 1] != ancestors[k])
+        {
+            RecomputeBoundsOf(ancestors[k - 1]);
+        }
+    }
     dirty_nodes_.Clear();
     return touched;
 }
 
 // Moves nodes [first, first + count) so that they start at index `to` of the array that remains once they are taken
-// out (to is at most the remaining size).
-void InstanceTree::MoveRange(u32 first, u32 count, u32 to)
+// out (to is at most the remaining size). Only the records between the two places move: `*lo` and `*hi` bound them.
+void InstanceTree::MoveRange(u32 first, u32 count, u32 to, u32* lo, u32* hi)
 {
-    Vector<InstanceTreeNode> next;
-    next.Reserve(nodes_.Size());
     Vector<InstanceTreeNode> moved;
     moved.Append(nodes_.Data() + first, count);
-    u32 kept = 0;
-    for (u32 i = 0; i < nodes_.Size(); ++i)
+    if (to > first)
     {
-        if (i >= first && i < first + count)
+        for (u32 i = first; i < to; ++i)
         {
-            continue;
+            nodes_[i] = nodes_[i + count];
         }
-        if (kept == to)
-        {
-            next.Append(moved.Data(), moved.Size());
-        }
-        next.Push(nodes_[i]);
-        ++kept;
+        *lo = first;
+        *hi = to + count;
     }
-    if (kept == to)
+    else
     {
-        next.Append(moved.Data(), moved.Size());
+        for (u32 i = first + count; i > to + count; --i)
+        {
+            nodes_[i - 1] = nodes_[i - 1 - count];
+        }
+        *lo = to;
+        *hi = first + count;
     }
-    nodes_.Swap(next);
+    for (u32 i = 0; i < count; ++i)
+    {
+        nodes_[to + i] = moved[i];
+    }
+}
+
+void InstanceTree::AncestorIds(u32 index, bool include_self, Vector<u32>* out) const
+{
+    if (include_self)
+    {
+        out->Push(nodes_[index].id);
+    }
+    for (u32 a = nodes_[index].parent; a != kTreeNone; a = nodes_[a].parent)
+    {
+        out->Push(nodes_[a].id);
+    }
+}
+
+// Repairs the links after MoveRange: the parents and id map of the records that moved, the sizes and flags of the
+// ancestors of both places, the roots, and the bounds of the old ancestors (they must stop covering the moved nodes).
+void InstanceTree::FinishMove(u32 moved_id, const Vector<u32>& old_chain, const Vector<u32>& new_chain, u32 count,
+                              u32 lo, u32 hi, bool had_lod)
+{
+    // The parent of each record in [lo, hi): a stack seeded with the chain of the record before the span.
+    Vector<u32> stack;
+    if (lo > 0)
+    {
+        const u32 before = lo - 1;
+        stack.Resize(nodes_[before].depth + 1);
+        for (u32 a = before; a != kTreeNone; a = nodes_[a].parent)
+        {
+            stack[nodes_[a].depth] = a;
+        }
+    }
+    for (u32 i = lo; i < hi; ++i)
+    {
+        InstanceTreeNode& node = nodes_[i];
+        stack.Resize(Min(static_cast<u32>(stack.Size()), node.depth));
+        node.parent = node.depth == 0 ? kTreeNone : stack[node.depth - 1];
+        stack.Push(i);
+        index_of_id_[node.id] = i;
+    }
+    for (usize k = 0; k < old_chain.Size(); ++k)
+    {
+        nodes_[index_of_id_[old_chain[k]]].subtree_size -= count;
+    }
+    for (usize k = 0; k < new_chain.Size(); ++k)
+    {
+        nodes_[index_of_id_[new_chain[k]]].subtree_size += count;
+    }
+    // The ancestors of both places, deepest first (a child has a greater index than its parent).
+    Vector<u32> chain;
+    for (usize k = 0; k < old_chain.Size(); ++k)
+    {
+        chain.Push(index_of_id_[old_chain[k]]);
+    }
+    for (usize k = 0; k < new_chain.Size(); ++k)
+    {
+        chain.Push(index_of_id_[new_chain[k]]);
+    }
+    Sort(Span<u32>(chain.Data(), chain.Size()));
+    usize unique = 0;
+    for (usize k = 0; k < chain.Size(); ++k)
+    {
+        if (unique == 0 || chain[unique - 1] != chain[k])
+        {
+            chain[unique++] = chain[k];
+        }
+    }
+    chain.Resize(unique);
+    // A shifted ancestor's children beyond the span name its new index.
+    for (usize k = 0; k < chain.Size(); ++k)
+    {
+        const u32 a = chain[k];
+        if (a >= lo && a < hi)
+        {
+            for (u32 c = a + 1; c < a + nodes_[a].subtree_size; c += nodes_[c].subtree_size)
+            {
+                nodes_[c].parent = a;
+            }
+        }
+    }
+    for (usize k = chain.Size(); k > 0; --k)
+    {
+        const u32 a = chain[k - 1];
+        if (had_lod)
+        {
+            bool any = nodes_[a].lod != kTreeNone;
+            for (u32 c = a + 1; c < a + nodes_[a].subtree_size && !any; c += nodes_[c].subtree_size)
+            {
+                any = nodes_[c].lod_in_subtree;
+            }
+            nodes_[a].lod_in_subtree = any;
+        }
+        RecomputeBoundsOf(a);
+    }
+    Vector<u32> roots;
+    roots.Reserve(roots_.Size() + 1);
+    usize r = 0;
+    for (; r < roots_.Size() && roots_[r] < lo; ++r)
+    {
+        roots.Push(roots_[r]);
+    }
+    for (; r < roots_.Size() && roots_[r] < hi; ++r)
+    {
+    }
+    for (u32 i = lo; i < hi; ++i)
+    {
+        if (nodes_[i].depth == 0)
+        {
+            roots.Push(i);
+        }
+    }
+    for (; r < roots_.Size(); ++r)
+    {
+        roots.Push(roots_[r]);
+    }
+    roots_.Swap(roots);
+    last_edit_cost_ = (hi - lo) + static_cast<u32>(chain.Size());
+    static_cast<void>(moved_id);
 }
 
 TreeStatus InstanceTree::Detach(TreeNodeId node)
@@ -545,6 +690,8 @@ TreeStatus InstanceTree::Detach(TreeNodeId node)
     InstanceTreeNode moved = nodes_[index];
     const u32 count = moved.subtree_size;
     const Vec3d origin = nodes_[RootOf(index)].origin + Vec3d(moved.world.position);
+    Vector<u32> old_chain;
+    AncestorIds(index, false, &old_chain);
     // The node keeps its world rotation and scale; its position becomes its root position.
     nodes_[index].local = moved.world;
     nodes_[index].local.position = Vec3(0.0f, 0.0f, 0.0f);
@@ -555,8 +702,10 @@ TreeStatus InstanceTree::Detach(TreeNodeId node)
     {
         nodes_[i].depth -= delta;
     }
-    MoveRange(index, count, static_cast<u32>(nodes_.Size()) - count);
-    Relink();
+    u32 lo = 0;
+    u32 hi = 0;
+    MoveRange(index, count, static_cast<u32>(nodes_.Size()) - count, &lo, &hi);
+    FinishMove(node.value, old_chain, Vector<u32>(), count, lo, hi, moved.lod_in_subtree);
     // The world transforms of the moved nodes are now relative to the new root: recompose them.
     const u32 at = Find(node);
     nodes_[at].dirty |= 1u;
@@ -590,6 +739,11 @@ TreeStatus InstanceTree::Attach(TreeNodeId node, TreeNodeId parent)
     const u32 count = nodes_[index].subtree_size;
     const u32 new_depth = nodes_[pindex].depth + 1;
     const u32 old_depth = nodes_[index].depth;
+    const bool had_lod = nodes_[index].lod_in_subtree;
+    Vector<u32> old_chain;
+    AncestorIds(index, false, &old_chain);
+    Vector<u32> new_chain;
+    AncestorIds(pindex, true, &new_chain);
     if (nodes_[index].parent == kTreeNone)
     {
         // A root's position is its origin: as a child it is the offset from the new parent.
@@ -604,8 +758,10 @@ TreeStatus InstanceTree::Attach(TreeNodeId node, TreeNodeId parent)
     const u32 node_id = node.value;
     const u32 old_end = pindex + nodes_[pindex].subtree_size;
     const u32 end = old_end - (index < old_end ? count : 0);
-    MoveRange(index, count, end);
-    Relink();
+    u32 lo = 0;
+    u32 hi = 0;
+    MoveRange(index, count, end, &lo, &hi);
+    FinishMove(node_id, old_chain, new_chain, count, lo, hi, had_lod);
     const u32 at = index_of_id_[node_id];
     nodes_[at].dirty |= 1u;
     dirty_nodes_.Push(at);

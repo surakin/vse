@@ -39,7 +39,8 @@ inline constexpr f64 kMaxInstanceCoordinate = 1.0e12;
 enum class InstanceStatus : u8
 {
     Ok,            ///< Done.
-    Full,          ///< The set holds its most instances.
+    Full,          ///< The set holds its most instances, or its most chunks (`InstanceSetDesc::max_chunks`), or the
+                   ///< memory for another chunk was refused.
     StaleId,       ///< The id names an instance that was removed, or was never made by this set.
     NoData,        ///< The set was made without per-instance data.
     InvalidValue,  ///< A value is not finite, a coordinate is beyond `kMaxInstanceCoordinate`, or a scale is not above
@@ -105,6 +106,10 @@ struct InstanceSetDesc
     f64 key_cell_size = 4.0;
     /// How far, in metres, an instance may move outside its chunk's box before it changes chunk; finite, not below 0.
     f32 move_threshold = 8.0f;
+    /// The most chunks the set may hold; 0 means four times the chunks its `max_instances` fill. A chunk is 256
+    /// slots whatever it holds, so instances scattered far apart (each opening a chunk) stop at this many chunks and
+    /// the next `Add` is `Full`.
+    u32 max_chunks = 0;
 };
 
 /// A chunk's summary, what culling and the upload read.
@@ -286,6 +291,8 @@ private:
     static bool ValidTransform(const InstanceTransform& t);
     bool Resolve(InstanceId id, u32* chunk, u32* pos) const;
     u32 OrderLowerBound(u64 key, u32 chunk) const;
+    u32 ChunkCap() const;
+    bool Near(u32 chunk, const Vec3d& position) const;
     u32 ChooseChunk(u64 key, const Vec3d& position);
     u32 NewChunk(u64 key, const Vec3d& origin);
     void FreeChunk(u32 chunk);

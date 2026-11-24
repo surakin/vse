@@ -222,15 +222,11 @@ private:
     // The meshes the scene's entries draw: a removal-tracked handle cannot hold a share, so the system does.
     void Hold(renderer::InstancedId id, const Array<renderer::GpuMeshPtr, renderer::kMaxSceneTreeMeshes>& meshes)
     {
-        for (Held& h : held_)
+        if (held_.Size() <= id.index)
         {
-            if (h.id == id)
-            {
-                h.meshes = meshes;
-                return;
-            }
+            held_.Resize(id.index + 1);  // indexed by the scene's slot: a lookup is one read
         }
-        held_.Push(Held{id, meshes});
+        held_[id.index] = Held{id, meshes};
     }
 
     void Drop(renderer::RenderScene& scene, renderer::InstancedId id, SceneSyncReport& report)
@@ -240,14 +236,9 @@ private:
             scene.RemoveInstanced(id);
             ++report.hierarchies_removed;
         }
-        for (usize i = 0; i < held_.Size(); ++i)
+        if (id.index < held_.Size() && held_[id.index].id == id)
         {
-            if (held_[i].id == id)
-            {
-                held_[i] = held_[held_.Size() - 1];
-                held_.Pop();
-                break;
-            }
+            held_[id.index] = Held();
         }
     }
 
