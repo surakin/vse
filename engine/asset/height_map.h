@@ -57,7 +57,7 @@ struct HeightMapHeader
     u32 height = 0;        ///< Samples down (the z axis), 2 to `kMaxHeightMapSide`.
     f32 range_min = 0.0f;  ///< The height of sample value 0, in metres; finite.
     f32 range_max = 1.0f;  ///< The height of sample value 65535, in metres; finite, not below `range_min`.
-    f32 cell_size = 1.0f;  ///< Metres between neighbouring samples; finite, above 0.
+    f32 cell_size = 1.0f;  ///< Metres between neighbouring samples; 0.001 to 100,000.
 };
 
 /// The levels of a full mip chain for a map of `width` by `height` samples.

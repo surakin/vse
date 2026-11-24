@@ -336,6 +336,7 @@ private:
     Vector<TerrainTile> tile_scratch_;
     void PrepareTerrains(const RenderScene& scene, const Camera& camera, u64 frame_index);
     GpuTexturePtr environment_cube_;  // the procedural sky's cube, for the lighting pass
+    bool environment_tried_ = false;  // the cube was built (or tried) from `environment_source_`
     SkySettings environment_source_;  // the settings it was made from
     SkySettings sky_settings_;
     f32 sky_reflection_ = 0.0f;

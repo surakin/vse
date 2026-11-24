@@ -394,4 +394,21 @@ TEST_CASE("height map source: errors name the line", "[asset][height_map][mint]"
     CHECK(error.line == 3);
 }
 
+TEST_CASE("height map: a range or a cell size that would overflow a float is refused", "[asset][height_map]")
+{
+    TypeRegistry types;
+    Vector<byte> samples = HmSamples(4, 4, [](u32, u32) -> u32 { return 100; });
+    Vector<byte> blob;
+    HeightMapHeader header = HmHeader(4, 4);
+    header.range_min = -3.0e38f;
+    header.range_max = 3.0e38f;
+    CHECK_FALSE(BuildHeightMapBlob(types, Rid(7), header, AsBytes(samples), &blob).Ok());
+    header = HmHeader(4, 4);
+    header.cell_size = 3.0e38f;
+    CHECK_FALSE(BuildHeightMapBlob(types, Rid(7), header, AsBytes(samples), &blob).Ok());
+    header.cell_size = 1.0e-9f;
+    CHECK_FALSE(BuildHeightMapBlob(types, Rid(7), header, AsBytes(samples), &blob).Ok());
+    CHECK(BuildHeightMapBlob(types, Rid(7), HmHeader(4, 4), AsBytes(samples), &blob).Ok());
+}
+
 }  // namespace vse::asset

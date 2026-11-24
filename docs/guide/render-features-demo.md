@@ -50,7 +50,7 @@ Keys in a window: `C` switches the sky, `F1` hides the overlay, `Escape` quits.
 `--headless` prints one line, for example
 
 ```
-render_features_demo: 300 steps, 4 threads, 200000 trees, state hash 0x..., visible hash 0x..., 55895 tree nodes and 14 rock runs visible ok
+render_features_demo: 300 steps, 4 threads, 200000 trees, state hash 0x..., visible hash 0x..., 55896 tree nodes and 14 rock runs visible ok
 ```
 
 The state hash is the physics world's hash after the steps; the visible hash is the FNV-1a hash of the list of tree nodes

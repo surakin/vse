@@ -54,7 +54,9 @@ AddManyResult Scatter(InstanceSet* set, const ScatterRule& rule, const InstanceE
     if (set == nullptr || !IsFinite(rule.min_x) || !IsFinite(rule.max_x) || !IsFinite(rule.min_z) ||
         !IsFinite(rule.max_z) || !IsFinite(rule.height) || !IsFinite(rule.min_scale) || !IsFinite(rule.max_scale) ||
         !IsFinite(rule.lift) || rule.max_x < rule.min_x || rule.max_z < rule.min_z || !(rule.min_scale > 0.0f) ||
-        rule.max_scale < rule.min_scale)
+        rule.max_scale < rule.min_scale || rule.count > kMaxInstances || Abs(rule.min_x) > kMaxInstanceCoordinate ||
+        Abs(rule.max_x) > kMaxInstanceCoordinate || Abs(rule.min_z) > kMaxInstanceCoordinate ||
+        Abs(rule.max_z) > kMaxInstanceCoordinate || Abs(rule.height) > kMaxInstanceCoordinate)
     {
         result.status = InstanceStatus::InvalidValue;
         return result;

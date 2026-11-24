@@ -486,14 +486,15 @@ private:
     rhi::BindGroupHandle instance_group_;  // the frame's instance buffer (set 3), bound for instanced draws only
     Vec3 view_position_ = Vec3(0, 0, 0);
     jobs::Scheduler* scheduler_ = nullptr;
-    InstanceCullResult cull_result_;         // reused by every instanced set
-    TreeCullResult tree_cull_;               // reused by every instance tree
-    Vector<TreeLodState> tree_lod_;          // hysteresis state of each instance tree entry, by scene slot
-    rhi::BindGroupHandle joint_group_;       // the frame's joint palette (set 3), bound for skinned draws only
-    Vector<MorphJob> morph_jobs_;            // this frame's morphed objects (glTF coverage Day 7)
-    u64 morph_bytes_ = 0;                    // the size of the frame's morph buffer
-    GraphResource morph_buffer_;             // the morphed vertices, written by the morph pass
-    rhi::BufferHandle object_index_stream_;  // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
+    InstanceCullResult cull_result_;              // reused by every instanced set
+    TreeCullResult tree_cull_;                    // reused by every instance tree
+    Vector<TreeLodState> tree_lod_;               // hysteresis state of each instance tree entry, by scene slot
+    Vector<const InstanceTree*> tree_lod_owner_;  // the tree each tree_lod_ entry belongs to
+    rhi::BindGroupHandle joint_group_;            // the frame's joint palette (set 3), bound for skinned draws only
+    Vector<MorphJob> morph_jobs_;                 // this frame's morphed objects (glTF coverage Day 7)
+    u64 morph_bytes_ = 0;                         // the size of the frame's morph buffer
+    GraphResource morph_buffer_;                  // the morphed vertices, written by the morph pass
+    rhi::BufferHandle object_index_stream_;       // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     GBufferTargets targets_;
     rhi::TextureUsage extra_usage_ = rhi::TextureUsage::None;
     u32 width_ = 0;

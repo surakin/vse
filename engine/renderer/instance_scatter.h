@@ -61,7 +61,8 @@ struct ScatterRule
 /// Scatters instances over a rectangle, on a height field when one is given.
 ///
 /// - Param set: the set; not null.
-/// - Param rule: where and how; a rectangle with a negative size, a scale range that is not above 0 and ordered, or a
+/// - Param rule: where and how; a rectangle with a negative size or a coordinate beyond `kMaxInstanceCoordinate`, a
+/// `count` above `kMaxInstances`, a scale range that is not above 0 and ordered, or a
 ///   non-finite value places nothing.
 /// - Param data: the data every scattered instance gets (a set with data), or null for the default.
 /// - Param height_fn: the surface, or null for the flat `rule.height`.

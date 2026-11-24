@@ -70,9 +70,14 @@ const char* HmCheckHeader(const HeightMapHeader& h)
     {
         return "the height range is not finite or its minimum is above its maximum";
     }
-    if (!IsFinite(h.cell_size) || !(h.cell_size > 0.0f))
+    // A bound keeps `range_max - range_min` and a tile's extent far from overflowing a float.
+    if (h.range_min < -1.0e7f || h.range_max > 1.0e7f)
     {
-        return "the cell size is not finite and above 0";
+        return "the height range is beyond 10,000 kilometres";
+    }
+    if (!IsFinite(h.cell_size) || !(h.cell_size >= 1.0e-3f) || h.cell_size > 1.0e5f)
+    {
+        return "the cell size is not within 0.001 to 100,000 metres";
     }
     return nullptr;
 }

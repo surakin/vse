@@ -99,9 +99,11 @@ bool SameVec(const Vec3d& a, const Vec3d& b)
 bool SameCollider(const Collider& a, const Collider& b)
 {
     return a.shape.kind == b.shape.kind && a.shape.radius == b.shape.radius &&
-           a.shape.half_height == b.shape.half_height && SameVec(a.shape.half_extents, b.shape.half_extents) &&
-           SameVec(a.offset, b.offset) && a.rotation.x == b.rotation.x && a.rotation.y == b.rotation.y &&
-           a.rotation.z == b.rotation.z && a.rotation.w == b.rotation.w && a.material.friction == b.material.friction &&
+           a.shape.half_height == b.shape.half_height && a.shape.hull == b.shape.hull && a.shape.mesh == b.shape.mesh &&
+           a.shape.compound == b.shape.compound && a.shape.height_field == b.shape.height_field &&
+           SameVec(a.shape.half_extents, b.shape.half_extents) && SameVec(a.offset, b.offset) &&
+           a.rotation.x == b.rotation.x && a.rotation.y == b.rotation.y && a.rotation.z == b.rotation.z &&
+           a.rotation.w == b.rotation.w && a.material.friction == b.material.friction &&
            a.material.restitution == b.material.restitution && a.material.density == b.material.density &&
            a.material.friction_rule == b.material.friction_rule &&
            a.material.restitution_rule == b.material.restitution_rule && a.layer == b.layer && a.group == b.group &&

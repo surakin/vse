@@ -22,9 +22,13 @@ Status: written. Terms are in alphabetical order; each points to the page that e
 
 **Chunk.** A block of memory that holds the components of several entities of one archetype, one column per component type. See [ECS](ecs.md).
 
+**Chunk (instances).** A block of up to 256 nearby instances of an instance set with one box around them: a cull accepts or rejects it with one test. See [Instancing](instancing.md).
+
 **Command buffer.** Where a script's writes are recorded during a tick instead of being applied; the sync point applies the buffers in a fixed order. See [Scripting](scripting.md), "The world view and the merge".
 
 **Component.** A plain data struct attached to an entity. A component with no fields is a *tag*. See [ECS](ecs.md).
+
+**Cube map.** A texture of six square faces seen from the middle of a box, looked up by a direction; the sky and its reflections use one. See [Renderer](renderer.md), "The sky".
 
 **Day, phase.** The unit of the plan. A *phase* is a body of work with a goal (physics, audio, ...); a *day* is one file of specific tasks inside it. Phases are whole numbers. See `PLAN.md`.
 
@@ -44,7 +48,13 @@ Status: written. Terms are in alphabetical order; each points to the page that e
 
 **Gate.** A check that fails the build or a test when a rule of the house is broken (`std_usage_check`, `module_deps_check`, ...). Its allow list names the documented exceptions, and a stale entry fails. See [Building and testing](building-and-testing.md).
 
+**Geomorph.** Moving a terrain tile's vertices toward the coarser tile's heights as the tile nears its switch distance, so a change of detail does not pop. See [Terrain](terrain.md).
+
+**Height map.** A grid of 16-bit height samples over a range in metres; the terrain's drawn surface and its collider are both read from one. See [Terrain](terrain.md).
+
 **Host.** A program that loads the engine as a library and uses it through the C API. See [Engine as a library](engine-library.md).
+
+**Instance run.** A stretch of consecutive visible instances (or nodes of one mesh, slot and level) that a cull returns, drawn as one instanced draw. See [Instancing](instancing.md).
 
 **Job.** A piece of work run by the job scheduler; jobs are C++20 coroutines, not threads. See [Jobs](jobs.md).
 
@@ -53,6 +63,8 @@ Status: written. Terms are in alphabetical order; each points to the page that e
 **Layer (collision).** A number from 0 to 31 on a collider; the layer matrix says which layers touch. See [Physics](physics.md).
 
 **Layer (module).** The level of a module in `ARCHITECTURE.md`. A module uses only modules below it. See `ARCHITECTURE.md`.
+
+**Level of detail (LOD).** A coarser mesh or tile used beyond a distance, and for an instance node a stand-in or a cull distance as well. See [Instancing](instancing.md) and [Terrain](terrain.md).
 
 **Mint.** To process source data (a glTF file, a shader, a font) offline into the engine's own format. The tools are *minters*, the outputs are *minted*, and the same inputs give byte-identical outputs. We do not say "cook". See [Assets](assets.md).
 
@@ -80,7 +92,11 @@ Status: written. Terms are in alphabetical order; each points to the page that e
 
 **Spatial set.** The collection of items with bounds that answers "what is near this?" See [Spatial](spatial.md).
 
+**Splat map.** A texture that says which terrain layer shows where (a weight for each of up to four layers). See [Terrain](terrain.md).
+
 **State hash.** A hash of every body's state in the physics world, used to prove two runs (or two machines) agree. See [Physics](physics.md).
+
+**Subtree.** A node of an instance hierarchy and all its descendants, which sit in one contiguous range of the packed array, so a cull can skip or accept them with one jump. See [Instancing](instancing.md).
 
 **Surface.** In the C API, a render target that a host binds to its own window or texture. See [Engine as a library](engine-library.md).
 
@@ -91,6 +107,8 @@ Status: written. Terms are in alphabetical order; each points to the page that e
 **System.** A function that the ECS schedule runs over entities, declaring which components it reads and writes so the scheduler can overlap it with others. See [ECS](ecs.md).
 
 **Task (script).** A pure function run over indices on every core (`task.run`, `task.map`, `task.parallel_for`); it sees no world, only its arguments. See [Scripting](scripting.md), "Script tasks".
+
+**Tile.** One square piece of the terrain's quadtree, drawn with a fixed 32 by 32 grid whatever its level. See [Terrain](terrain.md).
 
 **Unity build.** Merging several source files into one translation unit to compile faster. Both unity and non-unity builds must pass. See [Building and testing](building-and-testing.md).
 

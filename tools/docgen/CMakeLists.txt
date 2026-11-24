@@ -148,6 +148,8 @@ endif()
 list(INSERT DOCGEN_LINK_ARGS 0 --link $<TARGET_LINKER_FILE:asset>)
 # The animation library (Phase 22 Day 321) depends on asset, so it comes before it.
 list(INSERT DOCGEN_LINK_ARGS 0 --link $<TARGET_LINKER_FILE:animation>)
+# The physics library (the terrain tutorial's height field) depends on spatial, ecs and storage, which come later in the list.
+list(INSERT DOCGEN_LINK_ARGS 0 --link $<TARGET_LINKER_FILE:physics>)
 # The guide's text samples open the shipped font; samples run in a scratch directory, so they get its absolute path as a macro.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(DOCGEN_FONT_FLAG "/DDOCS_FONT_FILE=\"${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf\"")
@@ -183,7 +185,7 @@ add_custom_target(docs
   COMMAND $<TARGET_FILE:docgen> links --root ${CMAKE_SOURCE_DIR}
   COMMAND $<TARGET_FILE:docgen> samples ${DOCGEN_SAMPLES_ARGS}
   COMMAND $<TARGET_FILE:docgen> lint ${DOCGEN_LINT_ARGS}
-  DEPENDS docgen renderer_passes renderer renderer_reflection net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi jobs foundation sentry ${DOCGEN_SAMPLE_LIBRARIES}
+  DEPENDS docgen renderer_passes renderer renderer_reflection net storage database_sqlite database sqlite3 physics spatial ecs text freetype rhi_backends rhi jobs foundation sentry ${DOCGEN_SAMPLE_LIBRARIES}
   COMMENT "Regenerating docs/reference and running the documentation checks"
   VERBATIM
   USES_TERMINAL)

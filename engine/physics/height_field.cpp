@@ -65,13 +65,15 @@ bool RayTriangleBothSides(const Vec3& o, const Vec3& d, f32 tmax, const Vec3& a,
     const f32 inv = 1.0f / det;
     const Vec3 s = o - a;
     const f32 u = s.Dot(p) * inv;
-    if (u < 0.0f || u > 1.0f)
+    // A little slack on the edges: a ray through a shared edge or the diagonal must hit one of the two triangles.
+    constexpr f32 kEdge = 1e-5f;
+    if (u < -kEdge || u > 1.0f + kEdge)
     {
         return false;
     }
     const Vec3 q = s.Cross(e1);
     const f32 v = d.Dot(q) * inv;
-    if (v < 0.0f || u + v > 1.0f)
+    if (v < -kEdge || u + v > 1.0f + kEdge)
     {
         return false;
     }
@@ -102,7 +104,7 @@ HeightFieldConstPtr HeightField::Create(const HeightFieldSpec& spec, Validation*
         r = Validation::NotFinite;
         return HeightFieldConstPtr();
     }
-    if (!(spec.cell_size > 0.0f) || spec.range_max < spec.range_min)
+    if (!(spec.cell_size >= 1.0e-3f) || spec.range_max < spec.range_min)
     {
         r = Validation::NotPositive;
         return HeightFieldConstPtr();

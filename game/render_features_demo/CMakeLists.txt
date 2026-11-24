@@ -18,7 +18,7 @@ target_link_libraries(render_features_demo PRIVATE render_features_lib platform 
 foreach(threads 1 2 4 16)
   add_test(NAME render_features_demo_hash_${threads} COMMAND render_features_demo --headless --steps 300 --threads ${threads})
   set_tests_properties(render_features_demo_hash_${threads} PROPERTIES LABELS "demo"
-    PASS_REGULAR_EXPRESSION "200000 trees, state hash 0xd9708d0f24c0d4a4, visible hash 0x7d248bf9a82da4dd, 55895 tree nodes and 14 rock runs visible ok")
+    PASS_REGULAR_EXPRESSION "200000 trees, state hash 0xd9708d0f24c0d4a4, visible hash 0xbfdfe69adcee0598, 55896 tree nodes and 14 rock runs visible ok")
   engine_label_tests(render_features_demo_hash_${threads})
 endforeach()
 

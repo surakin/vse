@@ -495,4 +495,42 @@ TEST_CASE("Instance tree: edits are refused by status, not by abort", "[instance
     CHECK_FALSE(tree->NeedsUpdate());
 }
 
+TEST_CASE("Instance tree: attaching a root keeps its offset from the new parent", "[instance_tree]")
+{
+    Vector<TreeMeshInfo> meshes = TrMeshes();
+    InstanceTreeBuilder builder(Span<const TreeMeshInfo>(meshes.Data(), meshes.Size()));
+    TreeNodeDesc first;
+    first.position = Vec3d(100.0, 0.0, 0.0);
+    TreeNodeDesc second;
+    second.position = Vec3d(0.0, 50.0, 0.0);
+    TreeNodeId a;
+    TreeNodeId b;
+    REQUIRE(builder.AddRoot(first, &a) == TreeStatus::Ok);
+    REQUIRE(builder.AddRoot(second, &b) == TreeStatus::Ok);
+    InstanceTreePtr tree = builder.Finish(nullptr);
+    REQUIRE(tree->Attach(a, b) == TreeStatus::Ok);
+    REQUIRE(tree->Validate());
+    const Vec3d origin = tree->Node(tree->Find(b)).origin;
+    const Vec3 offset = tree->Node(tree->Find(a)).local.position;
+    // the first root's 100 m east of the second, not on top of it
+    CHECK(origin.y == 50.0);
+    CHECK(offset.x == 100.0f);
+    CHECK(tree->Node(tree->Find(a)).world.position.x == 100.0f);
+}
+
+TEST_CASE("Instance tree: a stand-in beyond the cull distance is refused", "[instance_tree]")
+{
+    Vector<TreeMeshInfo> meshes = TrMeshes();
+    InstanceTreeBuilder builder(Span<const TreeMeshInfo>(meshes.Data(), meshes.Size()));
+    TreeNodeDesc d;
+    d.has_lod = true;
+    d.lod.standin_mesh = 1;
+    d.lod.standin_distance = 500.0f;
+    d.lod.cull_distance = 100.0f;
+    TreeNodeId id;
+    CHECK(builder.AddRoot(d, &id) == TreeStatus::InvalidValue);
+    d.lod.standin_distance = 50.0f;
+    CHECK(builder.AddRoot(d, &id) == TreeStatus::Ok);
+}
+
 }  // namespace vse::renderer

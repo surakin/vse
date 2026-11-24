@@ -3101,7 +3101,7 @@ The height of sample value 65535, finite, not below `range_min`.
 f32 cell_size;
 ```
 
-Metres between neighbouring samples, finite, above 0.
+Metres between neighbouring samples, finite, at least 0.001.
 
 ## `HeightFieldConstPtr` {#physics-heightfieldconstptr}
 
@@ -3448,7 +3448,7 @@ Appends the triangles that may touch `box` (field space) to `out`, in increasing
 |---|---|
 | Parameter `box` | the query box. |
 | Parameter `out` | receives the triangle indices, appended. |
-| Parameter `limit` | the most triangles to append; the cells are taken row by row, so the rest are those of the last rows. |
+| Parameter `limit` | the most triangles to append; the cells are taken row by row from the lowest z, so the rest are those of the highest rows. |
 | Returns | the number appended. |
 | Fails | never. |
 | Ownership | `out` is the caller's. |

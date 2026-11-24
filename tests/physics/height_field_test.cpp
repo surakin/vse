@@ -521,3 +521,48 @@ TEST_CASE("Height field: a body resting on it stays, and a snapshot holds the sh
     PhysicsWorld other;
     CHECK(other.Restore(ByteSpan(bytes.Data(), bytes.Size())) == SnapshotStatus::LibraryMismatch);
 }
+
+TEST_CASE("HeightField: a cell size below a millimetre is refused", "[physics][heightfield]")
+{
+    Validation v = Validation::Ok;
+    Vector<u16> samples;
+    for (u32 i = 0; i < 4; ++i)
+    {
+        samples.Push(0);
+    }
+    CHECK(!HeightField::CreateFromSamples(Span<const u16>(samples.Data(), 4), 2, 2, 0.0f, 1.0f, 1.0e-30f, &v));
+    CHECK(v == Validation::NotPositive);
+}
+
+TEST_CASE("HeightField: a vertical ray never slips through the cell diagonal or a vertex", "[physics][heightfield]")
+{
+    Vector<u16> samples;
+    for (u32 z = 0; z < 9; ++z)
+    {
+        for (u32 x = 0; x < 9; ++x)
+        {
+            samples.Push(static_cast<u16>(((x * 7 + z * 13) % 5) * 1000));
+        }
+    }
+    Validation v = Validation::Ok;
+    const HeightFieldConstPtr field = HeightField::CreateFromSamples(Span<const u16>(samples.Data(), samples.Size()), 9,
+                                                                     9, 0.0f, 10.0f, 0.3f, &v);
+    REQUIRE(field);
+    u32 misses = 0;
+    for (u32 z = 0; z < 8; ++z)
+    {
+        for (u32 x = 0; x < 8; ++x)
+        {
+            // the corner of the cell, and the middle of its diagonal
+            for (u32 k = 0; k < 2; ++k)
+            {
+                const f32 fx = (static_cast<f32>(x) + 0.5f * static_cast<f32>(k)) * 0.3f - 1.2f;
+                const f32 fz = (static_cast<f32>(z) + 0.5f * static_cast<f32>(k)) * 0.3f - 1.2f;
+                f32 t = 0.0f;
+                u32 tri = 0;
+                misses += field->RayCast(Vec3(fx, 50.0f, fz), Vec3(0, -1, 0), 100.0f, &t, &tri) ? 0 : 1;
+            }
+        }
+    }
+    CHECK(misses == 0);
+}

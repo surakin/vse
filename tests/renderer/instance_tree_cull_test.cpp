@@ -69,6 +69,10 @@ TreeLod TcRandomLod(TcGen& g)
     {
         lod.standin_mesh = 5;
         lod.standin_distance = g.Range(60.0f, 250.0f);
+        if (lod.cull_distance != 0.0f && lod.standin_distance >= lod.cull_distance)
+        {
+            lod.standin_distance = lod.cull_distance * 0.9f;  // a stand-in beyond the cull distance is refused
+        }
     }
     return lod;
 }

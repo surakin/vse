@@ -7,6 +7,7 @@
 #include "algorithm.h"
 #include "containers/vector.h"
 #include "lang/limits.h"
+#include "renderer/instance_scatter.h"
 #include "renderer/instance_set.h"
 #include "soak.h"
 
@@ -543,6 +544,22 @@ TEST_CASE("An instance set holds and edits a million instances and agrees with a
     set->Rebuild();
     CheckAgainstModel(*set, model);
     REQUIRE(set->MemoryBytes() / static_cast<usize>(set->Count()) < 160);
+}
+
+TEST_CASE("Instance set: a scatter with a hostile rule places nothing and returns at once", "[instance_set]")
+{
+    InstanceSetDesc desc;
+    desc.max_instances = 1000;
+    InstanceSetPtr set = InstanceSet::Create(desc);
+    ScatterRule rule;
+    rule.count = 0xFFFFFFFFu;  // four billion points to try
+    rule.min_x = rule.min_z = -10.0;
+    rule.max_x = rule.max_z = 10.0;
+    CHECK(Scatter(set.Get(), rule, nullptr, nullptr, nullptr).status == InstanceStatus::InvalidValue);
+    rule.count = 10;
+    rule.max_x = 1.0e300;
+    CHECK(Scatter(set.Get(), rule, nullptr, nullptr, nullptr).status == InstanceStatus::InvalidValue);
+    CHECK(set->Count() == 0);
 }
 
 }  // namespace vse::renderer

@@ -20,6 +20,9 @@ Status: written. A way into the documentation by what you want to do. Each line 
 | react to the keyboard and mouse | [Handle keyboard and mouse input](../tutorials/handling-input.md) |
 | clear the screen with the graphics layer | [Clear a window with the RHI](../tutorials/hello-rhi.md), [RHI](rhi.md) |
 | draw a lit 3D scene | [From a scene to a lit frame](../tutorials/hello-renderer.md), [A 3D scene in your window](../tutorials/a-3d-scene-in-your-window.md), [Renderer](renderer.md) |
+| give the scene a sky, with reflections | [Lighting a world with a sky](../tutorials/lighting-a-world-with-a-sky.md), [Renderer](renderer.md) |
+| draw a landscape from a height map that bodies can walk on | [Making a landscape](../tutorials/making-a-landscape.md), [Terrain](terrain.md) |
+| draw a forest, or any number of copies of a mesh | [A forest in one draw](../tutorials/a-forest-in-one-draw.md), [Instancing](instancing.md), [The render features demo](render-features-demo.md) |
 | write a shader | [Shaders](rhi-shaders.md) |
 | draw text or build a user interface | [Text](text.md), [UI](ui.md) |
 | let the user change quality settings while running | [Render settings](render-settings.md) |

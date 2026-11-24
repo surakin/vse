@@ -262,13 +262,15 @@ bool TerrainPass::Add(const TerrainDraw& draw, Span<const TerrainTile> tiles)
     }
     if (tile_cursor_ >= kMaxTerrainDrawTiles)
     {
-        RenderLog(LogVerbosity::Warn, "TerrainPass: more tiles than the frame holds; the farthest are not drawn");
+        RenderLog(LogVerbosity::Warn,
+                  "TerrainPass: more tiles than the frame holds; the last of the selection are not drawn");
         return false;
     }
     u32 count = static_cast<u32>(tiles.Size());
     if (count > kMaxTerrainDrawTiles - tile_cursor_)
     {
-        RenderLog(LogVerbosity::Warn, "TerrainPass: more tiles than the frame holds; the farthest are not drawn");
+        RenderLog(LogVerbosity::Warn,
+                  "TerrainPass: more tiles than the frame holds; the last of the selection are not drawn");
         count = kMaxTerrainDrawTiles - tile_cursor_;
     }
     const char* invalid = TerrainMaterialInvalid(draw.material);
@@ -276,8 +278,13 @@ bool TerrainPass::Add(const TerrainDraw& draw, Span<const TerrainTile> tiles)
     {
         RenderLog(LogVerbosity::Warn, "TerrainPass: the terrain material is invalid; the default material is drawn");
     }
-    const TerrainMaterial fallback_material;
-    const TerrainMaterial& mat = invalid == nullptr ? draw.material : fallback_material;
+    // The shader samples every layer and multiplies by its weight (0 for an unused one): a layer beyond the count
+    // carries nothing the validation looked at, so it is reset, or a NaN there would poison the whole terrain.
+    TerrainMaterial mat = invalid == nullptr ? draw.material : TerrainMaterial();
+    for (u32 i = mat.layer_count; i < kMaxTerrainLayers; ++i)
+    {
+        mat.layers[i] = TerrainLayer();
+    }
     Entry entry;
     entry.height = draw.height;
     entry.layers = mat.layer_array ? mat.layer_array : fallback_layers_;

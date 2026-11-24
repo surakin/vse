@@ -1102,6 +1102,12 @@ void GBufferPass::PrepareTree(u32 slot, const InstancedObject& obj, const Frustu
     while (tree_lod_.Size() <= slot)
     {
         tree_lod_.Push(TreeLodState());
+        tree_lod_owner_.Push(nullptr);
+    }
+    if (tree_lod_owner_[slot] != &tree)  // another tree took the slot: its hysteresis state starts fresh
+    {
+        tree_lod_[slot] = TreeLodState();
+        tree_lod_owner_[slot] = &tree;
     }
     CullInstanceTree(tree, params, &tree_lod_[slot], scheduler_, &tree_cull_);
     stats_.instance_tree_nodes += tree_cull_.stats.nodes_emitted;

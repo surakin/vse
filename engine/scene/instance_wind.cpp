@@ -59,6 +59,12 @@ public:
                     const Quaternion q(Sin(half), 0.0f, 0.0f, Cos(half));
                     const Vec3d position = node.parent == renderer::kTreeNone ? node.origin
                                                                               : Vec3d(node.local.position);
+                    // A node whose angle did not change stays clean, so a calm wind recomposes nothing.
+                    if (node.local.rotation.x == q.x && node.local.rotation.y == q.y && node.local.rotation.z == q.z &&
+                        node.local.rotation.w == q.w)
+                    {
+                        continue;
+                    }
                     renderer::TreeNodeId id;
                     id.value = node.id;
                     tree->SetLocal(id, position, q, node.local.scale);

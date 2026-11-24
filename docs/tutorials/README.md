@@ -18,3 +18,6 @@ Goal-oriented walkthroughs. Every tutorial is written; each one has a program yo
 - [Your First Script](your-first-script.md)
 - [Using Every Core with Scripts](using-every-core.md)
 - [Big Worlds: What Is `f64`, What Is `f32`, and Why](big-worlds.md)
+- [Lighting a World with a Sky](lighting-a-world-with-a-sky.md)
+- [Making a Landscape](making-a-landscape.md)
+- [A Forest in One Draw](a-forest-in-one-draw.md)

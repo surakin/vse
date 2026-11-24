@@ -3805,7 +3805,7 @@ Scatters instances over a rectangle, on a height field when one is given.
 | Field | Value |
 |---|---|
 | Parameter `set` | the set; not null. |
-| Parameter `rule` | where and how; a rectangle with a negative size, a scale range that is not above 0 and ordered, or a non-finite value places nothing. |
+| Parameter `rule` | where and how; a rectangle with a negative size or a coordinate beyond `kMaxInstanceCoordinate`, a `count` above `kMaxInstances`, a scale range that is not above 0 and ordered, or a non-finite value places nothing. |
 | Parameter `data` | the data every scattered instance gets (a set with data), or null for the default. |
 | Parameter `height_fn` | the surface, or null for the flat `rule.height`. |
 | Parameter `user` | passed to `height_fn`. |

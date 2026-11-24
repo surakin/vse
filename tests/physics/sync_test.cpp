@@ -320,8 +320,8 @@ TEST_CASE("Sync: the scale of the world transform does not reach the body", "[ph
     rig.Frame();
     const Body* body = rig.physics.Find(rig.world.Get<BodyLink>(child)->id);
     REQUIRE(body != nullptr);
-    CHECK(Near(static_cast<f32>(body->position.x), 2.0f));     // the position is the world one
-    CHECK(Near(body->orientation.w, 1.0f));  // the rotation is a unit one, no scale in it
+    CHECK(Near(static_cast<f32>(body->position.x), 2.0f));  // the position is the world one
+    CHECK(Near(body->orientation.w, 1.0f));                 // the rotation is a unit one, no scale in it
     const ColliderRecord* record = rig.physics.FindCollider(body->first_collider);
     REQUIRE(record != nullptr);
     CHECK(record->value.shape.half_extents.x == 2.0f);  // the shape as given: the caller scales shapes
@@ -382,4 +382,17 @@ TEST_CASE("Sync: a mirrored parent gives a proper rotation", "[physics][sync]")
     const Body* body = rig.physics.Find(rig.world.Get<BodyLink>(child)->id);
     REQUIRE(body != nullptr);
     CHECK(Near(Abs(body->orientation.w), 1.0f));
+}
+
+TEST_CASE("Sync: a collider that differs only in a library id is applied again", "[physics][sync]")
+{
+    ecs::World world;
+    PhysicsWorld physics;
+    const ecs::Entity e = world.Create(RigidBody(), Ball(0.5f), At(0, 1, 0));
+    CHECK(SyncBodies(world, physics).created == 1);
+    Collider* c = world.Get<Collider>(e);
+    REQUIRE(c != nullptr);
+    c->shape.height_field = 2;  // the same extents and kind, another library entry
+    const SyncReport again = SyncBodies(world, physics);
+    CHECK(again.updated + again.refused == 1);  // it was compared as different, so SetCollider ran
 }

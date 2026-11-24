@@ -257,6 +257,10 @@ void SceneFrame::Rebind(rhi::Device* device, rhi::Swapchain* swapchain)
         return;
     }
     device_ = device;
+    if (!environment_cube_)
+    {
+        environment_tried_ = false;  // a new device may make the cube a failed build could not
+    }
     renderer_->Rebind(device, swapchain);
 }
 
@@ -289,10 +293,11 @@ void SceneFrame::SetSky(const SkySettings& settings, f32 sky_reflection)
         else
         {
             // The procedural sky's cube, made again only when its gradient changes.
-            if (!environment_cube_ || !SkyEnvironmentSame(settings, environment_source_))
+            if (!environment_tried_ || !SkyEnvironmentSame(settings, environment_source_))
             {
                 environment_cube_ = MakeSkyEnvironmentCube(device_, resources_, settings);
                 environment_source_ = settings;
+                environment_tried_ = true;  // a failed build is not repeated every frame
             }
             environment = environment_cube_;
         }

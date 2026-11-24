@@ -66,6 +66,11 @@ bool LodValid(const TreeLod& lod, usize mesh_count)
     {
         return false;
     }
+    // A stand-in beyond the cull distance would bring back a node the cull had removed.
+    if (lod.standin_mesh != kTreeNoMesh && lod.cull_distance != 0.0f && !(lod.standin_distance < lod.cull_distance))
+    {
+        return false;
+    }
     return true;
 }
 
@@ -587,6 +592,8 @@ TreeStatus InstanceTree::Attach(TreeNodeId node, TreeNodeId parent)
     const u32 old_depth = nodes_[index].depth;
     if (nodes_[index].parent == kTreeNone)
     {
+        // A root's position is its origin: as a child it is the offset from the new parent.
+        nodes_[index].local.position = nodes_[index].origin.Narrow();
         nodes_[index].origin = Vec3d(0.0, 0.0, 0.0);
     }
     for (u32 i = index; i < index + count; ++i)

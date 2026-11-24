@@ -49,7 +49,7 @@ struct HeightFieldSpec
     u32 height = 0;    ///< Samples down (z), 2 to `kMaxHeightFieldSide`.
     f32 range_min = 0.0f;  ///< The height of sample value 0, finite.
     f32 range_max = 1.0f;  ///< The height of sample value 65535, finite, not below `range_min`.
-    f32 cell_size = 1.0f;  ///< Metres between neighbouring samples, finite, above 0.
+    f32 cell_size = 1.0f;  ///< Metres between neighbouring samples, finite, at least 0.001.
 };
 
 class HeightField;
@@ -173,8 +173,8 @@ public:
     ///
     /// - Param box: the query box.
     /// - Param out: receives the triangle indices, appended.
-    /// - Param limit: the most triangles to append; the cells are taken row by row, so the rest are those of the last
-    ///   rows.
+    /// - Param limit: the most triangles to append; the cells are taken row by row from the lowest z, so the rest are
+    ///   those of the highest rows.
     /// - Returns: the number appended.
     /// - Ownership: `out` is the caller's.
     /// - Fails: never.

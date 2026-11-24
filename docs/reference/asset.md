@@ -5509,7 +5509,7 @@ The height of sample value 65535, in metres; finite, not below `range_min`.
 f32 cell_size;
 ```
 
-Metres between neighbouring samples; finite, above 0.
+Metres between neighbouring samples; 0.001 to 100,000.
 
 ## `HeightMapMipCount(u32,u32)` {#asset-heightmapmipcount-u32-u32}
 

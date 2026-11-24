@@ -520,7 +520,8 @@ void CheckInstanced(const InstancedObject& o)
                       IsFinite(o.position.z),
                   "instanced: the position or the scale is not valid");
     ENGINE_ASSERT(IsFinite(o.rotation.x) && IsFinite(o.rotation.y) && IsFinite(o.rotation.z) &&
-                      IsFinite(o.rotation.w) && o.rotation.LengthSquared() > 0.5f && o.rotation.LengthSquared() < 1.5f,
+                      IsFinite(o.rotation.w) && o.rotation.LengthSquared() > 0.98f &&
+                      o.rotation.LengthSquared() < 1.02f,
                   "instanced: the rotation is not a unit quaternion");
 }
 }  // namespace
