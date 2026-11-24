@@ -408,7 +408,8 @@ public:
     /// - Fails: reported by return value.
     MixerStatus Stop(VoiceId id, u32 fade_frames = kRampFrames, u64 block = kAtLead);
 
-    /// Fades a voice to silence and holds its position (control thread).
+    /// Fades a voice to silence and holds its position (control thread). A virtual voice, which is not heard, holds
+    /// its position from the block the command applies at.
     ///
     /// - Param id: the voice.
     /// - Param block: as for `Play`.
@@ -473,7 +474,8 @@ public:
     ///
     /// - Param id: the voice.
     /// - Param gain: the target, 0 to 16.
-    /// - Param frames: the length of the fade; 0 changes at once.
+    /// - Param frames: the length of the fade, any 32-bit length (a snapshot holds a fade of any length); 0 changes at
+    ///   once.
     /// - Param block: as for `Play`.
     /// - Returns: `Ok`, `InvalidVoice`, `InvalidParam` or `QueueFull`.
     /// - Fails: reported by return value.
@@ -695,8 +697,9 @@ public:
     /// Changes the output rate and layout while the mixer is idle (control thread; the audio thread must not be
     /// rendering: stop the device first). Voices, positions, buses and the command queue are kept: each voice's routing
     /// and step are recomputed for the new format at once, so a clip goes on from the frame it was at, at its own
-    /// pitch. A change of channel count reallocates the bus buffers and the limiter and bypasses every insert (effects
-    /// are built for a channel count; they stay alive and can be inserted again), and the half-rendered block is
+    /// pitch. A change of channel count reallocates the bus buffers and the limiter; a change of channel count or of
+    /// rate bypasses every insert (an effect is built for a channel count, and its parameters and lines for a rate; the
+    /// effects stay alive and can be inserted again with parameters for the new rate), and the half-rendered block is
     /// dropped.
     ///
     /// - Param sample_rate: the new rate in Hz.
@@ -719,8 +722,13 @@ public:
     /// - Ownership: `out` is appended to.
     SnapshotStatus SaveState(bytes::ByteWriter* out) const;
 
-    /// Restores a snapshot into a mixer set up the same way (rate, layout, voice pool, buses and inserts). The restore
-    /// is atomic: it parses and checks everything first, and on any failure the mixer is unchanged.
+    /// Restores a snapshot into a mixer set up the same way.
+    ///
+    /// The same way: the rate, layout, voice pool, buses, their sends and ducking, and inserts. The restore is atomic:
+    /// it parses and checks everything first, and on any failure the mixer is unchanged. Every value is checked: a
+    /// float that is not finite or is out of the range its setter takes, an index past its table, a send or ducking
+    /// source other than the mixer's own (so no cycle can be loaded), or a playing voice without its control slot is
+    /// refused as `Corrupt` or `Mismatch`.
     ///
     /// - Param bytes: the snapshot.
     /// - Param resolver: gives back the clips and streams the voices named.

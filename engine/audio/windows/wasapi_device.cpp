@@ -5,6 +5,7 @@
 // output was opened, a change of the default output, is reported once as `Lost`; the system reopens through Day 427's
 // path.
 #include "audio/windows/wasapi_device.h"
+#include "audio/device_counters.h"
 
 #include "audio/pcm_negotiate.h"
 #include "containers/array.h"
@@ -158,11 +159,6 @@ bool SameId(const wchar_t* a, const wchar_t* b)
         i += 1;
     }
     return a[i] == b[i];
-}
-
-u64 NowMicros()
-{
-    return os::MonotonicTimeNanos() / 1000;
 }
 
 // Watches the system's outputs while a device is open: a change of the default output (when the default was opened)
@@ -331,10 +327,8 @@ public:
     DeviceCounters Counters() const override
     {
         DeviceCounters c;
-        c.callbacks = callbacks_.Load();
+        counters_.Fill(&c);
         c.underruns = underruns_.Load();
-        c.slow_callbacks = slow_.Load();
-        c.longest_callback_micros = longest_.Load();
         return c;
     }
 
@@ -459,10 +453,8 @@ private:
         }
         lost_.Store(false);
         rendered_.Store(0);
-        callbacks_.Store(0);
+        counters_.Reset();
         underruns_.Store(0);
-        slow_.Store(0);
-        longest_.Store(0);
         return DeviceStatus::Ok;
     }
 
@@ -530,19 +522,10 @@ private:
                 {
                     break;
                 }
-                const u64 start = NowMicros();
+                const u64 start = CallbackCounters::NowMicros();
                 render_(user_, buffer_.Data(), frames);
-                const u64 took = NowMicros() - start;
-                callbacks_.FetchAdd(1);
+                counters_.Record(CallbackCounters::NowMicros() - start, block_micros);
                 rendered_.FetchAdd(frames);
-                if (took > block_micros)
-                {
-                    slow_.FetchAdd(1);
-                }
-                u64 longest = longest_.Load();
-                while (took > longest && !longest_.CompareExchangeWeak(longest, took))
-                {
-                }
                 const u32 samples = frames * channels_;
                 if (format_ == PcmFormat::F32)
                 {
@@ -607,10 +590,8 @@ private:
     Atomic<bool> stop_{false};
     Atomic<bool> lost_{false};
     Atomic<u64> rendered_{0};
-    Atomic<u64> callbacks_{0};
+    CallbackCounters counters_;
     Atomic<u64> underruns_{0};
-    Atomic<u64> slow_{0};
-    Atomic<u64> longest_{0};
 };
 
 }  // namespace

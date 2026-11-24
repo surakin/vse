@@ -28,6 +28,8 @@ set(AUDIO_TEST_SOURCES
   music_test.cpp  # Day 436
   snapshot_test.cpp  # Day 437
   stress_test.cpp  # Day 442
+  hardening_test.cpp  # the closing review's findings
+  alloc_test.cpp  # the audio thread's no-allocation rule, counted
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/audio_source.cpp  # Day 418: the audio minter under test
 )
 

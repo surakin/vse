@@ -152,7 +152,8 @@ the same ranking as before (priority, gain, age), and a victim is stopped in the
 
 Every setter ramps: a change of gain, pan or pitch moves linearly over `audio.ramp_frames` (64 by default; 0 is instant), one step per frame, and the last frame uses
 the target itself, so the ramp ends exactly on it. A pitch ramp moves the position step the same way, so the position stays continuous. `Stop` fades out and then frees
-the voice, `Pause` fades to silence and holds the position, `Resume` fades back, `Fade(gain, frames)` is a ramp of any length, and a voice played with `fade_in`
+the voice, `Pause` fades to silence and holds the position (a virtual voice, which is not heard, holds it from the block the command applies at), `Resume` fades
+back, `Fade(gain, frames)` is a ramp of any 32-bit length (the ramped step is exact while the pitch moves, and a snapshot holds it), and a voice played with `fade_in`
 starts from silence; `Seek` jumps and is not smoothed. Events (`VoiceEvent`: `Finished`, `Looped` at most once a block, `Virtualised`, `Stolen`, `Stopped`) come back through
 a second ring that always keeps room for one terminal event per voice, and `PollEvents` hands them out; nothing is called back across threads. A full command ring
 returns `QueueFull` and counts in `Stats().commands_dropped`; nothing blocks.
@@ -230,7 +231,8 @@ headers still runs where the library is missing) and then **ALSA** through raw `
   `Stop` returns after the last render call; destroying a running device stops it first.
 - **Underruns:** a write that finds the buffer empty (`EPIPE`) re-prepares the stream and counts in
   `DeviceCounters::underruns`; a render call longer than the time the buffer lasts counts in `slow_callbacks`
-  (`longest_callback_micros` is the longest). PipeWire reports no underruns of its own.
+  (`longest_callback_micros` is the longest). PipeWire reports no underruns of its own. The four hardware backends keep
+  these render-call counters in one `CallbackCounters` (`audio/device_counters.h`: lock-free, no allocation).
 - **Errors:** `EBUSY` is `Busy`, `EACCES`/`EPERM` `PermissionDenied`, `ENODEV` `Lost` (also sent to the error callback),
   an unsupported configuration `Unsupported`, a missing device `NotFound`.
 - `tools/audio_probe` (`list`, `play --backend=... --seconds=N`) plays a quiet tone through the real backend and prints the
@@ -301,8 +303,9 @@ the queued commands.
 
 - `Mixer::Reconfigure(rate, layout)` re-plans the mixer for a new rate or layout: every voice recomputes its step and its
   routing, so a clip that was half played keeps its place and its pitch. A change of channel *count* re-allocates the bus
-  buffers and the limiter and **bypasses the bus inserts** (their state is per channel; the application re-creates them).
-  Effect parameter blocks are in frames, so after a rate change they are rebuilt by the application (`Make...Params`).
+  buffers and the limiter. A change of channel count **or of rate bypasses the bus inserts**: an effect's state is per
+  channel and its parameter block and lines are in frames of the rate, so the application inserts them again with
+  parameters made for the new rate (`Make...Params`); the bypassed effects stay alive.
 - `ApplySettings` is classified by cost (`ApplyCost`): the master volume is a bus gain and free; a changed rate or channel
   count re-plans and reopens the device; a changed device name or buffer size reopens it. The voice limit and the resampler
   quality belong to a mixer and are not applied live. A reopen that fails leaves the system on the null device.
@@ -327,7 +330,10 @@ entity's local -Z is its forward axis. `SpatialAudio::Update(world, dt)` (`audio
    distance gain * cone gain`. They are ranked by loudness, then `priority`, then entity id, and the loudest
    `max_real_voices` get real voices, the rest virtual ones (looping sources keep a virtual voice so their position goes
    on; a one-shot starts when it is first audible). Sources without `spatial` are always candidates and are not placed.
-4. A destroyed entity (or one that lost its source) fades its voice out over `stop_fade_frames` and is forgotten.
+4. A destroyed entity (or one that lost its source) fades its voice out over `stop_fade_frames` and is forgotten; a stop
+   that a full command queue refused is sent again by the next updates, so the voice never plays on unowned. A looping
+   source whose voice was stolen by a better one starts again when it is ranked again; a one-shot that played to its end
+   does not. An emitter that did not move has no velocity, even when its audible radius changed.
 
 `DistanceGain` (`audio/distance.h`) has four models, all clamped to `min_distance` and silent beyond `max_distance`:
 inverse `min / (min + rolloff (d - min))`, linear `1 - rolloff (d - min) / (max - min)`, exponential `(d / min)^-rolloff`
@@ -452,11 +458,17 @@ gains, pan, direction, routing matrices, flags), the buses (gains, sends, duckin
 the history of every effect (`Effect::SaveState`: filter memories, delay and reverb lines, parameter ramps), the carry of the
 pull buffer and the control side's slots, serial and counters. It refuses with `SnapshotStatus::Busy` while commands are queued
 (render a block first), and does not save unpolled events. `LoadState(bytes, resolver)` restores into a mixer set up the same
-way (rate, layout, voice pool, buses and inserts; a difference is `Mismatch`); a `SnapshotResolver` gives back the clips by name
+way (rate, layout, voice pool, buses with their sends and ducking, and inserts; a difference is `Mismatch`, so a snapshot cannot
+load a bus cycle the mixer's own checks would refuse); a `SnapshotResolver` gives back the clips by name
 and length, and the stream buffers of stream voices, which are flushed and refilled from the saved position. The restore is
 atomic: it parses and checks everything first, and the effects and the limiter (the one thing loaded in place) are put back from
-a backup on any failure. Bad input is a value (`Corrupt`, `Version`, `Mismatch`, `MissingClip`), never an abort
-(`tests/audio/snapshot_test.cpp`: every truncation, 300 byte flips). **Replay:** the mixer is deterministic, so a snapshot at
+a backup on any failure. Every value is checked: a float that is NaN, infinite or larger than `kMaxStateMagnitude`
+(`audio/state_io.h`), a gain, pan, pitch or level outside the range its setter takes, a limiter state `Process` could not have
+left (a gain above 1, a delayed sample louder than the window's peak), an index past its table, or a playing voice without
+its control slot is `Corrupt`. Bad input is a value (`Corrupt`, `Version`, `Mismatch`, `MissingClip`), never an abort
+(`tests/audio/snapshot_test.cpp`: every truncation, 300 byte flips; `hardening_test.cpp`: every byte offset overwritten
+with NaN, both infinities and out-of-range values, after which a load that succeeds still mixes finite samples). The carried
+pull block starts as silence, so two mixers set up the same way save the same bytes. **Replay:** the mixer is deterministic, so a snapshot at
 block N plus the commands posted from N on reproduces the render bit for bit (tested on a scene of eight voices on two buses
 with a delay, a reverb, a filter, a send, a ramp in flight and the limiter). The `MusicPlayer` and the `AudioSystem` are not
 saved: the host rebuilds them and posts their commands again.
@@ -518,9 +530,11 @@ is 8 to 384 kHz; a clip is `f32` in memory (4 bytes a sample: a minute of 48 kHz
 Ogg); occlusion is a ray test against the physics world and cannot see diffraction (sound does not bend around a corner).
 **Not built:** HRTF and binaural rendering, ambisonics, MIDI, synthesis, voice chat, a loudness-normalised mixer. The memory per
 voice and per stream was not measured separately (the mixer allocates its pool, buses and effects when it is created and nothing on
-the audio thread; `KNOWN-ISSUES.md`).
+the audio thread; `KNOWN-ISSUES.md`). The audio-thread rule is counted: `alloc_test.cpp` replaces the program's heap
+allocation and finds no allocation in a warm mixer's `RenderBlock` and `Render` (every resampler, virtual voices, loops, a fade,
+pause and resume, sends, ducking, meters, the delay, reverb and filter, the limiter, commands applied in the block).
 
 ## Where the tests are
 
 `tests/audio`: `block_hash_test.cpp` (known values, byte order, zero, invalid cases, block boundaries), `render_compare_test.cpp` (equal, rounding,
-perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers). `effect_test.cpp` (the filter responses, the clamps, the ring-out, the delay taps, the reverb decay and stereo field, the inserts, the committed echo and reverb scene hashes). `backend_test.cpp` (the negotiation tables, the conversion, the lists, a real device rendered at its pace, a stalled callback, destroying a running device; the hardware tests print a warning and skip without a sound device). `system_test.cpp` (a fake card: another granted rate mid-clip, a lost device and its recovery, every setting in turn, 100 resets). `spatial_test.cpp` (the distance models at ten distances, the cone, the sync: ranking, determinism, 10,000 emitters with one moved, a destroyed entity, the listener's velocity). `panning_test.cpp` (the documented gains per layout, constant power at 360 azimuths, smoothness, the 5.1 mix with the LFE send, a ramp without a step). `doppler_test.cpp` (the formula, teleports, a flyby, the cutoff table, the one-pole low-pass, the committed flyby hash). `occlusion_test.cpp` (a test double: open, behind a wall, the level, a door fading, the rate limit, the round-robin and the budget); `snapshot_test.cpp` (save, restore and replay bit for bit, refusals, stream voices, the committed scene hashes, the callback sizes, the cost). `tests/audio_physics` (the real physics world: thin and thick walls, two walls, layers and absorptions, the level through the system).
+perturbed, very different, shapes) and `repeatable_render_test.cpp` (a small scene rendered twice and with different pulls, and the 1.001 gain), `format_test.cpp`, `convert_test.cpp` (every conversion, the 5.1 downmix) `clip_test.cpp` (creation, shared bytes, validation) and `wav_test.cpp` (every encoding, extensible, loops, truncation, the fuzz tests) and `aclip_test.cpp` (mint then view, loops, determinism, source errors, corruption at every byte, every hostile header field and non-finite sample refused, the resource manager). `device_test.cpp` (the null and file devices, refused configurations, the list, the settings). `mixer_test.cpp` (exact reproduction at pitch 1 and 2, the octave, the loop wrap, the pan law, voice stealing, virtual voices, pull sizes, the committed scene hashes). `control_test.cpp` (ramps, stop, pause, seek, events, the queue, late commands, a random stream against a model, the producer thread). `bus_test.cpp` (the bus tree, mute and solo, sends, cycles, ducking, meters, the limiter, the decibel helpers). `effect_test.cpp` (the filter responses, the clamps, the ring-out, the delay taps, the reverb decay and stereo field, the inserts, the committed echo and reverb scene hashes). `backend_test.cpp` (the negotiation tables, the conversion, the lists, a real device rendered at its pace, a stalled callback, destroying a running device; the hardware tests print a warning and skip without a sound device). `system_test.cpp` (a fake card: another granted rate mid-clip, a lost device and its recovery, every setting in turn, 100 resets). `spatial_test.cpp` (the distance models at ten distances, the cone, the sync: ranking, determinism, 10,000 emitters with one moved, a destroyed entity, the listener's velocity). `panning_test.cpp` (the documented gains per layout, constant power at 360 azimuths, smoothness, the 5.1 mix with the LFE send, a ramp without a step). `doppler_test.cpp` (the formula, teleports, a flyby, the cutoff table, the one-pole low-pass, the committed flyby hash). `occlusion_test.cpp` (a test double: open, behind a wall, the level, a door fading, the rate limit, the round-robin and the budget); `snapshot_test.cpp` (save, restore and replay bit for bit, refusals, stream voices, the committed scene hashes, the callback sizes, the cost). `hardening_test.cpp` (hostile snapshot values at every offset, a bus graph other than the mixer's own, a fade of four billion frames saved and restored, a paused virtual voice, a rate change with inserts, a refused stop sent again, a stolen loop restarting, an emitter's velocity when it stops). `alloc_test.cpp` (no heap allocation on the audio thread, counted). `tests/audio_physics` (the real physics world: thin and thick walls, two walls, layers and absorptions, the level through the system).

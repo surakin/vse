@@ -2390,8 +2390,8 @@ extern "C"
         engine_status (*audio_open)(engine_handle engine, const engine_audio_info* info);
 
         /* Closes the mixer: clips, buses and voices are gone, and their ids are stale. A table call in flight on
-         * another thread finishes first (it keeps the mixer alive); not while another thread is in audio_render. Fails
-         * with: STALE_HANDLE, NOT_READY (not open). */
+         * another thread finishes first (it keeps the mixer alive), and an audio_render in flight on another thread
+         * is waited for (a later one returns NOT_READY). Fails with: STALE_HANDLE, NOT_READY (not open). */
         engine_status (*audio_close)(engine_handle engine);
 
         /* Copies the PCM `size` bytes at `data` (a whole number of frames) into a clip. Fails with: STALE_HANDLE,

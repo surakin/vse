@@ -159,6 +159,29 @@ void Limiter::LoadState(StateIn* in)
     {
         in->Fail();
     }
+    // The values as `Process` keeps them: gains between 0 and 1, peaks not negative, and no delayed sample louder than
+    // the loudest peak of the window (every delayed frame's peak is in it), so a hostile snapshot cannot hide a loud
+    // sample from the gain that holds it down.
+    if (!(gain_ >= 0.0f && gain_ <= 1.0f) || !(min_gain_ >= 0.0f && min_gain_ <= 1.0f))
+    {
+        in->Fail();
+    }
+    f32 loudest = 0.0f;
+    for (usize i = 0; i < peaks_.Size(); ++i)
+    {
+        if (!(peaks_[i] >= 0.0f) || !(gains_[i] >= 0.0f && gains_[i] <= 1.0f))
+        {
+            in->Fail();
+        }
+        loudest = peaks_[i] > loudest ? peaks_[i] : loudest;
+    }
+    for (usize i = 0; i < delay_.Size(); ++i)
+    {
+        if (delay_[i] > loudest || delay_[i] < -loudest)
+        {
+            in->Fail();
+        }
+    }
 }
 
 }  // namespace vse::audio

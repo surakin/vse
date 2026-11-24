@@ -93,9 +93,9 @@ public:
     /// Applies new settings without a restart, doing the cheapest thing that works.
     ///
     /// The master volume is a bus gain; a changed rate or channel count re-plans the mixer (voices keep their place;
-    /// effects are bypassed on a channel change, see `Mixer::Reconfigure`) and reopens the device; a changed device
-    /// name or buffer size reopens the device. The voice limit and the resampler quality need a new mixer and are not
-    /// applied live. If the reopened device fails the system falls back to the null device.
+    /// effects are bypassed on a rate or channel change, see `Mixer::Reconfigure`) and reopens the device; a changed
+    /// device name or buffer size reopens the device. The voice limit and the resampler quality need a new mixer and
+    /// are not applied live. If the reopened device fails the system falls back to the null device.
     ///
     /// - Param settings: the new settings.
     /// - Param now_nanos: the current time.

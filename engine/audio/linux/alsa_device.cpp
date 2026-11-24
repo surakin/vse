@@ -1,4 +1,5 @@
 #include "audio/linux/alsa_device.h"
+#include "audio/device_counters.h"
 
 #include <fcntl.h>
 #include <sched.h>
@@ -232,11 +233,6 @@ int OpenPcm(i32 card, i32 device)
     return os::Open(StringView(path, n), O_RDWR | O_CLOEXEC);
 }
 
-u64 NowMicros()
-{
-    return os::MonotonicTimeNanos() / 1000;
-}
-
 class AlsaDevice final : public AudioDevice
 {
 public:
@@ -355,10 +351,8 @@ public:
     DeviceCounters Counters() const override
     {
         DeviceCounters c;
-        c.callbacks = callbacks_.Load();
+        counters_.Fill(&c);
         c.underruns = underruns_.Load();
-        c.slow_callbacks = slow_.Load();
-        c.longest_callback_micros = longest_.Load();
         return c;
     }
 
@@ -470,10 +464,8 @@ private:
         info_.buffer_frames = grant.period_frames;
         info_.latency_frames = buffer_size;
         rendered_.Store(0);
-        callbacks_.Store(0);
+        counters_.Reset();
         underruns_.Store(0);
-        slow_.Store(0);
-        longest_.Store(0);
         return DeviceStatus::Ok;
     }
 
@@ -494,19 +486,10 @@ private:
         const u64 period_micros = static_cast<u64>(period) * 1000000ull / grant_.rate;
         while (!stop_.Load())
         {
-            const u64 start = NowMicros();
+            const u64 start = CallbackCounters::NowMicros();
             render_(user_, buffer_.Data(), period);
-            const u64 took = NowMicros() - start;
-            callbacks_.FetchAdd(1);
+            counters_.Record(CallbackCounters::NowMicros() - start, period_micros);
             rendered_.FetchAdd(period);
-            if (took > period_micros)
-            {
-                slow_.FetchAdd(1);
-            }
-            u64 longest = longest_.Load();
-            while (took > longest && !longest_.CompareExchangeWeak(longest, took))
-            {
-            }
             ConvertForPcm(grant_.format, buffer_.Data(), period * channels, raw_.Data());
             if (!WriteAll(period))
             {
@@ -581,10 +564,8 @@ private:
     Atomic<bool> stop_{false};
     Atomic<bool> lost_{false};
     Atomic<u64> rendered_{0};
-    Atomic<u64> callbacks_{0};
+    CallbackCounters counters_;
     Atomic<u64> underruns_{0};
-    Atomic<u64> slow_{0};
-    Atomic<u64> longest_{0};
 };
 
 }  // namespace

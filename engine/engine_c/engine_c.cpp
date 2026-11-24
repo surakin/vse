@@ -38,6 +38,7 @@
 #include "string/string.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
+#include "sync/thread.h"
 #include "types.h"
 #if ENGINE_TEST_EXTENSION
 #include "engine_c/engine_test_extension.h"
@@ -162,6 +163,10 @@ struct State
 // exists (both zero when none does). Written under the state's lock, on create and on destroy.
 Atomic<u64> g_audio_handle{0};
 Atomic<Runtime*> g_audio_runtime{nullptr};
+// The `audio_render` calls in flight: `audio_close` and the engine's destruction clear what the audio thread reads,
+// then wait for this to fall to zero. Sequentially consistent on both sides, so a call either is counted before the
+// clear is seen or sees the clear.
+Atomic<u32> g_audio_renders{0};
 
 State& GetState()
 {
@@ -419,11 +424,12 @@ engine_status DestroyFn(engine_handle handle)
                          static_cast<unsigned>(engine->outstanding));
             return ENGINE_ERROR_IN_USE;
         }
-        g_audio_runtime.Store(nullptr, MemoryOrder::Release);
+        g_audio_runtime.Store(nullptr, MemoryOrder::SeqCst);
         g_audio_handle.Store(0, MemoryOrder::Relaxed);
         dying = static_cast<UniquePtr<Engine>&&>(state.engine);
         state.destroying = true;
     }
+    AudioRenderWait();  // a render that read the runtime before the clear finishes before the runtime goes
     // Outside the lock: SetLogObserver waits for callbacks in flight, and a callback may be waiting for the lock to
     // call back into the API.
     if (dying->log != nullptr)
@@ -683,14 +689,28 @@ engine_status ResolveRuntime(engine_handle engine, Runtime** out)
     return status;
 }
 
-Runtime* AudioRenderRuntime(engine_handle engine)
+Runtime* AudioRenderEnter(engine_handle engine)
 {
-    Runtime* runtime = g_audio_runtime.Load(MemoryOrder::Acquire);
+    g_audio_renders.FetchAdd(1, MemoryOrder::SeqCst);
+    Runtime* runtime = g_audio_runtime.Load(MemoryOrder::SeqCst);
     if (runtime == nullptr || engine.value == 0 || engine.value != g_audio_handle.Load(MemoryOrder::Relaxed))
     {
         return nullptr;
     }
     return runtime;
+}
+
+void AudioRenderLeave()
+{
+    g_audio_renders.FetchSub(1, MemoryOrder::SeqCst);
+}
+
+void AudioRenderWait()
+{
+    while (g_audio_renders.Load(MemoryOrder::SeqCst) != 0)
+    {
+        ThisThread::Yield();
+    }
 }
 
 Runtime* CurrentRuntime()

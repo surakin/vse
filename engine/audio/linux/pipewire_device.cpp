@@ -1,4 +1,5 @@
 #include "audio/linux/pipewire_device.h"
+#include "audio/device_counters.h"
 
 #include "audio/format.h"
 #include "cstr/mem_ops.h"
@@ -219,9 +220,7 @@ public:
         info_.buffer_frames = buffer_frames_;
         info_.latency_frames = buffer_frames_ * 2;
         rendered_.Store(0);
-        callbacks_.Store(0);
-        slow_.Store(0);
-        longest_.Store(0);
+        counters_.Reset();
         return DeviceStatus::Ok;
     }
 
@@ -276,9 +275,7 @@ public:
     DeviceCounters Counters() const override
     {
         DeviceCounters c;
-        c.callbacks = callbacks_.Load();
-        c.slow_callbacks = slow_.Load();
-        c.longest_callback_micros = longest_.Load();
+        counters_.Fill(&c);
         return c;
     }
 
@@ -390,16 +387,8 @@ private:
         data.chunk->size = frames * stride;
         g_api.stream_queue_buffer(self->stream_, buffer);
         self->in_callback_.Store(false);
-        self->callbacks_.FetchAdd(1);
+        self->counters_.Record(took, static_cast<u64>(frames) * 1000000ull / self->rate_);
         self->rendered_.FetchAdd(frames);
-        if (took > static_cast<u64>(frames) * 1000000ull / self->rate_)
-        {
-            self->slow_.FetchAdd(1);
-        }
-        u64 longest = self->longest_.Load();
-        while (took > longest && !self->longest_.CompareExchangeWeak(longest, took))
-        {
-        }
     }
 
     RenderCallback render_ = nullptr;
@@ -417,9 +406,7 @@ private:
     Atomic<bool> running_{false};
     Atomic<bool> in_callback_{false};
     Atomic<u64> rendered_{0};
-    Atomic<u64> callbacks_{0};
-    Atomic<u64> slow_{0};
-    Atomic<u64> longest_{0};
+    CallbackCounters counters_;
 };
 
 }  // namespace

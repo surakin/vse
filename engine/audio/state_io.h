@@ -1,15 +1,24 @@
 // The byte helpers of the audio snapshot (Phase 26 Day 437): a writer and a reader over `bytes::ByteWriter` and
 // `bytes::ByteReader` for the values the mixer, the effects and the limiter keep. The reader has a sticky failure:
 // after the first bad read every read returns zero and `Ok()` is false, so a parser checks once at the end of a group.
+// A float that is not finite, or larger in magnitude than `kMaxStateMagnitude`, is a bad read too: no state the mixer,
+// an effect or the limiter keeps is ever one, and a hostile one would turn the mix into NaN or infinity.
 #pragma once
 
 #include "bytes/byte_reader.h"
 #include "bytes/byte_writer.h"
 #include "containers/vector.h"
+#include "lang/scalar.h"
 #include "types.h"
 
 namespace vse::audio
 {
+
+/// The largest magnitude a float of a snapshot may have.
+///
+/// `StateIn::F32` refuses a larger one, and every non-finite value. It is far above any level, gain, coefficient or
+/// history value audio keeps, and low enough that sums and products of a few of them stay finite.
+inline constexpr f32 kMaxStateMagnitude = 1.0e12f;
 
 /// Writes the snapshot's value types.
 ///
@@ -89,11 +98,15 @@ public:
         return ok_ ? v : 0;
     }
     /// Reads a float.
-    /// - Fails: sticky, returns 0.
+    /// - Fails: sticky, returns 0; also for a value that is not finite or is above `kMaxStateMagnitude` in magnitude.
     f32 F32()
     {
         f32 v = 0.0f;
         Check(r_->ReadF32(&v));
+        if (ok_ && (!IsFinite(v) || v > kMaxStateMagnitude || v < -kMaxStateMagnitude))
+        {
+            ok_ = false;
+        }
         return ok_ ? v : 0.0f;
     }
     /// Reads a bool.
@@ -104,7 +117,7 @@ public:
         Check(r_->ReadBool(&v));
         return ok_ && v;
     }
-    /// Reads `count` floats.
+    /// Reads `count` floats, each checked as `F32` checks it.
     /// - Fails: sticky.
     /// - Ownership: `v` is borrowed for the call.
     void F32s(f32* v, usize count)

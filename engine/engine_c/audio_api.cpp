@@ -184,7 +184,8 @@ engine_status AudioCloseFn(engine_handle engine)
     {
         return Fail(ENGINE_ERROR_NOT_READY, "audio is not open");
     }
-    runtime->audio_host.Store(nullptr, MemoryOrder::Release);
+    runtime->audio_host.Store(nullptr, MemoryOrder::SeqCst);
+    AudioRenderWait();             // an `audio_render` that read the host before the clear finishes with it first
     runtime->audio_owner.Reset();  // the last share (a call in flight may hold one) frees the host
     return ENGINE_OK;
 }
@@ -566,23 +567,29 @@ engine_status AudioBusSetFn(engine_handle engine, u32 bus, const engine_audio_bu
 
 engine_status AudioRenderFn(engine_handle engine, u32 frames, float* out)
 {
-    // No lock, no allocation, no failure text on the success path: the host's audio thread.
-    Runtime* runtime = AudioRenderRuntime(engine);
+    // No lock, no allocation, no failure text on the success path: the host's audio thread. The call is counted from
+    // enter to leave, so `audio_close` and the engine's destruction wait for it instead of freeing what it uses.
     if (out == nullptr)
     {
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }
+    Runtime* runtime = AudioRenderEnter(engine);
+    engine_status status = ENGINE_OK;
+    AudioHost* host = runtime != nullptr ? runtime->audio_host.Load(MemoryOrder::SeqCst) : nullptr;
     if (runtime == nullptr)
     {
-        return ENGINE_ERROR_STALE_HANDLE;
+        status = ENGINE_ERROR_STALE_HANDLE;
     }
-    AudioHost* host = runtime->audio_host.Load(MemoryOrder::Acquire);
-    if (host == nullptr)
+    else if (host == nullptr)
     {
-        return ENGINE_ERROR_NOT_READY;
+        status = ENGINE_ERROR_NOT_READY;
     }
-    host->mixer.Render(out, frames);
-    return ENGINE_OK;
+    else
+    {
+        host->mixer.Render(out, frames);
+    }
+    AudioRenderLeave();
+    return status;
 }
 
 engine_status AudioEventsFn(engine_handle engine, engine_audio_event* out, size_t capacity, size_t* total)

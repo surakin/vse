@@ -78,8 +78,7 @@ void SpatialAudio::Restart(Entity entity)
     Emitter& e = emitters_[*slot];
     if (e.voice.IsValid())
     {
-        Post(mixer_->Stop(e.voice, config_.stop_fade_frames));
-        report_.stopped += 1;
+        StopVoice(e.voice);
         e.voice = VoiceId();
     }
     e.finished = false;
@@ -125,8 +124,7 @@ void SpatialAudio::Drop(u32 index)
     }
     if (e.voice.IsValid())
     {
-        Post(mixer_->Stop(e.voice, config_.stop_fade_frames));
-        report_.stopped += 1;
+        StopVoice(e.voice);
     }
     index_.Remove(e.entity.ToU64());
     const u32 last = static_cast<u32>(emitters_.Size()) - 1;
@@ -146,14 +144,26 @@ bool SpatialAudio::Post(MixerStatus status)
     return status == MixerStatus::Ok;
 }
 
+// Stops a voice the system lets go of. The emitter forgets the voice at once, so a stop a full queue refused is kept
+// and sent again by the next updates: otherwise a looping voice would play on with no emitter to stop it.
+void SpatialAudio::StopVoice(VoiceId voice)
+{
+    const MixerStatus status = mixer_->Stop(voice, config_.stop_fade_frames);
+    report_.commands += 1;
+    report_.stopped += 1;
+    if (status == MixerStatus::QueueFull)
+    {
+        orphans_.Push(voice);
+    }
+}
+
 // Starts or updates the voice of an emitter that has been ranked.
 void SpatialAudio::Drive(Emitter* e, const AudioSource& src, const Candidate& c, bool real)
 {
     if (e->voice.IsValid() && e->stream_sent != static_cast<const void*>(src.stream.Get()))
     {
         // Another stream was set: the voice reads the old one, so it stops and the new one starts below.
-        Post(mixer_->Stop(e->voice, config_.stop_fade_frames));
-        report_.stopped += 1;
+        StopVoice(e->voice);
         e->voice = VoiceId();
         e->finished = false;
     }
@@ -225,6 +235,18 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
     report_ = SpatialAudioReport();
     epoch_ += 1;
 
+    // The stops a full queue refused before: sent again (a voice that ended meanwhile is refused as invalid, and done).
+    usize orphans_kept = 0;
+    for (usize i = 0; i < orphans_.Size(); ++i)
+    {
+        report_.commands += 1;
+        if (mixer_->Stop(orphans_[i], config_.stop_fade_frames) == MixerStatus::QueueFull)
+        {
+            orphans_[orphans_kept++] = orphans_[i];
+        }
+    }
+    orphans_.Resize(orphans_kept);
+
     // The listener: the active one with the lowest entity id.
     ListenerState previous = listener_;
     listener_.valid = false;
@@ -286,12 +308,16 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
                                    ? AudibleRadius(src.attenuation,
                                                    config_.audibility_threshold / (src.gain > 1e-6f ? src.gain : 1e-6f))
                                    : 0.0f;
-            if (em->radius == radius && SameVec(em->position, position))
+            if (SameVec(em->position, position))
             {
+                // Not moved: no speed, whether or not the radius changed.
                 em->velocity = Vec3(0.0f, 0.0f, 0.0f);
-                return;
+                if (em->radius == radius)
+                {
+                    return;
+                }
             }
-            if (em->radius >= 0.0f && SameVec(em->position, position) == false && Finite(position))
+            else if (em->radius >= 0.0f && Finite(position))
             {
                 const Vec3 jump = (position - em->position).Narrow();
                 if (dt > 0.0f)
@@ -544,8 +570,11 @@ void SpatialAudio::Update(ecs::World& world, f32 dt)
         }
         if (!mixer_->IsPlaying(em.voice))
         {
+            // A one-shot that ended is done for good. A looping clip never ends by itself: its voice was taken by a
+            // better one (stolen), so the emitter starts again when it is ranked again.
+            const AudioSource* src = world.Get<AudioSource>(em.entity);
             em.voice = VoiceId();
-            em.finished = true;
+            em.finished = src == nullptr || !src->loop || src->stream;
             continue;
         }
         if (!em.audible && !em.virtual_sent)

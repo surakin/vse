@@ -8,6 +8,7 @@
 // device, or a change of the default output when the default was opened, is reported once as `Lost`; the system reopens
 // through Day 427's path.
 #include "audio/macos/coreaudio_device.h"
+#include "audio/device_counters.h"
 
 #include "audio/pcm_negotiate.h"
 #include "containers/array.h"
@@ -156,11 +157,6 @@ DeviceStatus StatusOf(OSStatus status)
     return DeviceStatus::IoError;
 }
 
-u64 NowMicros()
-{
-    return os::MonotonicTimeNanos() / 1000;
-}
-
 class CoreAudioDevice final : public AudioDevice
 {
 public:
@@ -253,10 +249,8 @@ public:
     DeviceCounters Counters() const override
     {
         DeviceCounters c;
-        c.callbacks = callbacks_.Load();
+        counters_.Fill(&c);
         c.underruns = underruns_.Load();
-        c.slow_callbacks = slow_.Load();
-        c.longest_callback_micros = longest_.Load();
         return c;
     }
 
@@ -394,10 +388,8 @@ private:
         lost_.Store(false);
         stop_.Store(true);
         rendered_.Store(0);
-        callbacks_.Store(0);
+        counters_.Reset();
         underruns_.Store(0);
-        slow_.Store(0);
-        longest_.Store(0);
         return Listen(want_default);
     }
 
@@ -604,19 +596,12 @@ private:
             const u32 n = left < info_.buffer_frames ? left : info_.buffer_frames;
             f32* target = interleaved_ ? static_cast<f32*>(io->mBuffers[0].mData) + static_cast<usize>(done) * channels_
                                        : scratch_.Data();
-            const u64 start = NowMicros();
+            const u64 start = CallbackCounters::NowMicros();
             render_(user_, target, n);
-            const u64 took = NowMicros() - start;
-            callbacks_.FetchAdd(1);
+            // Slow: longer than the frames it rendered last.
+            counters_.Record(CallbackCounters::NowMicros() - start,
+                             static_cast<u64>(n) * 1000000ull / info_.sample_rate);
             rendered_.FetchAdd(n);
-            if (took > static_cast<u64>(n) * 1000000ull / info_.sample_rate)  // longer than the frames it rendered last
-            {
-                slow_.FetchAdd(1);
-            }
-            u64 longest = longest_.Load();
-            while (took > longest && !longest_.CompareExchangeWeak(longest, took))
-            {
-            }
             if (!interleaved_)
             {
                 // One buffer per channel: de-interleave the scratch into each.
@@ -696,10 +681,8 @@ private:
     Atomic<bool> lost_{false};
     Atomic<u32> in_render_{0};
     Atomic<u64> rendered_{0};
-    Atomic<u64> callbacks_{0};
+    CallbackCounters counters_;
     Atomic<u64> underruns_{0};
-    Atomic<u64> slow_{0};
-    Atomic<u64> longest_{0};
 };
 
 }  // namespace

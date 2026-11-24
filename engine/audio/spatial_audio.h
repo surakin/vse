@@ -110,7 +110,8 @@ public:
     ///
     /// - Param world: the world (read only; no structural change).
     /// - Param dt: the seconds since the last update, for the listener's velocity (0 keeps the old velocity).
-    /// - Fails: a full mixer command queue drops commands (counted by the mixer); the next update repeats them.
+    /// - Fails: a full mixer command queue drops commands (counted by the mixer); the next update repeats them, the
+    ///   stop of a forgotten emitter's voice included.
     void Update(ecs::World& world, f32 dt);
 
     /// The voice of an emitter, if it has one.
@@ -224,6 +225,7 @@ private:
     void Drop(u32 index);
     void Drive(Emitter* e, const AudioSource& src, const Candidate& c, bool real);
     bool Post(MixerStatus status);
+    void StopVoice(VoiceId voice);
 
     Mixer* mixer_ = nullptr;
     SpatialAudioConfig config_;
@@ -232,6 +234,7 @@ private:
     Vector<Emitter> emitters_;
     Vector<Candidate> candidates_;
     Vector<u32> gone_;
+    Vector<VoiceId> orphans_;  ///< Voices whose `Stop` a full queue refused: sent again each update until taken.
     ListenerState listener_;
     SpatialAudioReport report_;
     OcclusionQuery* occlusion_ = nullptr;

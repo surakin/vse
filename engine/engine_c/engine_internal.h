@@ -36,12 +36,24 @@ engine_status ResolveRuntime(engine_handle engine, Runtime** out);
 /// - Thread-safety: thread-safe.
 Runtime* CurrentRuntime();
 
-/// The runtime a handle names, for the host's audio thread: no lock, no allocation, no failure text.
+/// Enters an `audio_render` call and gives the runtime a handle names, for the host's audio thread: no lock, no
+/// allocation, no failure text. Every call is paired with `AudioRenderLeave`, whatever it returned; while a call is
+/// between the two, `audio_close` and the engine's destruction wait (`AudioRenderWait`).
 ///
 /// - Param engine: the handle `audio_render` was given.
 /// - Returns: the runtime, or null when the handle is zero, was never issued or names an engine that is gone.
-/// - Thread-safety: thread-safe and lock-free; the engine must not be destroyed while the call runs (the host stops
-/// its audio thread first, as `audio_close` asks).
-Runtime* AudioRenderRuntime(engine_handle engine);
+/// - Thread-safety: thread-safe and lock-free.
+Runtime* AudioRenderEnter(engine_handle engine);
+
+/// Leaves the call `AudioRenderEnter` entered.
+///
+/// - Thread-safety: thread-safe and lock-free.
+void AudioRenderLeave();
+
+/// Waits until no `audio_render` call is between `AudioRenderEnter` and `AudioRenderLeave`. Called after the host
+/// pointer (or the runtime) the audio thread reads was cleared: a call that enters later sees it cleared.
+///
+/// - Thread-safety: thread-safe; spins with a yield (a render call is short and takes no lock).
+void AudioRenderWait();
 
 }  // namespace vse::engine_c

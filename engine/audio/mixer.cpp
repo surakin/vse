@@ -22,6 +22,19 @@ bool IsFinite(f32 v)
     return v == v && v - v == 0.0f;
 }
 
+// The step `pos / len` of the way from `from` to `to`, truncated toward `from` as `from + delta * pos / len` in exact
+// integer arithmetic would give it, without the product: a `Fade` may last any 32-bit length while the pitch moves, and
+// `delta * pos` does not fit 64 bits then. `pos <= len`, `len > 0`.
+u64 RampedStep(u64 from, u64 to, u32 pos, u32 len)
+{
+    const bool up = to >= from;
+    const u64 delta = up ? to - from : from - to;
+    const u64 whole = delta / len;
+    const u64 rest = delta % len;  // below `len`, so `rest * pos` fits 64 bits
+    const u64 moved = whole * pos + rest * pos / len;
+    return up ? from + moved : from - moved;
+}
+
 i64 PosMod(i64 value, i64 modulus)
 {
     i64 m = value % modulus;
@@ -198,6 +211,9 @@ MixerStatus Mixer::Init(const MixerConfig& config)
         return MixerStatus::OutOfMemory;
     }
     BuildSincTable(sinc_.Data());
+    // The carried block is saved in a snapshot before any `Render` has filled it: it starts as silence, never as
+    // whatever the heap held.
+    MemSet(carry_.Data(), 0, carry_.Size() * sizeof(f32));
     // The buses: the master exists from the start; the buffers are allocated for all of them now.
     if (config.max_buses == 0 || config.max_buses > kMaxBuses ||
         !bus_buffers_.TryResizeUninitialized(static_cast<usize>(config.max_buses) * kBlockFrames * channels_))
@@ -261,9 +277,16 @@ MixerStatus Mixer::Reconfigure(u32 sample_rate, ChannelLayout layout)
         {
             return MixerStatus::OutOfMemory;
         }
+        MemSet(carry.Data(), 0, carry.Size() * sizeof(f32));
         carry_ = Move(carry);
         bus_buffers_ = Move(buses);
         limiter_ = Move(limiter);
+        channels_ = channels;
+    }
+    if (channels_changed || sample_rate != config_.sample_rate)
+    {
+        // An effect is built for a channel count and its parameters and lines for a rate (cutoffs, delay times and
+        // line lengths are in frames): neither carries over, so every insert is bypassed. The effects stay alive.
         for (u32 b = 0; b < kMaxBuses; ++b)
         {
             for (u32 i = 0; i < kMaxInserts; ++i)
@@ -272,7 +295,6 @@ MixerStatus Mixer::Reconfigure(u32 sample_rate, ChannelLayout layout)
                 control_buses_[b].inserts[i] = nullptr;
             }
         }
-        channels_ = channels;
     }
     config_.sample_rate = sample_rate;
     config_.layout = layout;
@@ -807,9 +829,7 @@ void Mixer::EffectiveNow(const Voice& voice, ChannelMatrix* route, u64* step) co
                                 (voice.route.gain[o][i] - voice.route_from.gain[o][i]) * t;
         }
     }
-    const i64 delta = static_cast<i64>(voice.step) - static_cast<i64>(voice.step_from);
-    *step = static_cast<u64>(static_cast<i64>(voice.step_from) +
-                             delta * static_cast<i64>(voice.ramp_pos) / static_cast<i64>(voice.ramp_len));
+    *step = RampedStep(voice.step_from, voice.step, voice.ramp_pos, voice.ramp_len);
 }
 
 // Recomputes the targets from the voice's parameters and ramps to them over `frames` (0: at once).
@@ -1139,6 +1159,18 @@ void Mixer::AdvanceVirtual(Voice* voice)
         Finish(voice, true, VoiceEventType::Stopped);
         return;
     }
+    if (voice->pausing)
+    {
+        // A virtual voice is not heard, so its fade to silence is over at once: it holds its position from this block,
+        // as `Stop` frees a virtual voice at once.
+        voice->ramp_len = 0;
+        voice->ramp_pos = 0;
+        voice->route_from = voice->route;
+        voice->step_from = voice->step;
+        voice->pausing = false;
+        voice->paused = true;
+        return;
+    }
     if (voice->stream)
     {
         // A virtual stream keeps consuming its ring, so it stays where it would be.
@@ -1246,9 +1278,7 @@ void Mixer::MixVoice(Voice* voice, f32* out, f32* send_out)
                     }
                 }
                 matrix = &ramped;
-                const i64 delta = static_cast<i64>(voice->step) - static_cast<i64>(voice->step_from);
-                step = static_cast<u64>(static_cast<i64>(voice->step_from) +
-                                        delta * static_cast<i64>(voice->ramp_pos) / static_cast<i64>(voice->ramp_len));
+                step = RampedStep(voice->step_from, voice->step, voice->ramp_pos, voice->ramp_len);
             }
         }
         source.periodic = index >= source.loop_start;

@@ -16,10 +16,19 @@ constexpr u32 kNoIndex = 0xFFFFFFFFu;
 constexpr u32 kMaxName = 256;
 // The fastest a voice can advance, in clip frames per output frame (32 fraction bits): far above any pitch
 // and rate ratio the mixer takes, low enough that a loop wrap is a few steps.
-// The longest ramp the mixer makes (`MixerConfig::ramp_frames` is at most this): keeps `step delta * ramp position`
-// inside 63 bits.
-constexpr u32 kMaxRampLength = 65536;
 constexpr u64 kMaxStep = u64{256} << 32;
+// The bounds of the gains a snapshot may hold, as the setters take them (`Mixer::Play`, `SetGain`, `SetBusGain`,
+// `SetBusSend`, `SetVoiceSend`: 0 to 16).
+constexpr f32 kMaxSavedGain = 16.0f;
+// The largest entry of a voice's routing matrix: the gain times the largest pan or speaker gain, with room to spare.
+constexpr f32 kMaxRouteGain = 64.0f;
+// A voice names its clip's length in 32 bits: every clip fits (`AudioClip` refuses one above `kMaxClipFrames`).
+static_assert(kMaxClipFrames <= 0xFFFFFFFFull, "the snapshot writes a clip's frame count in 32 bits");
+
+bool InRange(f32 v, f32 low, f32 high)
+{
+    return v >= low && v <= high;  // false for a NaN (the reader already refuses one)
+}
 
 void WriteName(StateOut* out, StringView name)
 {
@@ -74,6 +83,16 @@ void ReadMatrix(StateIn* in, ChannelMatrix* m)
     if (m->inputs > kMaxChannels || m->outputs > kMaxChannels)
     {
         in->Fail();
+    }
+    for (u32 o = 0; o < kMaxChannels; ++o)
+    {
+        for (u32 i = 0; i < kMaxChannels; ++i)
+        {
+            if (!InRange(m->gain[o][i], -kMaxRouteGain, kMaxRouteGain))
+            {
+                in->Fail();
+            }
+        }
     }
 }
 
@@ -303,7 +322,7 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
     const bool limiter_on = s.Bool();
     const f32 limiter_min = s.F32();
     limiter_.LoadState(&s);
-    if (!s.Ok())
+    if (!s.Ok() || !InRange(limiter_min, 0.0f, 1.0f))
     {
         return fail(SnapshotStatus::Corrupt);
     }
@@ -358,21 +377,49 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
         }
         for (u32 k = 0; k < kMaxSends; ++k)
         {
-            if (bus.sends[k].target != kNoIndex && bus.sends[k].target >= config_.max_buses)
+            if ((bus.sends[k].target != kNoIndex && bus.sends[k].target >= config_.max_buses) ||
+                !InRange(bus.sends[k].gain, 0.0f, kMaxSavedGain))
             {
                 return fail(SnapshotStatus::Corrupt);
             }
         }
+        // The levels as the setters and the bus processing keep them (`applied` is the gain times the ducker's gain).
+        if (!InRange(bus.gain, 0.0f, kMaxSavedGain) || !InRange(bus.applied, 0.0f, kMaxSavedGain) ||
+            !InRange(bus.duck_depth, 0.0f, 1.0f) || !(bus.duck_threshold > 0.0f) ||
+            !InRange(bus.duck_release, 0.0f, 1.0f) || !InRange(bus.duck_gain, 0.0f, 1.0f) || !(bus.last_peak >= 0.0f))
+        {
+            return fail(SnapshotStatus::Corrupt);
+        }
     }
-    // A send must name an active bus (an inactive one has no buffer to write to).
+    // A send must name an active bus (an inactive one has no buffer to write to), and the bus graph must be the one the
+    // control side knows: its sends and ducking are what the control side's cycle checks rely on, so a snapshot that
+    // routes differently (a cycle among them) is refused rather than loaded behind its back.
     for (u32 b = 0; b < kMaxBuses; ++b)
     {
+        if (!buses[b].active)
+        {
+            continue;
+        }
         for (u32 k = 0; k < kMaxSends; ++k)
         {
-            if (buses[b].active && buses[b].sends[k].target != kNoIndex && !buses[buses[b].sends[k].target].active)
+            const Send& send = buses[b].sends[k];
+            if (send.target != kNoIndex && !buses[send.target].active)
             {
                 return fail(SnapshotStatus::Corrupt);
             }
+            const u32 effective = send.target != kNoIndex && send.gain > 0.0f ? send.target : kNoIndex;
+            if (effective != control_buses_[b].send_target[k])
+            {
+                return fail(SnapshotStatus::Mismatch);
+            }
+        }
+        if (buses[b].duck_source != control_buses_[b].duck_source)
+        {
+            return fail(SnapshotStatus::Mismatch);
+        }
+        if (buses[b].duck_source != kNoIndex && (buses[b].duck_source == b || !buses[buses[b].duck_source].active))
+        {
+            return fail(SnapshotStatus::Corrupt);
         }
     }
     const u32 voice_count = s.U32();
@@ -438,21 +485,20 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
         ReadMatrix(&s, &voice.route_play);
         ReadMatrix(&s, &voice.route);
         ReadMatrix(&s, &voice.route_from);
+        // A ramp may be as long as a `Fade` asks (any 32-bit length): the ramped step is computed without overflow.
         if (!s.Ok() || voice.bus >= kMaxBuses || !buses[voice.bus].active ||
             (voice.send_bus != kNoIndex && (voice.send_bus >= config_.max_buses || !buses[voice.send_bus].active)) ||
-            voice.ramp_pos > voice.ramp_len || voice.ramp_len > kMaxRampLength || voice.delay >= kBlockFrames ||
-            voice.step > kMaxStep || voice.step_from > kMaxStep)
+            voice.ramp_pos > voice.ramp_len || voice.delay >= kBlockFrames || voice.step > kMaxStep ||
+            voice.step_from > kMaxStep)
         {
             return fail(SnapshotStatus::Corrupt);
         }
+        if (!InRange(voice.gain, 0.0f, kMaxSavedGain) || !InRange(voice.send_gain, 0.0f, kMaxSavedGain) ||
+            !InRange(voice.pan, -1.0f, 1.0f) || !InRange(voice.lfe_send, 0.0f, 1.0f) ||
+            !(voice.air_coefficient > 0.0f && voice.air_coefficient <= 1.0f) ||
+            !InRange(voice.pitch, kMinPitch, kMaxPitch))
         {
-            // The ramped step is `delta * ramp_pos / ramp_len` in 64 bits: refuse a pair whose product could overflow.
-            const u64 delta = voice.step > voice.step_from ? voice.step - voice.step_from
-                                                           : voice.step_from - voice.step;
-            if (voice.ramp_len != 0 && delta > (u64{1} << 62) / voice.ramp_len)
-            {
-                return fail(SnapshotStatus::Corrupt);
-            }
+            return fail(SnapshotStatus::Corrupt);
         }
         if (streaming)
         {
@@ -496,10 +542,24 @@ SnapshotStatus Mixer::LoadState(ByteSpan bytes, SnapshotResolver* resolver)
         c.priority = static_cast<i32>(s.U32());
         c.gain = s.F32();
         c.serial = s.U64();
+        if (!InRange(c.gain, 0.0f, kMaxSavedGain))
+        {
+            s.Fail();
+        }
     }
     if (!s.Ok() || !reader.AtEnd() || live != active_count)
     {
         return fail(SnapshotStatus::Corrupt);
+    }
+    // Every playing voice has its control slot: the same generation, still taken. (A slot may outlive its voice: the
+    // voice ended and the control side has not drained the event yet.) Without it a later `Play` would take the slot
+    // and start over a voice that is still playing.
+    for (u32 v = 0; v < voice_count; ++v)
+    {
+        if (voices[v].active && (!control[v].active || control[v].generation != voices[v].generation))
+        {
+            return fail(SnapshotStatus::Corrupt);
+        }
     }
     // Commit: nothing below can fail.
     for (u32 v = 0; v < voice_count; ++v)

@@ -9,6 +9,7 @@
 #include "audio/asset_clip.h"
 #include "audio_source.h"
 #include "containers/unique_ptr.h"
+#include "cstr/mem_ops.h"
 #include "wav_builder.h"
 
 using namespace vse;
@@ -177,6 +178,106 @@ TEST_CASE("aclip: a corrupted blob is refused or harmless at every byte", "[audi
             cut.Push(good[k]);
         }
         REQUIRE(view.Open(Share(cut), types).Failed());
+    }
+}
+
+TEST_CASE("aclip: every hostile header field and sample is refused with an error status", "[audio][aclip][fuzz]")
+{
+    WavSpec spec;
+    spec.encoding = audio::WavEncoding::F32;
+    spec.channels = 2;
+    spec.frames = 20;
+    spec.with_loop = true;
+    spec.loop_start = 2;
+    spec.loop_end_inclusive = 15;
+    const Vector<byte> good = Mint(kSource, BuildWav(spec));
+    TypeRegistry types;
+    // The header section: rate, channels, storage, frames, loop start, loop end, codec, reserved (eight u32).
+    const u32 expected[8] = {48000, 2, 0, 20, 2, 16, 0, 0};
+    usize head = 0;
+    for (usize i = 0; i + 32 <= good.Size() && head == 0; ++i)
+    {
+        bool match = true;
+        for (u32 f = 0; f < 8 && match; ++f)
+        {
+            u32 v = 0;
+            for (u32 k = 0; k < 4; ++k)
+            {
+                v |= static_cast<u32>(good[i + 4 * f + k]) << (8 * k);
+            }
+            match = v == expected[f];
+        }
+        head = match ? i : 0;
+    }
+    REQUIRE(head != 0);
+    struct Hostile
+    {
+        u32 field;
+        u32 value;
+    };
+    const Hostile hostile[] = {
+        {0, 0},           {0, 7999},        {0, 384001},      {0, 0xFFFFFFFFu}, {1, 0},
+        {1, 3},           {1, 9},           {1, 0xFFFFFFFFu}, {2, 1},           {2, 2},
+        {2, 0xFFFFFFFFu}, {3, 0},           {3, 19},          {3, 21},          {3, (1u << 29) + 1},
+        {3, 0xFFFFFFFFu}, {4, 16},          {4, 17},          {4, 0xFFFFFFFFu}, {5, 21},
+        {5, 2},           {5, 0xFFFFFFFFu}, {6, 2},           {6, 0xFFFFFFFFu}, {7, 1},
+        {7, 0xFFFFFFFFu},
+    };
+    for (const Hostile& h : hostile)
+    {
+        Vector<byte> bad;
+        for (usize k = 0; k < good.Size(); ++k)
+        {
+            bad.Push(good[k]);
+        }
+        for (u32 k = 0; k < 4; ++k)
+        {
+            bad[head + 4 * h.field + k] = static_cast<byte>((h.value >> (8 * k)) & 0xFFu);
+        }
+        AudioClipView view;
+        bool refused = view.Open(Share(bad), types).Failed();
+        if (!refused)
+        {
+            audio::AudioClipPtr clip;
+            refused = audio::MakeClipFromAsset(view, "", &clip) != audio::ClipStatus::Ok;
+        }
+        INFO("field " << h.field << " value " << h.value);
+        CHECK(refused);
+    }
+    // A non-finite sample (NaN, both infinities) at the first, a middle and the last sample.
+    const u32 non_finite[] = {0x7FC00000u, 0x7F800000u, 0xFF800000u};
+    const usize sample_bytes = 20 * 2 * 4;
+    usize samples = 0;
+    {
+        AudioClipView view;
+        REQUIRE(view.Open(Share(good), types).Ok());
+        audio::AudioClipPtr clip;
+        REQUIRE(audio::MakeClipFromAsset(view, "", &clip) == audio::ClipStatus::Ok);
+        // The samples are stored as is: find the clip's samples in the blob.
+        for (usize i = head + 32; i + sample_bytes <= good.Size() && samples == 0; ++i)
+        {
+            samples = MemCompare(good.Data() + i, clip->View().samples.Data(), sample_bytes) == 0 ? i : 0;
+        }
+    }
+    REQUIRE(samples != 0);
+    for (u32 bits : non_finite)
+    {
+        for (usize index : {usize{0}, usize{17}, usize{39}})
+        {
+            Vector<byte> bad;
+            for (usize k = 0; k < good.Size(); ++k)
+            {
+                bad.Push(good[k]);
+            }
+            for (u32 k = 0; k < 4; ++k)
+            {
+                bad[samples + index * 4 + k] = static_cast<byte>((bits >> (8 * k)) & 0xFFu);
+            }
+            AudioClipView view;
+            REQUIRE(view.Open(Share(bad), types).Ok());  // the view does not scan samples
+            audio::AudioClipPtr clip;
+            CHECK(audio::MakeClipFromAsset(view, "", &clip) == audio::ClipStatus::NotFinite);
+        }
     }
 }
 

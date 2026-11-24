@@ -395,6 +395,70 @@ static void TestThreads(engine_handle engine)
     CHECK_STATUS(g_api->audio_close(engine), ENGINE_OK);
 }
 
+typedef struct close_render_thread
+{
+    engine_handle engine;
+    int blocks;
+    int rendered;
+    int failed;
+} close_render_thread;
+
+/* Renders as fast as it can while the main thread opens and closes audio: each call either renders or finds audio
+   closed, never anything else. */
+static void RenderAcrossCloses(void* arg)
+{
+    close_render_thread* t = (close_render_thread*)arg;
+    float out[2 * 1024];
+    int i;
+    for (i = 0; i < t->blocks; ++i)
+    {
+        const engine_status status = g_api->audio_render(t->engine, 1024, out);
+        if (status == ENGINE_OK)
+        {
+            t->rendered += 1;
+        }
+        else if (status != ENGINE_ERROR_NOT_READY)
+        {
+            t->failed += 1;
+        }
+    }
+}
+
+/* audio_close while another thread is inside audio_render: the close waits for the render, which never reads a freed
+   mixer (the sanitizer flavors catch a use after free). */
+static void TestCloseWhileRendering(engine_handle engine)
+{
+    engine_audio_info info = Info(2);
+    engine_audio_clip_info clip_info = ClipInfo(2, ENGINE_AUDIO_FORMAT_F32);
+    float samples[4000];
+    close_render_thread t;
+    host_thread thread;
+    int i;
+    for (i = 0; i < 4000; ++i)
+    {
+        samples[i] = (float)sin(0.03 * i) * 0.2f;
+    }
+    t.engine = engine;
+    t.blocks = 20000;
+    t.rendered = 0;
+    t.failed = 0;
+    CHECK(host_thread_start(&thread, RenderAcrossCloses, &t) == 0);
+    for (i = 0; i < 1000; ++i)
+    {
+        uint64_t clip = 0;
+        uint64_t voice = 0;
+        engine_audio_play play;
+        CHECK_STATUS(g_api->audio_open(engine, &info), ENGINE_OK);
+        CHECK_STATUS(g_api->audio_clip_create(engine, &clip_info, samples, sizeof(samples), &clip), ENGINE_OK);
+        play = Play(clip);
+        play.loop = 1;
+        CHECK_STATUS(g_api->audio_play(engine, &play, &voice), ENGINE_OK);
+        CHECK_STATUS(g_api->audio_close(engine), ENGINE_OK);
+    }
+    host_thread_join(&thread);
+    CHECK(t.failed == 0);
+}
+
 int main(void)
 {
     engine_handle engine;
@@ -408,6 +472,7 @@ int main(void)
     TestArguments(engine);
     TestRender(engine);
     TestThreads(engine);
+    TestCloseWhileRendering(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     g_api->thread_detach();
     if (g_failures != 0)
