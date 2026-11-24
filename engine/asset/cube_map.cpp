@@ -186,6 +186,7 @@ Status PrefilterEnvironmentChains(u32 face_size, u32 mips, Vector<Vector<byte>>*
     {
         return Status::Make(ErrorCode::Invalid, "the mip count is above the full chain, or there are not six chains");
     }
+    bool bad_texel = false;  // a source texel that is an infinity or a NaN stops the prefilter
     // Level offsets in a chain (8 bytes a texel).
     Vector<usize> offsets;
     Vector<u32> sizes;
@@ -279,8 +280,10 @@ Status PrefilterEnvironmentChains(u32 face_size, u32 mips, Vector<Vector<byte>>*
                         for (u32 c = 0; c < 3; ++c)
                         {
                             f32 value = 0.0f;
-                            HalfBitsToFloat(static_cast<u32>(texel[c * 2]) | (static_cast<u32>(texel[c * 2 + 1]) << 8),
-                                            &value);
+                            bad_texel = !HalfBitsToFloat(static_cast<u32>(texel[c * 2]) |
+                                                             (static_cast<u32>(texel[c * 2 + 1]) << 8),
+                                                         &value) ||
+                                        bad_texel;
                             sum[c] += value * nl;
                         }
                         weight += nl;
@@ -299,6 +302,10 @@ Status PrefilterEnvironmentChains(u32 face_size, u32 mips, Vector<Vector<byte>>*
                     dst[6] = own[6];
                     dst[7] = own[7];
                 }
+            }
+            if (bad_texel)
+            {
+                return Status::Make(ErrorCode::Corrupt, "the environment has an infinite or NaN texel");
             }
             if (!result.TryReserve(6))
             {

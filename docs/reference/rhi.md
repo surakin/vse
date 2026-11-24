@@ -630,6 +630,16 @@ u32 max_texture_dimension_2d;
 
 Largest width or height of a 2D texture, in texels.
 
+### `max_texture_dimension_cube` {#rhi-devicecaps-max-texture-dimension-cube}
+
+`variable rhi::DeviceCaps::max_texture_dimension_cube` — defined in `engine/rhi/caps.h`
+
+```cpp
+u32 max_texture_dimension_cube;
+```
+
+Largest width or height of a cube texture's face, in texels (often below the 2D limit).
+
 ### `max_texture_dimension_3d` {#rhi-devicecaps-max-texture-dimension-3d}
 
 `variable rhi::DeviceCaps::max_texture_dimension_3d` — defined in `engine/rhi/caps.h`

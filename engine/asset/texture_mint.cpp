@@ -182,6 +182,15 @@ Status MintTextureFromHalfPixels(const TypeRegistry& types, ResourceId id, const
         {
             return Status::Make(ErrorCode::Invalid, "the image has a different size from the first one");
         }
+        // An infinity or a NaN texel (the exponent bits all set) would poison every mip and the prefilter.
+        for (usize at = 0; at < images[layer].Size(); at += 2)
+        {
+            const u32 half = static_cast<u32>(images[layer][at]) | (static_cast<u32>(images[layer][at + 1]) << 8);
+            if (((half >> 10) & 31u) == 31u)
+            {
+                return Status::Make(ErrorCode::Corrupt, "the image has an infinite or NaN texel");
+            }
+        }
         MipOptions options;
         options.filter = source.filter;
         options.alpha = source.alpha;

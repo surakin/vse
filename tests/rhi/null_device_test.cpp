@@ -357,6 +357,26 @@ TEST_CASE("Resources beyond the device limits are refused", "[rhi][null][misuse]
     f.ExpectOneError();
 }
 
+TEST_CASE("A cube face beyond the device's cube limit is refused though a 2D texture of that size is not",
+          "[rhi][null][misuse]")
+{
+    NullDeviceOptions opts;
+    opts.caps.max_texture_dimension_2d = 4096;
+    opts.caps.max_texture_dimension_cube = 1024;
+    Fixture f(opts);
+    TextureDesc d;
+    d.dimension = TextureDimension::Cube;
+    d.width = d.height = 2048;
+    d.array_layers = 6;
+    d.format = Format::RGBA8_UNorm;
+    d.usage = TextureUsage::Sampled;
+    CHECK_FALSE(f.dev->CreateTexture(d).IsValid());
+    f.ExpectOneError();
+    CHECK(f.Texture(2048, 8, Format::RGBA8_UNorm, TextureUsage::Sampled).IsValid());
+    d.width = d.height = 1024;
+    CHECK(f.dev->CreateTexture(d).IsValid());
+}
+
 TEST_CASE("Stale handles are rejected on every destroy", "[rhi][null][misuse]")
 {
     Fixture f;

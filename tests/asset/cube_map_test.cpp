@@ -586,3 +586,51 @@ TEST_CASE("cube map: environment needs a half-float cube", "[asset][cube]")
 }
 
 }  // namespace vse::asset
+
+namespace vse::asset
+{
+
+TEST_CASE(
+    "cube map: half-float faces with one NaN or infinite texel are refused, with or without the environment chain",
+    "[asset][cube]")
+{
+    for (u32 bad = 0; bad < 2; ++bad)
+    {
+        for (u32 environment = 0; environment < 2; ++environment)
+        {
+            Vector<Vector<byte>> images;
+            for (u32 face = 0; face < 6; ++face)
+            {
+                Vector<byte> pixels;
+                pixels.Resize(8 * 8 * 8);
+                for (usize i = 0; i < 64; ++i)
+                {
+                    CmPut(&pixels, i, 0.25f, 0.5f, 0.75f, 1.0f);
+                }
+                if (face == 3)
+                {
+                    pixels[17 * 8 + 2] = 0;                       // texel 17, green: exponent bits all set
+                    pixels[17 * 8 + 3] = bad == 0 ? 0x7e : 0x7c;  // a NaN (0x7e00), then an infinity (0x7c00)
+                }
+                images.Push(Move(pixels));
+            }
+            Vector<ByteSpan> spans;
+            for (usize i = 0; i < images.Size(); ++i)
+            {
+                spans.Push(ByteSpan(images[i].Data(), images[i].Size()));
+            }
+            TextureMintSpec spec;
+            spec.kind = TextureKind::Cube;
+            spec.format = rhi::Format::RGBA16_Float;
+            spec.mips = environment != 0 ? 0 : 1;
+            spec.environment = environment != 0;
+            TypeRegistry types;
+            Vector<byte> blob;
+            const Status status = MintTextureFromHalfPixels(types, ResourceId::FromValue(1), spec, 8, 8,
+                                                            Span<const ByteSpan>(spans.Data(), spans.Size()), &blob, 0);
+            CHECK(status.Failed());
+        }
+    }
+}
+
+}  // namespace vse::asset

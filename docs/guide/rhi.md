@@ -590,7 +590,7 @@ order +X, -X, +Y, -Y, +Z, -Z, each face an array layer, so `UploadTexture(tex, m
 A cube can only be sampled and copied (no storage, no render target) and has no array form. A shader reads it as
 `TextureCube`; the binding is a plain `SampledTexture` (the dimension belongs to the texture, not the layout). Check
 `DeviceCaps::cube_textures` first: the Vulkan, Direct3D 12 and Metal backends and the null device report true, and `CreateTexture` fails for a
-cube on a device that reports false.
+cube on a device that reports false, and for a cube face larger than `DeviceCaps::max_texture_dimension_cube` (Vulkan's `maxImageDimensionCube`, 16384 on Direct3D 12 and Metal; it can be below the 2D limit).
 
 Samplers are cheap to describe and are shared: `CreateSampler` returns the same handle for equal descriptors and
 counts references, so call `DestroySampler` once per `CreateSampler`. The anisotropy is clamped to what the device

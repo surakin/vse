@@ -405,6 +405,7 @@ void VulkanDevice::FillCaps()
     const VkPhysicalDeviceLimits& limits = properties_.limits;
     caps_.max_texture_dimension_2d = limits.maxImageDimension2D;
     caps_.max_texture_dimension_3d = limits.maxImageDimension3D;
+    caps_.max_texture_dimension_cube = limits.maxImageDimensionCube;
     caps_.max_texture_array_layers = limits.maxImageArrayLayers;
     caps_.cube_textures = true;
     caps_.max_bind_groups = limits.maxBoundDescriptorSets < kMaxBindGroups ? limits.maxBoundDescriptorSets

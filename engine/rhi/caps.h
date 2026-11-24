@@ -20,6 +20,8 @@ struct DeviceCaps
 {
     /// Largest width or height of a 2D texture, in texels.
     u32 max_texture_dimension_2d = 4096;
+    /// Largest width or height of a cube texture's face, in texels (often below the 2D limit).
+    u32 max_texture_dimension_cube = 4096;
     /// Largest width, height or depth of a 3D texture, in texels.
     u32 max_texture_dimension_3d = 256;
     /// Largest number of array layers in a texture.

@@ -1365,6 +1365,10 @@ TextureHandle NullDevice::CreateTexture(const TextureDesc& desc)
     }
     u32 limit = desc.dimension == TextureDimension::Tex3D ? caps.max_texture_dimension_3d
                                                           : caps.max_texture_dimension_2d;
+    if (desc.dimension == TextureDimension::Cube && caps.max_texture_dimension_cube < limit)
+    {
+        limit = caps.max_texture_dimension_cube;
+    }
     u32 biggest = desc.width > desc.height ? desc.width : desc.height;
     if (desc.dimension == TextureDimension::Tex3D && desc.depth > biggest)
     {

@@ -163,6 +163,12 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDesc& desc)
     }
     const bool is_cube = desc.dimension == TextureDimension::Cube;
     const bool is3d = desc.dimension == TextureDimension::Tex3D;
+    if (is_cube && (desc.width > caps_.max_texture_dimension_cube || desc.height > caps_.max_texture_dimension_cube))
+    {
+        RhiLog(LogVerbosity::Error, "CreateTexture: a cube face of %ux%u exceeds the device's cube limit of %u",
+               desc.width, desc.height, caps_.max_texture_dimension_cube);
+        return {};
+    }
     if (desc.width > (is3d ? caps_.max_texture_dimension_3d : caps_.max_texture_dimension_2d) ||
         desc.height > (is3d ? caps_.max_texture_dimension_3d : caps_.max_texture_dimension_2d) ||
         (is3d && desc.depth > caps_.max_texture_dimension_3d) || desc.array_layers > caps_.max_texture_array_layers)
