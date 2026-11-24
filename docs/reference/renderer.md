@@ -15856,6 +15856,34 @@ Returns the terrain tile settings in force: the ones last set with `SetTerrainSe
 |---|---|
 | Fails | never. |
 
+### `TerrainTilesDrawn()` {#renderer-sceneframe-terraintilesdrawn-const}
+
+`method renderer::SceneFrame::TerrainTilesDrawn` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+u32 TerrainTilesDrawn() const;
+```
+
+The terrain tiles drawn in the last prepared frame, all terrains together.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `TerrainTilesDropped()` {#renderer-sceneframe-terraintilesdropped-const}
+
+`method renderer::SceneFrame::TerrainTilesDropped` — defined in `engine/renderer/scene_frame.h`
+
+```cpp
+u32 TerrainTilesDropped() const;
+```
+
+The terrain tiles chosen in the last prepared frame that did not fit and were not drawn (the farthest go first).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `Sky()` {#renderer-sceneframe-sky-const}
 
 `method renderer::SceneFrame::Sky` — defined in `engine/renderer/scene_frame.h`
@@ -18576,6 +18604,48 @@ The tiles of the frame that will be drawn, all terrains together.
 |---|---|
 | Fails | never. |
 
+### `TileRoom()` {#renderer-terrainpass-tileroom-const}
+
+`method renderer::TerrainPass::TileRoom` — defined in `engine/renderer/terrain_pass.h`
+
+```cpp
+u32 TileRoom() const;
+```
+
+The tiles the frame has room for, after the terrains added so far (a terrain's tiles start at a multiple of 8).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `DroppedTiles()` {#renderer-terrainpass-droppedtiles-const}
+
+`method renderer::TerrainPass::DroppedTiles` — defined in `engine/renderer/terrain_pass.h`
+
+```cpp
+u32 DroppedTiles() const;
+```
+
+The tiles of the frame that were chosen and not drawn for lack of room (also those the caller counted with `CountDropped`).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `CountDropped(u32)` {#renderer-terrainpass-countdropped-u32}
+
+`method renderer::TerrainPass::CountDropped` — defined in `engine/renderer/terrain_pass.h`
+
+```cpp
+void CountDropped(u32 tiles);
+```
+
+Adds to the count of dropped tiles; a caller that trims its list to `TileRoom()` reports what it removed.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ## `TerrainSource` {#renderer-terrainsource}
 
 `class renderer::TerrainSource` — defined in `engine/renderer/terrain_source.h`
@@ -19080,7 +19150,7 @@ void Select(const Vec3& camera, const Frustum* frustum, const TerrainSelectSetti
 
 Chooses the tiles to draw, appending them to `out` in the order level, then z, then x.
 
-A node is split while the camera is nearer to its box than the range of the level below; a node whose box is outside the frustum (or beyond `max_distance`) is dropped with everything under it. The chosen nodes cover each cell of the map that is in view exactly once, and neighbouring tiles differ by at most one level when the settings are valid. The result depends on the arguments only, so the same arguments give the same list on every thread and every run.
+A node is split while the camera is nearer to its box than the range of the level below; a node whose box is outside the frustum (or beyond `max_distance`) is dropped with everything under it. The chosen nodes cover each cell of the map that is in view exactly once, and neighbouring tiles differ by at most one level whatever the heights of the boxes are (a tile next to a finer one is split until the rule holds). The result depends on the arguments only, so the same arguments give the same list on every thread and every run.
 
 | Field | Value |
 |---|---|
@@ -19090,6 +19160,27 @@ A node is split while the camera is nearer to its box than the range of the leve
 | Parameter `out` | replaced by the tiles. |
 | Aborts | the quadtree is empty or the settings are not valid. |
 | Ownership | borrows its arguments for the call; `*out` is replaced. |
+
+### `KeepNearest(const Vec3&,u32,Vector<TerrainTile>*)` {#renderer-terraintiles-keepnearest-const-vec3-amp-u32-vector-lt-terraintile-gt-star-const}
+
+`method renderer::TerrainTiles::KeepNearest` — defined in `engine/renderer/terrain_tiles.h`
+
+```cpp
+u32 KeepNearest(const Vec3& camera, u32 room, Vector<TerrainTile>* list) const;
+```
+
+Keeps the `room` tiles of `*list` nearest to `camera` when there are more, and returns how many it removed.
+
+The distance is the one to the tile's box; ties go to the tile earlier in the list, so the result depends on the arguments only. The tiles that stay keep the list's order.
+
+| Field | Value |
+|---|---|
+| Parameter `camera` | the camera position in terrain space. |
+| Parameter `room` | how many tiles may stay. |
+| Parameter `list` | tiles of this quadtree, as `Select` returned them. |
+| Returns | the number of tiles removed (0 when the list fits). |
+| Aborts | a tile of `*list` is not a node of this quadtree. |
+| Ownership | borrows the quadtree; `*list` is rewritten. |
 
 ## `TerrainSelectSettingsValid(const TerrainSelectSettings&,f32)` {#renderer-terrainselectsettingsvalid-const-terrainselectsettings-amp-f32}
 
@@ -19104,6 +19195,25 @@ Whether the settings keep neighbouring tiles within one level: `first_range` at 
 | Field | Value |
 |---|---|
 | Parameter `cell_size` | metres between samples of the terrain the settings are for. |
+| Fails | never. |
+
+## `TerrainMaxMorphFraction(f32,f32)` {#renderer-terrainmaxmorphfraction-f32-f32}
+
+`function renderer::TerrainMaxMorphFraction` — defined in `engine/renderer/terrain_tiles.h`
+
+```cpp
+f32 TerrainMaxMorphFraction(f32 first_range, f32 cell_size);
+```
+
+The largest `morph_fraction` that keeps the seams between levels closed for `first_range` and `cell_size`.
+
+A tile of level `L` is chosen because its parent's box is nearer than `first_range * 2^L`, so its seam vertices are at most the parent's diagonal (`64 * sqrt(2) * 2^L` cells) farther; the coarser neighbour's own morph, which starts `first_range * 2^L * (1 - fraction)` beyond that range, must not have started by then, or its edge vertices no longer sit where the finer tile puts its own. The bound is for a map whose tiles are flat; a tall box (a cliff) can still start the coarser morph early.
+
+| Field | Value |
+|---|---|
+| Parameter `first_range` | the range of level 0. |
+| Parameter `cell_size` | metres between samples. |
+| Returns | a fraction in [0, 1), 0 when `first_range` is below three tile widths. |
 | Fails | never. |
 
 ## `TerrainLevelRange(const TerrainSelectSettings&,u32)` {#renderer-terrainlevelrange-const-terrainselectsettings-amp-u32}

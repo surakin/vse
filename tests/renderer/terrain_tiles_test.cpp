@@ -229,6 +229,209 @@ TEST_CASE("terrain tiles: every cell is covered exactly once, neighbours differ 
     }
 }
 
+TEST_CASE("terrain tiles: neighbours differ by one level at most with tall boxes beside flat ones",
+          "[renderer][terrain]")
+{
+    // Blocks whose heights jump from 0 to 40,000 m in a random pattern: a tile's box is far taller than it is wide, so
+    // the distance to a box is not the distance to its neighbour's box.
+    TerrainTilesDesc d = TtDesc(1025, 1.0f, 0, 0);
+    for (u32 bz = 0; bz < d.blocks_z; ++bz)
+    {
+        for (u32 bx = 0; bx < d.blocks_x; ++bx)
+        {
+            d.block_max[static_cast<usize>(bz) * d.blocks_x + bx] = bx >= d.blocks_x / 2 ? 40000 : 0;  // a plateau
+        }
+    }
+    u32 seed = 777;
+    TerrainTiles t;
+    REQUIRE(t.Build(d));
+    Vector<TerrainTile> tiles;
+    u32 jumps_total = 0;
+    for (u32 trial = 0; trial < 60; ++trial)
+    {
+        seed = seed * 1664525u + 1013904223u;
+        const Vec3 camera(static_cast<f32>((seed >> 8) % 400) + 250.0f, static_cast<f32>((seed >> 4) % 150) + 100.0f,
+                          static_cast<f32>((seed >> 12) % 1000) + 12.0f);
+        t.Select(camera, nullptr, TtSettings(96.0f), &tiles);
+        u32 overlaps = 0;
+        const Vector<u8> cover = TtCover(t, tiles, 1024, &overlaps);
+        CHECK(overlaps == 0);
+        for (u32 z = 0; z < 1023; ++z)
+        {
+            for (u32 x = 0; x < 1023; ++x)
+            {
+                const u32 a = cover[static_cast<usize>(z) * 1024 + x];
+                const u32 r = cover[static_cast<usize>(z) * 1024 + x + 1];
+                const u32 dn = cover[static_cast<usize>(z + 1) * 1024 + x];
+                jumps_total += (a > r ? a - r : r - a) > 1 ? 1 : 0;
+                jumps_total += (a > dn ? a - dn : dn - a) > 1 ? 1 : 0;
+                CHECK(a != 0xFF);
+            }
+        }
+    }
+    CHECK(jumps_total == 0);
+}
+
+TEST_CASE("terrain tiles: keeping the nearest tiles drops the farthest, in the list's order", "[renderer][terrain]")
+{
+    TerrainTiles t;
+    REQUIRE(t.Build(TtDesc(1025, 1.0f, 0, 0)));
+    Vector<TerrainTile> tiles;
+    const Vec3 camera(10.0f, 5.0f, 10.0f);
+    t.Select(camera, nullptr, TtSettings(96.0f), &tiles);
+    const usize all = tiles.Size();
+    REQUIRE(all > 20);
+    Vector<TerrainTile> copy;
+    copy.Append(tiles.Data(), tiles.Size());
+    CHECK(t.KeepNearest(camera, static_cast<u32>(all), &copy) == 0);
+    CHECK(copy.Size() == all);
+    CHECK(t.KeepNearest(camera, 20, &copy) == all - 20);
+    REQUIRE(copy.Size() == 20);
+    // every kept tile is at least as near as every removed one, and the kept ones keep the list's order
+    f32 farthest_kept = 0.0f;
+    u32 previous = 0;
+    for (const TerrainTile& k : copy)
+    {
+        const Aabb b = t.NodeBounds(k.level, k.x, k.z);
+        const f32 dx = FMax(FMax(b.min.x - camera.x, camera.x - b.max.x), 0.0f);
+        const f32 dz = FMax(FMax(b.min.z - camera.z, camera.z - b.max.z), 0.0f);
+        farthest_kept = FMax(farthest_kept, dx * dx + dz * dz);
+        u32 at = 0;
+        while (!(tiles[at].level == k.level && tiles[at].x == k.x && tiles[at].z == k.z))
+        {
+            ++at;
+        }
+        CHECK(at >= previous);
+        previous = at;
+    }
+    for (const TerrainTile& r : tiles)
+    {
+        bool kept = false;
+        for (const TerrainTile& k : copy)
+        {
+            kept = kept || (k.level == r.level && k.x == r.x && k.z == r.z);
+        }
+        if (!kept)
+        {
+            const Aabb b = t.NodeBounds(r.level, r.x, r.z);
+            const f32 dx = FMax(FMax(b.min.x - camera.x, camera.x - b.max.x), 0.0f);
+            const f32 dz = FMax(FMax(b.min.z - camera.z, camera.z - b.max.z), 0.0f);
+            CHECK(dx * dx + dz * dz >= farthest_kept);
+        }
+    }
+}
+
+TEST_CASE("terrain tiles: a box covers the heights its mesh can reach past its edge", "[renderer][terrain]")
+{
+    // One tall block just outside the tile at the origin: the coarse levels filter across the tile's edge.
+    TerrainTilesDesc d = TtDesc(1025, 1.0f, 0, 0);
+    d.block_max[0 * d.blocks_x + 4] = 30000;  // cells 32 to 40 of the first row: the tile 1 of level 0, not tile 0
+    TerrainTiles t;
+    REQUIRE(t.Build(d));
+    CHECK(t.NodeBounds(0, 1, 0).max.y == 30000.0f);
+    // tile 0 of level 0 morphs toward level 1, which reads two texels (four cells) past the edge: it sees the block
+    CHECK(t.NodeBounds(0, 0, 0).max.y == 30000.0f);
+    CHECK(t.NodeBounds(1, 0, 0).max.y == 30000.0f);
+    // a tile farther away does not
+    CHECK(t.NodeBounds(0, 0, 5).max.y == 0.0f);
+}
+
+namespace
+{
+
+// The morph factor the terrain vertex shader computes for a vertex at distance `d` in a tile of `level`.
+f32 TtMorph(const TerrainSelectSettings& s, u32 level, f32 d)
+{
+    const f32 range = TerrainLevelRange(s, level);
+    const f32 start = TerrainMorphStart(s, level);
+    const f32 m = (d - start) / FMax(range - start, 1e-4f);
+    return m < 0.0f ? 0.0f : (m > 1.0f ? 1.0f : m);
+}
+
+// The cracks along the edges between a tile and a coarser neighbour: a vertex of the finer tile that the coarser tile
+// has no vertex at must have morphed all the way (it sits on the coarser edge), and the coarser tile's own vertices on
+// that edge must not have started to morph (they stay where the finer tile puts its even vertices).
+void TtSeamFaults(const TerrainTiles& t, const Vector<TerrainTile>& tiles, const TerrainSelectSettings& s,
+                  const Vec3& camera, f32 cell, u32 cells, u32* unmorphed, u32* started)
+{
+    u32 overlaps = 0;
+    const Vector<u8> cover = TtCover(t, tiles, cells, &overlaps);
+    for (const TerrainTile& tile : tiles)
+    {
+        u32 r[4];
+        t.NodeCells(tile.level, tile.x, tile.z, r);
+        const f32 step = static_cast<f32>(r[2] - r[0]) / 32.0f;
+        const f32 stepz = static_cast<f32>(r[3] - r[1]) / 32.0f;
+        for (u32 side = 0; side < 4; ++side)
+        {
+            // the cell just outside the middle of this side
+            const i64 ox = side == 0 ? static_cast<i64>(r[0]) - 1
+                                     : (side == 1 ? static_cast<i64>(r[2]) : (r[0] + r[2]) / 2);
+            const i64 oz = side == 2 ? static_cast<i64>(r[1]) - 1
+                                     : (side == 3 ? static_cast<i64>(r[3]) : (r[1] + r[3]) / 2);
+            if (ox < 0 || oz < 0 || ox >= cells || oz >= cells ||
+                cover[static_cast<usize>(oz) * cells + static_cast<usize>(ox)] != tile.level + 1)
+            {
+                continue;
+            }
+            for (u32 i = 0; i <= 32; ++i)
+            {
+                const f32 px = side < 2 ? static_cast<f32>(side == 0 ? r[0] : r[2]) * cell
+                                        : (static_cast<f32>(r[0]) + step * static_cast<f32>(i)) * cell;
+                const f32 pz = side < 2 ? (static_cast<f32>(r[1]) + stepz * static_cast<f32>(i)) * cell
+                                        : static_cast<f32>(side == 2 ? r[1] : r[3]) * cell;
+                const Vec3 d3 = Vec3(px, 0.0f, pz) - camera;
+                const f32 d = Sqrt(d3.x * d3.x + d3.y * d3.y + d3.z * d3.z);
+                *unmorphed += (i % 2 == 1 && TtMorph(s, tile.level, d) < 1.0f) ? 1 : 0;
+                *started += TtMorph(s, tile.level + 1, d) > 0.0f ? 1 : 0;
+            }
+        }
+    }
+}
+
+}  // namespace
+
+TEST_CASE("terrain tiles: the seams between levels are closed by the morph up to the fraction the bound allows",
+          "[renderer][terrain]")
+{
+    TerrainTiles t;
+    REQUIRE(t.Build(TtDesc(1025, 1.0f, 0, 0)));
+    Vector<TerrainTile> tiles;
+    u32 seed = 4242;
+    u32 unmorphed = 0;
+    u32 started = 0;
+    for (u32 trial = 0; trial < 60; ++trial)
+    {
+        seed = seed * 1664525u + 1013904223u;
+        TerrainSelectSettings s = TtSettings(96.0f + static_cast<f32>(trial % 4) * 40.0f);
+        s.morph_fraction = FMin(0.1f + 0.2f * static_cast<f32>(trial % 5),
+                                TerrainMaxMorphFraction(s.first_range, 1.0f));
+        REQUIRE(TerrainSelectSettingsValid(s, 1.0f));
+        const Vec3 camera(static_cast<f32>((seed >> 8) % 1400) - 200.0f, static_cast<f32>((seed >> 4) % 80),
+                          static_cast<f32>((seed >> 12) % 1400) - 200.0f);
+        t.Select(camera, nullptr, s, &tiles);
+        TtSeamFaults(t, tiles, s, camera, 1.0f, 1024, &unmorphed, &started);
+    }
+    CHECK(unmorphed == 0);
+    CHECK(started == 0);
+    // the detector works: a morph past the bound starts the coarser tile's morph before the finer tile's far corner
+    u32 faults = 0;
+    for (u32 trial = 0; trial < 20; ++trial)
+    {
+        seed = seed * 1664525u + 1013904223u;
+        TerrainSelectSettings s = TtSettings(216.0f);
+        s.morph_fraction = 0.9f;
+        const Vec3 camera(static_cast<f32>((seed >> 8) % 1400) - 200.0f, static_cast<f32>((seed >> 4) % 80),
+                          static_cast<f32>((seed >> 12) % 1400) - 200.0f);
+        t.Select(camera, nullptr, s, &tiles);
+        TtSeamFaults(t, tiles, s, camera, 1.0f, 1024, &unmorphed, &faults);
+    }
+    CHECK(faults > 0);
+    CHECK(TerrainMaxMorphFraction(96.0f, 1.0f) < 0.1f);
+    CHECK(TerrainMaxMorphFraction(1000.0f, 1.0f) > 0.9f);
+    CHECK(TerrainMaxMorphFraction(50.0f, 1.0f) == 0.0f);
+}
+
 TEST_CASE("terrain tiles: a camera inside the map, above it and far away", "[renderer][terrain]")
 {
     TerrainTiles t;

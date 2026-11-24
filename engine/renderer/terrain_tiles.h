@@ -118,9 +118,9 @@ public:
     ///
     /// A node is split while the camera is nearer to its box than the range of the level below; a node whose box is
     /// outside the frustum (or beyond `max_distance`) is dropped with everything under it. The chosen nodes cover each
-    /// cell of the map that is in view exactly once, and neighbouring tiles differ by at most one level when the
-    /// settings are valid. The result depends on the arguments only, so the same arguments give the same list on every
-    /// thread and every run.
+    /// cell of the map that is in view exactly once, and neighbouring tiles differ by at most one level whatever
+    /// the heights of the boxes are (a tile next to a finer one is split until the rule holds). The result depends on
+    /// the arguments only, so the same arguments give the same list on every thread and every run.
     ///
     /// - Param camera: the camera position in terrain space.
     /// - Param frustum: the view frustum in terrain space, or null to select without culling.
@@ -130,6 +130,19 @@ public:
     /// - Ownership: borrows its arguments for the call; `*out` is replaced.
     void Select(const Vec3& camera, const Frustum* frustum, const TerrainSelectSettings& settings,
                 Vector<TerrainTile>* out) const;
+
+    /// Keeps the `room` tiles of `*list` nearest to `camera` when there are more, and returns how many it removed.
+    ///
+    /// The distance is the one to the tile's box; ties go to the tile earlier in the list, so the result depends on the
+    /// arguments only. The tiles that stay keep the list's order.
+    ///
+    /// - Param camera: the camera position in terrain space.
+    /// - Param room: how many tiles may stay.
+    /// - Param list: tiles of this quadtree, as `Select` returned them.
+    /// - Returns: the number of tiles removed (0 when the list fits).
+    /// - Aborts: a tile of `*list` is not a node of this quadtree.
+    /// - Ownership: borrows the quadtree; `*list` is rewritten.
+    u32 KeepNearest(const Vec3& camera, u32 room, Vector<TerrainTile>* list) const;
 
 private:
     struct Level
@@ -141,6 +154,9 @@ private:
 
     void SelectNode(u32 level, u32 x, u32 z, const Vec3& camera, const Frustum* frustum,
                     const TerrainSelectSettings& settings, Vector<TerrainTile>* out) const;
+    // Splits the chosen tiles until no tile has a neighbour two or more levels finer than itself.
+    void Balance(Vector<TerrainTile>* tiles) const;
+    void EmitBalanced(u32 level, u32 x, u32 z, const Vector<u8>& grid, Vector<TerrainTile>* out) const;
 
     u32 levels_ = 0;
     u32 tiles_x_ = 0;
@@ -157,6 +173,20 @@ private:
 /// - Param cell_size: metres between samples of the terrain the settings are for.
 /// - Fails: never.
 bool TerrainSelectSettingsValid(const TerrainSelectSettings& settings, f32 cell_size);
+
+/// The largest `morph_fraction` that keeps the seams between levels closed for `first_range` and `cell_size`.
+///
+/// A tile of level `L` is chosen because its parent's box is nearer than `first_range * 2^L`, so its seam vertices are
+/// at most the parent's diagonal (`64 * sqrt(2) * 2^L` cells) farther; the coarser neighbour's own morph, which starts
+/// `first_range * 2^L * (1 - fraction)` beyond that range, must not have started by then, or its edge vertices no
+/// longer sit where the finer tile puts its own. The bound is for a map whose tiles are flat; a tall box (a cliff) can
+/// still start the coarser morph early.
+///
+/// - Param first_range: the range of level 0.
+/// - Param cell_size: metres between samples.
+/// - Returns: a fraction in [0, 1), 0 when `first_range` is below three tile widths.
+/// - Fails: never.
+f32 TerrainMaxMorphFraction(f32 first_range, f32 cell_size);
 
 /// The distance out to which level `level` is used: `first_range * 2^level`.
 /// - Fails: never.

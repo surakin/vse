@@ -243,6 +243,12 @@ public:
     /// `terrain_*` render settings of the renderer (read at each call, so `Renderer::ApplySettings` changes them).
     /// - Fails: never.
     TerrainSelectSettings TerrainSelect() const;
+    /// The terrain tiles drawn in the last prepared frame, all terrains together.
+    /// - Fails: never.
+    u32 TerrainTilesDrawn() const { return terrain_ ? terrain_->DrawnTiles() : 0; }
+    /// The terrain tiles chosen in the last prepared frame that did not fit and were not drawn (the farthest go first).
+    /// - Fails: never.
+    u32 TerrainTilesDropped() const { return terrain_ ? terrain_->DroppedTiles() : 0; }
     /// Returns the sky last set.
     /// - Fails: never.
     const SkySettings& Sky() const { return sky_settings_; }

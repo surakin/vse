@@ -137,6 +137,19 @@ public:
     /// - Fails: never.
     u32 DrawnTiles() const { return tile_count_; }
 
+    /// The tiles the frame has room for, after the terrains added so far (a terrain's tiles start at a multiple of 8).
+    /// - Fails: never.
+    u32 TileRoom() const { return tile_cursor_ >= kMaxTerrainDrawTiles ? 0 : kMaxTerrainDrawTiles - tile_cursor_; }
+
+    /// The tiles of the frame that were chosen and not drawn for lack of room (also those the caller counted with
+    /// `CountDropped`).
+    /// - Fails: never.
+    u32 DroppedTiles() const { return dropped_tiles_; }
+
+    /// Adds to the count of dropped tiles; a caller that trims its list to `TileRoom()` reports what it removed.
+    /// - Fails: never.
+    void CountDropped(u32 tiles) { dropped_tiles_ += tiles; }
+
 private:
     struct Push
     {
@@ -179,6 +192,7 @@ private:
     Vector<Entry> entries_;
     u32 tile_cursor_ = 0;  // the next free instance in the slot's region
     u32 tile_count_ = 0;
+    u32 dropped_tiles_ = 0;
     u32 slot_ = 0;
     GBufferTargets targets_;
 };

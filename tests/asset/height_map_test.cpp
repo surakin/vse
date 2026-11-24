@@ -411,4 +411,35 @@ TEST_CASE("height map: a range or a cell size that would overflow a float is ref
     CHECK(BuildHeightMapBlob(types, Rid(7), HmHeader(4, 4), AsBytes(samples), &blob).Ok());
 }
 
+TEST_CASE("height map: VerifyHeightMap accepts a built map and refuses a lying block or mip", "[asset][height_map]")
+{
+    TypeRegistry types;
+    Vector<byte> blob = HmBlob(33, 33, [](u32 x, u32 z) -> u32 { return (x * 311 + z * 977) % 60000; });
+    HeightMapView view;
+    REQUIRE(view.Open(HmShare(blob), types).Ok());
+    CHECK(VerifyHeightMap(view).Ok());
+    // lower the maximum of block 0 by editing the blob in place: the blob's own checks do not look at the samples
+    Vector<byte> lying;
+    lying.Append(blob.Data(), blob.Size());
+    HeightMapView ok;
+    REQUIRE(ok.Open(HmShare(lying), types).Ok());
+    // find the pyramid's first block: the last section of the blob holds blocks, 4 bytes each, minimum then maximum
+    const usize blocks_bytes = static_cast<usize>(ok.BlocksX()) * ok.BlocksZ() * 4;
+    byte* pyramid = lying.Data() + lying.Size() - blocks_bytes;
+    pyramid[2] = 0;
+    pyramid[3] = 0;  // the maximum of block 0 becomes 0
+    HeightMapView bad;
+    REQUIRE(bad.Open(HmShare(lying), types).Ok());  // the blob has no checksum over its sections
+    CHECK_FALSE(VerifyHeightMap(bad).Ok());
+    // a lying mip: the first byte of level 1 changes
+    Vector<byte> mip_lie;
+    mip_lie.Append(blob.Data(), blob.Size());
+    HeightMapView ok2;
+    REQUIRE(ok2.Open(HmShare(mip_lie), types).Ok());
+    mip_lie[ok2.MipOffset(1)] ^= 0xFF;
+    HeightMapView bad2;
+    REQUIRE(bad2.Open(HmShare(mip_lie), types).Ok());
+    CHECK_FALSE(VerifyHeightMap(bad2).Ok());
+}
+
 }  // namespace vse::asset

@@ -15,7 +15,9 @@ The renderer's copy is `renderer::TerrainSource` (the tile quadtree and the `R16
 `renderer::RenderScene` holds up to 8 terrains a frame (and 4096 tiles in all): `AddTerrain`, `SetTerrain` and `RemoveTerrain` take a `renderer::TerrainObject` (source, material, world matrix: a translation and a turn about y). In the ECS, `scene::Terrain` (a source and a material) and the render sync system mirror an entity into the scene; the C API's component does the same on a
 surface. The surface of a terrain is a `renderer::TerrainMaterial`: up to four layers (tiling, tint, roughness, metallic) taken from a layer array texture and blended by a splat map, a slope rule that replaces the weights on steep faces and a distance fade (see [the renderer](renderer.md), "The terrain material").
 
-Which tiles are drawn is chosen by `TerrainSelectSettings`. The scene frame takes them from the render settings `terrain_first_range`, `terrain_morph_fraction` and `terrain_max_distance` ([Render settings](render-settings.md)) until `SceneFrame::SetTerrainSelect` sets them directly.
+Which tiles are drawn is chosen by `TerrainSelectSettings`; a tile next to a tile two levels finer is split until neighbours are within one level, whatever the heights of the boxes are, and a box's height range covers the heights the mesh can reach past its edge (the mip filter's reach). A frame that holds more tiles than the buffer (4096) keeps the nearest ones and counts the others (`SceneFrame::TerrainTilesDropped`). The scene frame takes them from the render settings `terrain_first_range`, `terrain_morph_fraction` and `terrain_max_distance` ([Render settings](render-settings.md)) until `SceneFrame::SetTerrainSelect` sets them directly.
+
+`asset::VerifyHeightMap` checks a blob's mips and block pyramid against its samples (the loader checks only their shape): use it in tools and tests, not on every load.
 
 ## Colliding
 

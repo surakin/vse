@@ -409,4 +409,68 @@ u16 HeightMapView::BlockMax(u32 bx, u32 bz) const
     return HmLoadU16(bytes_->Bytes().Data() + blocks_ + (static_cast<usize>(bz) * blocks_x_ + bx) * 4 + 2);
 }
 
+Status VerifyHeightMap(const HeightMapView& view)
+{
+    if (view.MipCount() == 0)
+    {
+        return Status::Make(ErrorCode::Invalid, "the height map view is empty");
+    }
+    const byte* base = view.Bytes()->Bytes().Data();
+    for (u32 level = 1; level < view.MipCount(); ++level)
+    {
+        const u32 pw = view.MipWidth(level - 1);
+        const u32 ph = view.MipHeight(level - 1);
+        const u32 nw = view.MipWidth(level);
+        const u32 nh = view.MipHeight(level);
+        const byte* src = base + view.MipOffset(level - 1);
+        const byte* dst = base + view.MipOffset(level);
+        for (u32 z = 0; z < nh; ++z)
+        {
+            const u32 z0 = 2 * z < ph ? 2 * z : ph - 1;
+            const u32 z1 = 2 * z + 1 < ph ? 2 * z + 1 : ph - 1;
+            for (u32 x = 0; x < nw; ++x)
+            {
+                const u32 x0 = 2 * x < pw ? 2 * x : pw - 1;
+                const u32 x1 = 2 * x + 1 < pw ? 2 * x + 1 : pw - 1;
+                const u32 sum = static_cast<u32>(HmLoadU16(src + (static_cast<usize>(z0) * pw + x0) * 2)) +
+                                HmLoadU16(src + (static_cast<usize>(z0) * pw + x1) * 2) +
+                                HmLoadU16(src + (static_cast<usize>(z1) * pw + x0) * 2) +
+                                HmLoadU16(src + (static_cast<usize>(z1) * pw + x1) * 2);
+                if (HmLoadU16(dst + (static_cast<usize>(z) * nw + x) * 2) != ((sum + 2) >> 2))
+                {
+                    return Status::Make(ErrorCode::Corrupt, "a mip level is not the average of the level above it");
+                }
+            }
+        }
+    }
+    const u32 w = view.MipWidth(0);
+    const u32 h = view.MipHeight(0);
+    for (u32 bz = 0; bz < view.BlocksZ(); ++bz)
+    {
+        for (u32 bx = 0; bx < view.BlocksX(); ++bx)
+        {
+            const u32 x0 = bx * kHeightMapBlockCells;
+            const u32 z0 = bz * kHeightMapBlockCells;
+            const u32 x1 = x0 + kHeightMapBlockCells < w - 1 ? x0 + kHeightMapBlockCells : w - 1;
+            const u32 z1 = z0 + kHeightMapBlockCells < h - 1 ? z0 + kHeightMapBlockCells : h - 1;
+            u32 lo = 0xFFFF;
+            u32 hi = 0;
+            for (u32 z = z0; z <= z1; ++z)
+            {
+                for (u32 x = x0; x <= x1; ++x)
+                {
+                    const u32 s = view.Sample(x, z);
+                    lo = s < lo ? s : lo;
+                    hi = s > hi ? s : hi;
+                }
+            }
+            if (view.BlockMin(bx, bz) != lo || view.BlockMax(bx, bz) != hi)
+            {
+                return Status::Make(ErrorCode::Corrupt, "a block's minimum or maximum is not that of its samples");
+            }
+        }
+    }
+    return Status::Success();
+}
+
 }  // namespace vse::asset

@@ -363,8 +363,12 @@ void SceneFrame::PrepareTerrains(const RenderScene& scene, const Camera& camera,
         const Frustum frustum = Frustum::FromViewProjection(camera.ViewProjection() * w);
         TerrainSelectSettings select = TerrainSelect();
         select.first_range = FMax(select.first_range, 3.0f * static_cast<f32>(kTerrainTileCells) * source.cell_size);
+        // the morph the seams need (a setting above it would open cracks between tiles of different levels)
+        select.morph_fraction = FMin(select.morph_fraction,
+                                     TerrainMaxMorphFraction(select.first_range, source.cell_size));
         tile_scratch_.Clear();
         source.tiles.Select(local, &frustum, select, &tile_scratch_);
+        terrain_->CountDropped(source.tiles.KeepNearest(local, terrain_->TileRoom(), &tile_scratch_));
         TerrainDraw draw;
         draw.height = source.height;
         draw.samples_x = source.samples_x;

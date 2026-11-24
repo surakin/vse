@@ -237,6 +237,7 @@ void TerrainPass::Clear()
     entries_.Clear();
     tile_cursor_ = 0;
     tile_count_ = 0;
+    dropped_tiles_ = 0;
 }
 
 void TerrainPass::BeginFrame(u64 frame_index)
@@ -253,15 +254,42 @@ void TerrainPass::Prepare(const TerrainDraw& draw, Span<const TerrainTile> tiles
 
 bool TerrainPass::Add(const TerrainDraw& draw, Span<const TerrainTile> tiles)
 {
-    if (!pipeline_.IsValid() || tile_mapped_ == nullptr || !draw.height || !draw.height->Valid() ||
-        draw.height->Desc().format != rhi::Format::R16_UNorm ||
-        draw.height->Desc().dimension != rhi::TextureDimension::Tex2D || tiles.Size() == 0 || draw.samples_x < 2 ||
-        draw.samples_z < 2 || !(draw.cell_size > 0.0f) || entries_.Size() >= kMaxTerrainsPerFrame)
+    // A pass the device cannot build draws nothing and says nothing each frame (the device's capabilities decide).
+    if (!pipeline_.IsValid() || tile_mapped_ == nullptr || tiles.Size() == 0)
     {
         return false;
     }
+    const char* refused = nullptr;
+    if (!draw.height || !draw.height->Valid())
+    {
+        refused = "the height texture is missing or invalid";
+    }
+    else if (draw.height->Desc().format != rhi::Format::R16_UNorm ||
+             draw.height->Desc().dimension != rhi::TextureDimension::Tex2D)
+    {
+        refused = "the height texture is not a 2D R16_UNorm texture";
+    }
+    else if (draw.samples_x < 2 || draw.samples_z < 2 || !(draw.cell_size > 0.0f))
+    {
+        refused = "the map's size or cell size is not valid";
+    }
+    else if (entries_.Size() >= kMaxTerrainsPerFrame)
+    {
+        refused = "more terrains than a frame holds";
+    }
+    if (refused != nullptr)
+    {
+        RenderLog(LogVerbosity::Warn, "TerrainPass: refused a terrain: %s", refused);
+        return false;
+    }
+    for (const TerrainTile& t : tiles)
+    {
+        ENGINE_ASSERT(t.level < kMaxTerrainLevels && t.level < 32 - 5,
+                      "TerrainPass::Add: a tile's level is out of range");
+    }
     if (tile_cursor_ >= kMaxTerrainDrawTiles)
     {
+        dropped_tiles_ += static_cast<u32>(tiles.Size());
         RenderLog(LogVerbosity::Warn,
                   "TerrainPass: more tiles than the frame holds; the last of the selection are not drawn");
         return false;
@@ -269,8 +297,10 @@ bool TerrainPass::Add(const TerrainDraw& draw, Span<const TerrainTile> tiles)
     u32 count = static_cast<u32>(tiles.Size());
     if (count > kMaxTerrainDrawTiles - tile_cursor_)
     {
+        // The caller trims the list to `TileRoom()` (the farthest go first); this is the net under it.
         RenderLog(LogVerbosity::Warn,
                   "TerrainPass: more tiles than the frame holds; the last of the selection are not drawn");
+        dropped_tiles_ += count - (kMaxTerrainDrawTiles - tile_cursor_);
         count = kMaxTerrainDrawTiles - tile_cursor_;
     }
     const char* invalid = TerrainMaterialInvalid(draw.material);

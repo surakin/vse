@@ -7942,6 +7942,7 @@ asset::HeightMapView::BlocksX() const	function	asset	asset-heightmapview-blocksx
 asset::HeightMapView::BlocksZ() const	function	asset	asset-heightmapview-blocksz-const	asset.md	engine/asset/height_map.h:173
 asset::HeightMapView::BlockMin(u32,u32) const	function	asset	asset-heightmapview-blockmin-u32-u32-const	asset.md	engine/asset/height_map.h:177
 asset::HeightMapView::BlockMax(u32,u32) const	function	asset	asset-heightmapview-blockmax-u32-u32-const	asset.md	engine/asset/height_map.h:181
+asset::VerifyHeightMap(const HeightMapView&)	function	asset	asset-verifyheightmap-const-heightmapview-amp	asset.md	engine/asset/height_map.h:207
 asset::kMaxHullVertices	variable	asset	asset-kmaxhullvertices	asset.md	engine/asset/hull.h:30
 asset::kMaxHullFaces	variable	asset	asset-kmaxhullfaces	asset.md	engine/asset/hull.h:32
 asset::kMaxHullFaceVertices	variable	asset	asset-kmaxhullfacevertices	asset.md	engine/asset/hull.h:34
@@ -12839,7 +12840,7 @@ renderer::ScatterRule::min_scale	variable	renderer	renderer-scatterrule-min-scal
 renderer::ScatterRule::max_scale	variable	renderer	renderer-scatterrule-max-scale	renderer.md	engine/renderer/instance_scatter.h:56
 renderer::ScatterRule::random_yaw	variable	renderer	renderer-scatterrule-random-yaw	renderer.md	engine/renderer/instance_scatter.h:57
 renderer::ScatterRule::lift	variable	renderer	renderer-scatterrule-lift	renderer.md	engine/renderer/instance_scatter.h:58
-renderer::Scatter(InstanceSet*,const ScatterRule&,const InstanceExtra*,ScatterHeightFn,void*)	function	renderer	renderer-scatter-instanceset-star-const-scatterrule-amp-const-instanceextra-star-scatterheightfn-void-star	renderer.md	engine/renderer/instance_scatter.h:72
+renderer::Scatter(InstanceSet*,const ScatterRule&,const InstanceExtra*,ScatterHeightFn,void*)	function	renderer	renderer-scatter-instanceset-star-const-scatterrule-amp-const-instanceextra-star-scatterheightfn-void-star	renderer.md	engine/renderer/instance_scatter.h:73
 renderer::kInstanceChunkSize	variable	renderer	renderer-kinstancechunksize	renderer.md	engine/renderer/instance_set.h:32
 renderer::kMaxInstances	variable	renderer	renderer-kmaxinstances	renderer.md	engine/renderer/instance_set.h:34
 renderer::kMaxInstanceCoordinate	variable	renderer	renderer-kmaxinstancecoordinate	renderer.md	engine/renderer/instance_set.h:36
@@ -13850,26 +13851,28 @@ renderer::SceneFrame::SetExposure(f32)	function	renderer	renderer-sceneframe-set
 renderer::SceneFrame::SetSky(const SkySettings&,f32)	function	renderer	renderer-sceneframe-setsky-const-skysettings-amp-f32	renderer.md	engine/renderer/scene_frame.h:235
 renderer::SceneFrame::SetTerrainSelect(const TerrainSelectSettings&)	function	renderer	renderer-sceneframe-setterrainselect-const-terrainselectsettings-amp	renderer.md	engine/renderer/scene_frame.h:241
 renderer::SceneFrame::TerrainSelect() const	function	renderer	renderer-sceneframe-terrainselect-const	renderer.md	engine/renderer/scene_frame.h:245
-renderer::SceneFrame::Sky() const	function	renderer	renderer-sceneframe-sky-const	renderer.md	engine/renderer/scene_frame.h:248
-renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:250
-renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:257
-renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:261
-renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:265
-renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:268
-renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:270
-renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:277
-renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:281
-renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:285
-renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:292
-renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:296
-renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:300
-renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:305
-renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:307
-renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:309
-renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:311
-renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:313
-renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:315
-renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:319
+renderer::SceneFrame::TerrainTilesDrawn() const	function	renderer	renderer-sceneframe-terraintilesdrawn-const	renderer.md	engine/renderer/scene_frame.h:248
+renderer::SceneFrame::TerrainTilesDropped() const	function	renderer	renderer-sceneframe-terraintilesdropped-const	renderer.md	engine/renderer/scene_frame.h:251
+renderer::SceneFrame::Sky() const	function	renderer	renderer-sceneframe-sky-const	renderer.md	engine/renderer/scene_frame.h:254
+renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:256
+renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:263
+renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:267
+renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:271
+renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:274
+renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:276
+renderer::SceneFrame::OpenLabelFont(ByteSpan)	function	renderer	renderer-sceneframe-openlabelfont-bytespan	renderer.md	engine/renderer/scene_frame.h:283
+renderer::SceneFrame::LabelsAvailable() const	function	renderer	renderer-sceneframe-labelsavailable-const	renderer.md	engine/renderer/scene_frame.h:287
+renderer::SceneFrame::BeginLabels()	function	renderer	renderer-sceneframe-beginlabels	renderer.md	engine/renderer/scene_frame.h:291
+renderer::SceneFrame::AddLabel(StringView,f32,f32,u32,u32,u32)	function	renderer	renderer-sceneframe-addlabel-stringview-f32-f32-u32-u32-u32	renderer.md	engine/renderer/scene_frame.h:298
+renderer::SceneFrame::LabelsQueued() const	function	renderer	renderer-sceneframe-labelsqueued-const	renderer.md	engine/renderer/scene_frame.h:302
+renderer::SceneFrame::LabelMissingGlyphs() const	function	renderer	renderer-sceneframe-labelmissingglyphs-const	renderer.md	engine/renderer/scene_frame.h:306
+renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:311
+renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:313
+renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:315
+renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:317
+renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:319
+renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:321
+renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:325
 renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:19
 renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:21
 renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:26
@@ -14081,6 +14084,9 @@ renderer::TerrainPass::Prepare(const TerrainDraw&,Span<const TerrainTile>,u64)	f
 renderer::TerrainPass::Clear()	function	renderer	renderer-terrainpass-clear	renderer.md	engine/renderer/terrain_pass.h:124
 renderer::TerrainPass::AddToGraph(RenderGraph*,const GBufferTargets&)	function	renderer	renderer-terrainpass-addtograph-rendergraph-star-const-gbuffertargets-amp	renderer.md	engine/renderer/terrain_pass.h:134
 renderer::TerrainPass::DrawnTiles() const	function	renderer	renderer-terrainpass-drawntiles-const	renderer.md	engine/renderer/terrain_pass.h:138
+renderer::TerrainPass::TileRoom() const	function	renderer	renderer-terrainpass-tileroom-const	renderer.md	engine/renderer/terrain_pass.h:142
+renderer::TerrainPass::DroppedTiles() const	function	renderer	renderer-terrainpass-droppedtiles-const	renderer.md	engine/renderer/terrain_pass.h:147
+renderer::TerrainPass::CountDropped(u32)	function	renderer	renderer-terrainpass-countdropped-u32	renderer.md	engine/renderer/terrain_pass.h:151
 renderer::TerrainSource	class	renderer	renderer-terrainsource	renderer.md	engine/renderer/terrain_source.h:23
 renderer::TerrainSource::tiles	variable	renderer	renderer-terrainsource-tiles	renderer.md	engine/renderer/terrain_source.h:26
 renderer::TerrainSource::height	variable	renderer	renderer-terrainsource-height	renderer.md	engine/renderer/terrain_source.h:27
@@ -14124,9 +14130,11 @@ renderer::TerrainTiles::NodesZ(u32) const	function	renderer	renderer-terraintile
 renderer::TerrainTiles::NodeBounds(u32,u32,u32) const	function	renderer	renderer-terraintiles-nodebounds-u32-u32-u32-const	renderer.md	engine/renderer/terrain_tiles.h:110
 renderer::TerrainTiles::NodeCells(u32,u32,u32,u32[4]) const	function	renderer	renderer-terraintiles-nodecells-u32-u32-u32-u32-4-const	renderer.md	engine/renderer/terrain_tiles.h:115
 renderer::TerrainTiles::Select(const Vec3&,const Frustum*,const TerrainSelectSettings&,Vector<TerrainTile>*) const	function	renderer	renderer-terraintiles-select-const-vec3-amp-const-frustum-star-const-terrainselectsettings-amp-vector-lt-terraintile-gt-star-const	renderer.md	engine/renderer/terrain_tiles.h:131
-renderer::TerrainSelectSettingsValid(const TerrainSelectSettings&,f32)	function	renderer	renderer-terrainselectsettingsvalid-const-terrainselectsettings-amp-f32	renderer.md	engine/renderer/terrain_tiles.h:159
-renderer::TerrainLevelRange(const TerrainSelectSettings&,u32)	function	renderer	renderer-terrainlevelrange-const-terrainselectsettings-amp-u32	renderer.md	engine/renderer/terrain_tiles.h:163
-renderer::TerrainMorphStart(const TerrainSelectSettings&,u32)	function	renderer	renderer-terrainmorphstart-const-terrainselectsettings-amp-u32	renderer.md	engine/renderer/terrain_tiles.h:168
+renderer::TerrainTiles::KeepNearest(const Vec3&,u32,Vector<TerrainTile>*) const	function	renderer	renderer-terraintiles-keepnearest-const-vec3-amp-u32-vector-lt-terraintile-gt-star-const	renderer.md	engine/renderer/terrain_tiles.h:145
+renderer::TerrainSelectSettingsValid(const TerrainSelectSettings&,f32)	function	renderer	renderer-terrainselectsettingsvalid-const-terrainselectsettings-amp-f32	renderer.md	engine/renderer/terrain_tiles.h:175
+renderer::TerrainMaxMorphFraction(f32,f32)	function	renderer	renderer-terrainmaxmorphfraction-f32-f32	renderer.md	engine/renderer/terrain_tiles.h:189
+renderer::TerrainLevelRange(const TerrainSelectSettings&,u32)	function	renderer	renderer-terrainlevelrange-const-terrainselectsettings-amp-u32	renderer.md	engine/renderer/terrain_tiles.h:193
+renderer::TerrainMorphStart(const TerrainSelectSettings&,u32)	function	renderer	renderer-terrainmorphstart-const-terrainselectsettings-amp-u32	renderer.md	engine/renderer/terrain_tiles.h:198
 renderer::TextRendererDesc	struct	renderer	renderer-textrendererdesc	renderer.md	engine/renderer/text_renderer.h:22
 renderer::TextRendererDesc::color_format	variable	renderer	renderer-textrendererdesc-color-format	renderer.md	engine/renderer/text_renderer.h:27
 renderer::TextRendererDesc::max_glyphs	variable	renderer	renderer-textrendererdesc-max-glyphs	renderer.md	engine/renderer/text_renderer.h:30

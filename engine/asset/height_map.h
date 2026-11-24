@@ -191,4 +191,19 @@ private:
     u32 blocks_z_ = 0;
 };
 
+/// Checks a height map's mips and block pyramid against its samples.
+///
+/// `HeightMapView::Open` checks only their shape. Every mip level must be the average of the level above it and every
+/// block's minimum and maximum those of its samples.
+///
+/// A blob whose block maxima are too low would make the renderer cull visible tiles; one whose mips differ from the
+/// samples would draw a different surface from the one the physics height field uses. The check reads every sample
+/// (a second or so for a 8192 by 8192 map), so it is for tools and tests, not for every load.
+///
+/// - Param view: an opened view.
+/// - Returns: success, or `Corrupt` naming the first level or block that differs.
+/// - Fails: `Invalid` for an empty view; `Corrupt` as above.
+/// - Thread-safety: thread-compatible; it reads the view only.
+Status VerifyHeightMap(const HeightMapView& view);
+
 }  // namespace vse::asset

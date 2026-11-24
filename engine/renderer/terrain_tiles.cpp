@@ -124,6 +124,41 @@ bool TerrainTiles::Build(const TerrainTilesDesc& d)
             }
         }
     }
+    // A tile's vertices read the mip of its level (and, while morphing, of the next) with a bilinear filter, which
+    // reaches up to two of that mip's texels past the tile's edge: the height range of every box covers the blocks
+    // that far around it, so a mesh never leaves its box.
+    for (u32 l = 0; l < levels; ++l)
+    {
+        Level& here = level_[l];
+        const u32 side = kTerrainTileCells << l;
+        const u32 pad = 2u << l;
+        for (u32 z = 0; z < here.nodes_z; ++z)
+        {
+            for (u32 x = 0; x < here.nodes_x; ++x)
+            {
+                const u32 cx0 = x * side > pad ? x * side - pad : 0;
+                const u32 cz0 = z * side > pad ? z * side - pad : 0;
+                const u32 bx0 = cx0 / kBlockCells;
+                const u32 bz0 = cz0 / kBlockCells;
+                const u32 bx1 = Min(d.blocks_x, TtCeilDiv((x + 1) * side + pad, kBlockCells));
+                const u32 bz1 = Min(d.blocks_z, TtCeilDiv((z + 1) * side + pad, kBlockCells));
+                u32 lo = 0xFFFF;
+                u32 hi = 0;
+                for (u32 bz = bz0; bz < bz1; ++bz)
+                {
+                    for (u32 bx = bx0; bx < bx1; ++bx)
+                    {
+                        const usize at = static_cast<usize>(bz) * d.blocks_x + bx;
+                        lo = d.block_min[at] < lo ? d.block_min[at] : lo;
+                        hi = d.block_max[at] > hi ? d.block_max[at] : hi;
+                    }
+                }
+                Aabb& box = here.boxes[static_cast<usize>(z) * here.nodes_x + x];
+                box.min.y = Min(box.min.y, d.range_min + static_cast<f32>(lo) * scale);
+                box.max.y = Max(box.max.y, d.range_min + static_cast<f32>(hi) * scale);
+            }
+        }
+    }
     levels_ = levels;
     return true;
 }
@@ -163,6 +198,17 @@ bool TerrainSelectSettingsValid(const TerrainSelectSettings& s, f32 cell_size)
     return IsFinite(s.first_range) && IsFinite(cell_size) && cell_size > 0.0f &&
            s.first_range >= 3.0f * static_cast<f32>(kTerrainTileCells) * cell_size && IsFinite(s.morph_fraction) &&
            s.morph_fraction >= 0.0f && s.morph_fraction < 1.0f && IsFinite(s.max_distance) && s.max_distance >= 0.0f;
+}
+
+f32 TerrainMaxMorphFraction(f32 first_range, f32 cell_size)
+{
+    if (!IsFinite(first_range) || !IsFinite(cell_size) || !(cell_size > 0.0f) || !(first_range > 0.0f))
+    {
+        return 0.0f;
+    }
+    // 64 * sqrt(2): the diagonal of a parent node in tile widths of cells
+    const f32 fraction = 1.0f - 90.50967f * cell_size / first_range;
+    return fraction > 0.0f ? (fraction < 0.99f ? fraction : 0.99f) : 0.0f;
 }
 
 f32 TerrainLevelRange(const TerrainSelectSettings& settings, u32 level)
@@ -214,6 +260,170 @@ void TerrainTiles::SelectNode(u32 level, u32 x, u32 z, const Vec3& camera, const
     out->Push(tile);
 }
 
+namespace
+{
+
+constexpr u8 kNoLevel = 255;
+
+}  // namespace
+
+void TerrainTiles::Balance(Vector<TerrainTile>* tiles) const
+{
+    // The level of every finest-level tile the selection covers; then a neighbour may be at most one level finer.
+    const u32 nx = tiles_x_;
+    const u32 nz = tiles_z_;
+    Vector<u8> grid;
+    grid.Resize(static_cast<usize>(nx) * nz);
+    for (usize i = 0; i < grid.Size(); ++i)
+    {
+        grid[i] = kNoLevel;
+    }
+    bool mixed = false;
+    for (const TerrainTile& t : *tiles)
+    {
+        mixed = mixed || t.level != (*tiles)[0].level;
+        const u32 size = 1u << t.level;
+        const u32 x1 = Min(nx, (t.x + 1) * size);
+        const u32 z1 = Min(nz, (t.z + 1) * size);
+        for (u32 z = t.z * size; z < z1; ++z)
+        {
+            for (u32 x = t.x * size; x < x1; ++x)
+            {
+                grid[static_cast<usize>(z) * nx + x] = static_cast<u8>(t.level);
+            }
+        }
+    }
+    if (!mixed)
+    {
+        return;
+    }
+    bool changed = true;
+    bool any = false;
+    while (changed)
+    {
+        changed = false;
+        for (u32 pass = 0; pass < 2; ++pass)
+        {
+            for (u32 zi = 0; zi < nz; ++zi)
+            {
+                const u32 z = pass == 0 ? zi : nz - 1 - zi;
+                for (u32 xi = 0; xi < nx; ++xi)
+                {
+                    const u32 x = pass == 0 ? xi : nx - 1 - xi;
+                    u8& v = grid[static_cast<usize>(z) * nx + x];
+                    if (v == kNoLevel)
+                    {
+                        continue;
+                    }
+                    const u8 neighbours[4] = {x > 0 ? grid[static_cast<usize>(z) * nx + x - 1] : kNoLevel,
+                                              x + 1 < nx ? grid[static_cast<usize>(z) * nx + x + 1] : kNoLevel,
+                                              z > 0 ? grid[static_cast<usize>(z - 1) * nx + x] : kNoLevel,
+                                              z + 1 < nz ? grid[static_cast<usize>(z + 1) * nx + x] : kNoLevel};
+                    for (const u8 n : neighbours)
+                    {
+                        if (n != kNoLevel && v > n + 1)
+                        {
+                            v = static_cast<u8>(n + 1);
+                            changed = true;
+                            any = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (!any)
+    {
+        return;
+    }
+    Vector<TerrainTile> balanced;
+    EmitBalanced(levels_ - 1, 0, 0, grid, &balanced);
+    tiles->Swap(balanced);
+}
+
+void TerrainTiles::EmitBalanced(u32 level, u32 x, u32 z, const Vector<u8>& grid, Vector<TerrainTile>* out) const
+{
+    const u32 size = 1u << level;
+    const u32 x1 = Min(tiles_x_, (x + 1) * size);
+    const u32 z1 = Min(tiles_z_, (z + 1) * size);
+    u8 lowest = kNoLevel;
+    for (u32 cz = z * size; cz < z1; ++cz)
+    {
+        for (u32 cx = x * size; cx < x1; ++cx)
+        {
+            lowest = Min(lowest, grid[static_cast<usize>(cz) * tiles_x_ + cx]);
+        }
+    }
+    if (lowest == kNoLevel)
+    {
+        return;
+    }
+    if (lowest < level)
+    {
+        const Level& below = level_[level - 1];
+        for (u32 dz = 0; dz < 2; ++dz)
+        {
+            for (u32 dx = 0; dx < 2; ++dx)
+            {
+                if (2 * x + dx < below.nodes_x && 2 * z + dz < below.nodes_z)
+                {
+                    EmitBalanced(level - 1, 2 * x + dx, 2 * z + dz, grid, out);
+                }
+            }
+        }
+        return;
+    }
+    TerrainTile tile;
+    tile.level = level;
+    tile.x = x;
+    tile.z = z;
+    out->Push(tile);
+}
+
+u32 TerrainTiles::KeepNearest(const Vec3& camera, u32 room, Vector<TerrainTile>* list) const
+{
+    if (list->Size() <= room)
+    {
+        return 0;
+    }
+    struct Keyed
+    {
+        f32 distance;
+        u32 index;
+    };
+    Vector<Keyed> keyed;
+    keyed.Reserve(list->Size());
+    for (u32 i = 0; i < list->Size(); ++i)
+    {
+        const TerrainTile& t = (*list)[i];
+        keyed.Push(Keyed{TtBoxDistance(NodeBounds(t.level, t.x, t.z), camera), i});
+    }
+    Sort(Span<Keyed>(keyed.Data(), keyed.Size()), [](const Keyed& a, const Keyed& b)
+         { return a.distance != b.distance ? a.distance < b.distance : a.index < b.index; });
+    Vector<u8> keep;
+    keep.Resize(list->Size());
+    for (usize i = 0; i < keep.Size(); ++i)
+    {
+        keep[i] = 0;
+    }
+    for (u32 i = 0; i < room; ++i)
+    {
+        keep[keyed[i].index] = 1;
+    }
+    Vector<TerrainTile> kept;
+    kept.Reserve(room);
+    for (u32 i = 0; i < list->Size(); ++i)
+    {
+        if (keep[i] != 0)
+        {
+            kept.Push((*list)[i]);
+        }
+    }
+    const u32 removed = static_cast<u32>(list->Size()) - room;
+    list->Swap(kept);
+    return removed;
+}
+
 void TerrainTiles::Select(const Vec3& camera, const Frustum* frustum, const TerrainSelectSettings& settings,
                           Vector<TerrainTile>* out) const
 {
@@ -221,6 +431,10 @@ void TerrainTiles::Select(const Vec3& camera, const Frustum* frustum, const Terr
     ENGINE_ASSERT(TerrainSelectSettingsValid(settings, cell_size_), "TerrainTiles::Select: the settings are not valid");
     out->Clear();
     SelectNode(levels_ - 1, 0, 0, camera, frustum, settings, out);
+    if (out->Size() > 1)
+    {
+        Balance(out);
+    }
     Sort(Span<TerrainTile>(out->Data(), out->Size()),
          [](const TerrainTile& a, const TerrainTile& b)
          {
