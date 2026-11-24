@@ -215,7 +215,7 @@ Scripts reach settings only through `settings.*` (`engine/script/settings_bindin
 
 ## Components and queries
 
-`component.*` and `query.*` (`engine/script/component_bindings.h`) reach every stored component of the host's `storage::ComponentRegistry` by its registered name (`"gadget"`, `"animation_player"`, `"light_source"`), through the
+`component.*` and `query.*` (`engine/script/component_bindings.h`) reach every stored component of the host's `storage::ComponentRegistry` by its registered name (`"gadget"`, `"animation_player"`, `"light_source"`), through the **In a world the C API makes**, the registry holds the builtin components and the physics ones (`rigid_body`, `collider`, `velocity`, with their checks), so a behavior can write `component.add(entity, 'rigid_body', {type = 1})` and `component.add(entity, 'collider', {shape = 2, radius = 0.25, half_height = 0.5})`; the frame makes the bodies from the tick after the script runs, and a bad field is a script error naming the reason. A host's own components are not in that registry.
 registry's own encoder: a read encodes the component and shows its fields as script values, a write builds the new record from the values, checks it by decoding it into a scratch component (types, ranges, enum ranges, UTF-8)
 and only then records a command. The host gives scripts a `ComponentCatalog` (`PartitionContext::components`, and `MergeServices::components` for the merge) over its registry.
 

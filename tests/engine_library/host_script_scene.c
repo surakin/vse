@@ -1018,6 +1018,81 @@ static void TestBigClipId(engine_handle engine)
     engine_buffer_release(&result.summary);
 }
 
+/* Components from scripts (maintenance, 2026-11-24): component.add / get / has of the physics components in a C API
+   world: a kinematic body and a capsule collider made by a behavior block a ray, and a bad field is a script error. */
+static const char kBodyScript[] =
+    "local function fails(f, ...)\n"
+    "  local ok, message = pcall(f, ...)\n"
+    "  return (not ok) and tostring(message) or ''\n"
+    "end\n"
+    "local function has(message, text) return string.find(message, text, 1, true) ~= nil and 1 or 0 end\n"
+    "behavior('solid', {\n"
+    "  on_create = function(self)\n"
+    "    local me = entity.self()\n"
+    "    event.on('go', function(_, what)\n"
+    "      if what == 1 then\n"
+    "        component.add(me, 'rigid_body', {type = 1})\n"
+    "        component.add(me, 'collider', {shape = 2, radius = 0.25, half_height = 0.5, offset = vec3.new(0, 0.5, 0)})\n"
+    "      elseif what == 2 then\n"
+    "        local body = component.get(me, 'rigid_body')\n"
+    "        local c = component.get(me, 'collider')\n"
+    "        host.report(1, body.type, c.shape, c.radius, c.half_height, component.has(me, 'rigid_body') and 1 or 0,\n"
+    "                    component.has(me, 'velocity') and 1 or 0, 0, 0, 0)\n"
+    "      elseif what == 3 then\n"
+    "        host.report(2, has(fails(component.set, me, 'rigid_body', {type = 7}), 'type'),\n"
+    "                    has(fails(component.set, me, 'collider', {radius = -1}), 'above zero'), 0, 0, 0, 0, 0, 0, 0)\n"
+    "      end\n"
+    "    end)\n"
+    "  end,\n"
+    "})\n";
+
+static void TestBodies(engine_handle engine)
+{
+    engine_handle world;
+    engine_script_load load;
+    engine_script_component component;
+    engine_ray_hit hit;
+    const double from[3] = {0.0, 5.0, 0.0};
+    const float down[3] = {0.0f, -1.0f, 0.0f};
+    uint64_t script = 0;
+    uint64_t solid;
+    int found = 1;
+    memset(g_rows, 0, sizeof(g_rows));
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->script_register_function(world, Str("host.report"), 10, 0, &HostReport, NULL), ENGINE_OK);
+    solid = PlaceEntity(world);
+    memset(&load, 0, sizeof(load));
+    load.struct_size = sizeof(load);
+    load.name = Str("solid");
+    load.source = Str(kBodyScript);
+    CHECK_STATUS(g_api->script_load(world, &load, &script), ENGINE_OK);
+    memset(&component, 0, sizeof(component));
+    component.struct_size = sizeof(component);
+    component.enabled = 1;
+    strcpy(component.behavior, "solid");
+    CHECK_STATUS(g_api->component_set(world, solid, ENGINE_COMPONENT_SCRIPT, &component), ENGINE_OK);
+    Frames(engine, 2);
+    memset(&hit, 0, sizeof(hit));
+    hit.struct_size = sizeof(hit);
+    CHECK_STATUS(g_api->physics_raycast(world, from, down, 10.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
+    CHECK(found == 0); /* nothing solid yet */
+    EmitTurn(world, "go", 1.0, solid);
+    Frames(engine, 4);
+    memset(&hit, 0, sizeof(hit));
+    hit.struct_size = sizeof(hit);
+    CHECK_STATUS(g_api->physics_raycast(world, from, down, 10.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
+    CHECK(found == 1 && hit.entity == solid && Near(hit.point[1], 2.25)); /* 1 + 0.5 offset + 0.5 + 0.25 */
+    EmitTurn(world, "go", 2.0, solid);
+    Frames(engine, 3);
+    CHECK(g_rows[1].seen && Near(g_rows[1].v[0], 1.0) && Near(g_rows[1].v[1], 2.0) && Near(g_rows[1].v[2], 0.25) &&
+          Near(g_rows[1].v[3], 0.5) && Near(g_rows[1].v[4], 1.0) && Near(g_rows[1].v[5], 0.0));
+    EmitTurn(world, "go", 3.0, solid);
+    Frames(engine, 3);
+    CHECK(g_rows[2].seen && Near(g_rows[2].v[0], 1.0) && Near(g_rows[2].v[1], 1.0));
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+}
+
 static const char kBytesScript[] =
     "local function fails(f, ...)\n"
     "  local ok, message = pcall(f, ...)\n"
@@ -1185,6 +1260,7 @@ int main(void)
     {
         TestBigClipId(engine);
     }
+    TestBodies(engine);
     TestBytes(engine);
     if (getenv("HOST_SCRIPT_SCENE_NO_PICTURE") == NULL) /* ThreadSanitizer cannot run the GPU driver's threads */
     {

@@ -20,6 +20,11 @@
 #include "script/script_settings.h"
 #include "script/task_pool.h"
 #include "script/value.h"
+#include "script/component_catalog.h"
+#include "storage/builtin_components.h"
+#include "storage/component_registry.h"
+#include "physics/components.h"
+#include "ecs/query.h"
 #include "script/service_slots.h"
 #include "engine_c/script_scene.h"
 #include "script_physics/physics_bindings.h"
@@ -584,8 +589,12 @@ using namespace detail;
 
 struct ScriptHost::Impl
 {
-    explicit Impl(const ScriptSettingValues& values) : settings(values) {}
+    explicit Impl(const ScriptSettingValues& values) : settings(values), catalog(&registry) {}
     ScriptSettingValues settings;
+    // The components `component.*` and `query.*` can name in this world (the builtin and the physics ones, with the
+    // physics checks): the same set the C API's `component_set` reaches. Frozen before the runtime is made.
+    storage::ComponentRegistry registry;
+    script::ComponentCatalog catalog;
     UniquePtr<script::Backend> backend;
     script::BindingRegistry bindings;
     bool standard_bindings = false;
@@ -649,9 +658,20 @@ struct ScriptHost::Impl
         {
             return backend_status;
         }
+        if (!catalog.IsFrozen())
+        {
+            if (!storage::RegisterBuiltinComponents(&registry).Ok() ||
+                !script_physics::RegisterPhysicsComponents(&registry))
+            {
+                return Fail(ENGINE_ERROR_INTERNAL, "the script components did not register");
+            }
+            script_physics::RegisterPhysicsValidators(&catalog);
+            catalog.Freeze();
+        }
         script::ScriptRuntimeConfig config;
         config.backend = backend.Get();
         config.bindings = &bindings;
+        config.components = &catalog;
         config.partitions = settings.partitions;
         config.partition_memory = settings.partition_memory;
         config.random_seed = settings.random_seed;
@@ -748,6 +768,12 @@ void ScriptTickWorld(WorldObject& object, f64 dt)
     if (impl != nullptr && impl->runtime.Get() != nullptr)
     {
         impl->runtime->Tick(&object.world, dt);
+        // A script may have added a body or a collider: the frame makes the bodies only for a world that has one.
+        if (!object.physics_used && (object.world.Query<ecs::Read<physics::RigidBody>>().Count() != 0 ||
+                                     object.world.Query<ecs::Read<physics::Collider>>().Count() != 0))
+        {
+            object.physics_used = true;
+        }
     }
 }
 
