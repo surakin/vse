@@ -430,6 +430,21 @@ Binds a handle to a placed sound's emitter entity.
 | Parameter `transient` | whether the entity was made for the sound and goes with it. |
 | Fails | never; a handle that is already bound is replaced. |
 
+### `RemovePlacedOn(ecs::Entity)` {#script-media-voicetable-removeplacedon-ecs-entity}
+
+`method script_media::VoiceTable::RemovePlacedOn` — defined in `engine/script_media/audio_services.h`
+
+```cpp
+void RemovePlacedOn(ecs::Entity emitter);
+```
+
+Forgets every placed sound whose emitter is `emitter`.
+
+| Field | Value |
+|---|---|
+| Parameter `emitter` | the emitter entity. |
+| Fails | never. |
+
 ### `PlacedHandles(Vector<u64>*)` {#script-media-voicetable-placedhandles-vector-lt-u64-gt-star-const}
 
 `method script_media::VoiceTable::PlacedHandles` — defined in `engine/script_media/audio_services.h`

@@ -2994,20 +2994,21 @@ script_media::VoiceTable::VoiceTable(const VoiceTable&)	function	script_media	sc
 script_media::VoiceTable::operator=(const VoiceTable&)	function	script_media	script-media-voicetable-operator-eq-const-voicetable-amp	script_media.md	engine/script_media/audio_services.h:82
 script_media::VoiceTable::Add(u64,audio::VoiceId,u64)	function	script_media	script-media-voicetable-add-u64-audio-voiceid-u64	script_media.md	engine/script_media/audio_services.h:90
 script_media::VoiceTable::AddPlaced(u64,ecs::Entity,u64,bool)	function	script_media	script-media-voicetable-addplaced-u64-ecs-entity-u64-bool	script_media.md	engine/script_media/audio_services.h:99
-script_media::VoiceTable::PlacedHandles(Vector<u64>*) const	function	script_media	script-media-voicetable-placedhandles-vector-lt-u64-gt-star-const	script_media.md	engine/script_media/audio_services.h:106
-script_media::VoiceTable::Find(u64) const	function	script_media	script-media-voicetable-find-u64-const	script_media.md	engine/script_media/audio_services.h:113
-script_media::VoiceTable::MarkStopping(u64)	function	script_media	script-media-voicetable-markstopping-u64	script_media.md	engine/script_media/audio_services.h:119
-script_media::VoiceTable::HandleOf(audio::VoiceId) const	function	script_media	script-media-voicetable-handleof-audio-voiceid-const	script_media.md	engine/script_media/audio_services.h:125
-script_media::VoiceTable::Remove(u64)	function	script_media	script-media-voicetable-remove-u64	script_media.md	engine/script_media/audio_services.h:131
-script_media::VoiceTable::Size() const	function	script_media	script-media-voicetable-size-const	script_media.md	engine/script_media/audio_services.h:136
-script_media::AudioScriptServices	struct	script_media	script-media-audioscriptservices	script_media.md	engine/script_media/audio_services.h:149
-script_media::AudioScriptServices::mixer	variable	script_media	script-media-audioscriptservices-mixer	script_media.md	engine/script_media/audio_services.h:152
-script_media::AudioScriptServices::spatial	variable	script_media	script-media-audioscriptservices-spatial	script_media.md	engine/script_media/audio_services.h:155
-script_media::AudioScriptServices::clips	variable	script_media	script-media-audioscriptservices-clips	script_media.md	engine/script_media/audio_services.h:157
-script_media::AudioScriptServices::streams	variable	script_media	script-media-audioscriptservices-streams	script_media.md	engine/script_media/audio_services.h:159
-script_media::AudioScriptServices::music	variable	script_media	script-media-audioscriptservices-music	script_media.md	engine/script_media/audio_services.h:161
-script_media::AudioScriptServices::voices	variable	script_media	script-media-audioscriptservices-voices	script_media.md	engine/script_media/audio_services.h:163
-script_media::AudioScriptServices::sample_rate	variable	script_media	script-media-audioscriptservices-sample-rate	script_media.md	engine/script_media/audio_services.h:165
+script_media::VoiceTable::RemovePlacedOn(ecs::Entity)	function	script_media	script-media-voicetable-removeplacedon-ecs-entity	script_media.md	engine/script_media/audio_services.h:105
+script_media::VoiceTable::PlacedHandles(Vector<u64>*) const	function	script_media	script-media-voicetable-placedhandles-vector-lt-u64-gt-star-const	script_media.md	engine/script_media/audio_services.h:112
+script_media::VoiceTable::Find(u64) const	function	script_media	script-media-voicetable-find-u64-const	script_media.md	engine/script_media/audio_services.h:119
+script_media::VoiceTable::MarkStopping(u64)	function	script_media	script-media-voicetable-markstopping-u64	script_media.md	engine/script_media/audio_services.h:125
+script_media::VoiceTable::HandleOf(audio::VoiceId) const	function	script_media	script-media-voicetable-handleof-audio-voiceid-const	script_media.md	engine/script_media/audio_services.h:131
+script_media::VoiceTable::Remove(u64)	function	script_media	script-media-voicetable-remove-u64	script_media.md	engine/script_media/audio_services.h:137
+script_media::VoiceTable::Size() const	function	script_media	script-media-voicetable-size-const	script_media.md	engine/script_media/audio_services.h:142
+script_media::AudioScriptServices	struct	script_media	script-media-audioscriptservices	script_media.md	engine/script_media/audio_services.h:155
+script_media::AudioScriptServices::mixer	variable	script_media	script-media-audioscriptservices-mixer	script_media.md	engine/script_media/audio_services.h:158
+script_media::AudioScriptServices::spatial	variable	script_media	script-media-audioscriptservices-spatial	script_media.md	engine/script_media/audio_services.h:161
+script_media::AudioScriptServices::clips	variable	script_media	script-media-audioscriptservices-clips	script_media.md	engine/script_media/audio_services.h:163
+script_media::AudioScriptServices::streams	variable	script_media	script-media-audioscriptservices-streams	script_media.md	engine/script_media/audio_services.h:165
+script_media::AudioScriptServices::music	variable	script_media	script-media-audioscriptservices-music	script_media.md	engine/script_media/audio_services.h:167
+script_media::AudioScriptServices::voices	variable	script_media	script-media-audioscriptservices-voices	script_media.md	engine/script_media/audio_services.h:169
+script_media::AudioScriptServices::sample_rate	variable	script_media	script-media-audioscriptservices-sample-rate	script_media.md	engine/script_media/audio_services.h:171
 script_media::RegisterInputBindings(script::BindingRegistry*)	function	script_media	script-media-registerinputbindings-script-bindingregistry-star	script_media.md	engine/script_media/input_bindings.h:30
 script_media::kEventInput	variable	script_media	script-media-keventinput	script_media.md	engine/script_media/input_bindings.h:33
 script_media::InputEventReport	struct	script_media	script-media-inputeventreport	script_media.md	engine/script_media/input_bindings.h:38
@@ -6542,10 +6543,11 @@ audio::SpatialAudio::SetOcclusion(OcclusionQuery*)	function	audio	audio-spatiala
 audio::SpatialAudio::OcclusionOf(ecs::Entity) const	function	audio	audio-spatialaudio-occlusionof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:138
 audio::SpatialAudio::Report() const	function	audio	audio-spatialaudio-report-const	audio.md	engine/audio/spatial_audio.h:143
 audio::SpatialAudio::IsKnown(ecs::Entity) const	function	audio	audio-spatialaudio-isknown-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:149
-audio::SpatialAudio::IsFinished(ecs::Entity) const	function	audio	audio-spatialaudio-isfinished-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:155
-audio::SpatialAudio::IsAudible(ecs::Entity) const	function	audio	audio-spatialaudio-isaudible-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:161
-audio::SpatialAudio::PitchOf(ecs::Entity) const	function	audio	audio-spatialaudio-pitchof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:167
-audio::SpatialAudio::IsReal(ecs::Entity) const	function	audio	audio-spatialaudio-isreal-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:173
+audio::SpatialAudio::Restart(ecs::Entity)	function	audio	audio-spatialaudio-restart-ecs-entity	audio.md	engine/audio/spatial_audio.h:157
+audio::SpatialAudio::IsFinished(ecs::Entity) const	function	audio	audio-spatialaudio-isfinished-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:163
+audio::SpatialAudio::IsAudible(ecs::Entity) const	function	audio	audio-spatialaudio-isaudible-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:169
+audio::SpatialAudio::PitchOf(ecs::Entity) const	function	audio	audio-spatialaudio-pitchof-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:175
+audio::SpatialAudio::IsReal(ecs::Entity) const	function	audio	audio-spatialaudio-isreal-ecs-entity-const	audio.md	engine/audio/spatial_audio.h:181
 audio::StateOut	class	audio	audio-stateout	audio.md	engine/audio/state_io.h:18
 audio::StateOut::StateOut(bytes::ByteWriter*)	function	audio	audio-stateout-stateout-bytes-bytewriter-star	audio.md	engine/audio/state_io.h:24
 audio::StateOut::U32(u32)	function	audio	audio-stateout-u32-u32	audio.md	engine/audio/state_io.h:27

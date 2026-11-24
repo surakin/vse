@@ -675,7 +675,9 @@ bool ApplyPlaceSound(MergeContext& context, const AudioScriptServices* audio, ec
     }
     ecs::World* world = context.World();
     const bool at_point = (header.flags & 4u) != 0;
-    ecs::Entity emitter = target;
+    // The target of a global command arrives as the script gave it: an entity made earlier in the same tick is still a
+    // placeholder, which the merge resolves.
+    ecs::Entity emitter = at_point ? ecs::Entity() : context.Resolve(target);
     if (at_point)
     {
         ecs::LocalTransform local;
@@ -693,7 +695,13 @@ bool ApplyPlaceSound(MergeContext& context, const AudioScriptServices* audio, ec
     source.pitch = header.pitch;
     source.loop = (header.flags & 1u) != 0;
     source.priority = header.priority;
-    // Another sound already on the entity is replaced: an entity has one source.
+    // Another sound already on the entity is replaced: an entity has one source, so the handles of the earlier
+    // sounds on it end here and the system plays the new source from the start.
+    if (!at_point)
+    {
+        audio->voices->RemovePlacedOn(emitter);
+        audio->spatial->Restart(emitter);
+    }
     const ecs::Status status = world->Set<audio::AudioSource>(emitter, Move(source));
     if (status != ecs::Status::Ok)
     {

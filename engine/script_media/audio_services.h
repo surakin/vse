@@ -98,6 +98,12 @@ public:
     /// - Fails: never; a handle that is already bound is replaced.
     void AddPlaced(u64 handle, ecs::Entity emitter, u64 owner_key, bool transient);
 
+    /// Forgets every placed sound whose emitter is `emitter`.
+    ///
+    /// - Param emitter: the emitter entity.
+    /// - Fails: never.
+    void RemovePlacedOn(ecs::Entity emitter);
+
     /// The handles of the placed sounds, in ascending order (so that what is done for each is the same on every run).
     ///
     /// - Param out: receives the handles; cleared first.

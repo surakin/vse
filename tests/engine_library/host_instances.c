@@ -126,6 +126,28 @@ static void Api(engine_handle engine)
     CHECK_STATUS(g_api->instance_set_remove(world, set, ids[7]), ENGINE_OK);
     CHECK_STATUS(g_api->instance_set_remove(world, set, ids[7]), ENGINE_ERROR_NOT_FOUND);
     CHECK_STATUS(g_api->instance_set_set_transform(world, set, ids[7], &item, sizeof(item)), ENGINE_ERROR_NOT_FOUND);
+    /* a call that the chunk cap refuses part way adds none: 256 instances allow 4 chunks, 5 far-apart ones need 5 */
+    {
+        uint64_t small = 0;
+        uint64_t small_ids[5];
+        engine_instance far_items[5];
+        engine_instance one = Item(0, 0, 0, 1, 1, 1, 1);
+        uint32_t k;
+        for (k = 0; k < 5; ++k)
+        {
+            far_items[k] = Item((double)k * 100000.0, 0.0, 0.0, 1.0f, 1, 1, 1);
+        }
+        CHECK_STATUS(g_api->instance_set_create(world, &p, MESH_ID, 256, &small), ENGINE_OK);
+        CHECK_STATUS(g_api->instance_set_add_many(world, small, far_items, 5, sizeof(engine_instance), small_ids),
+                     ENGINE_ERROR_LIMIT_EXCEEDED);
+        /* nothing was added: four more singles still fit the cap's four chunks */
+        for (k = 0; k < 4; ++k)
+        {
+            one = far_items[k];
+            CHECK_STATUS(g_api->instance_set_add_many(world, small, &one, 1, sizeof(engine_instance), small_ids),
+                         ENGINE_OK);
+        }
+    }
     /* the refusals */
     CHECK_STATUS(g_api->instance_set_add_many(world, set, items, 10, sizeof(engine_instance) - 8, NULL),
                  ENGINE_ERROR_STRUCT_SIZE);

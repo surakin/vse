@@ -6971,6 +6971,21 @@ Whether the system knows `entity` as an emitter (an update has seen its `AudioSo
 | Parameter `entity` | the entity. |
 | Returns | true if known. |
 
+### `Restart(ecs::Entity)` {#audio-spatialaudio-restart-ecs-entity}
+
+`method audio::SpatialAudio::Restart` — defined in `engine/audio/spatial_audio.h`
+
+```cpp
+void Restart(ecs::Entity entity);
+```
+
+Makes the emitter play its `AudioSource` again from the start: a voice it has stops (with the stop fade) and a one-shot that had ended is forgotten as ended, so the next update starts the source (for a changed clip or a repeated sound on the same entity).
+
+| Field | Value |
+|---|---|
+| Parameter `entity` | the entity; one the system does not know is ignored. |
+| Fails | never. |
+
 ### `IsFinished(ecs::Entity)` {#audio-spatialaudio-isfinished-ecs-entity-const}
 
 `method audio::SpatialAudio::IsFinished` — defined in `engine/audio/spatial_audio.h`

@@ -1,5 +1,7 @@
 #include "script_media/audio_services.h"
 
+#include "algorithm.h"
+
 namespace vse::script_media
 {
 
@@ -23,6 +25,22 @@ void VoiceTable::AddPlaced(u64 handle, ecs::Entity emitter, u64 owner_key, bool 
     by_handle_.Insert(handle, entry);
 }
 
+void VoiceTable::RemovePlacedOn(ecs::Entity emitter)
+{
+    Vector<u64> doomed;
+    for (const auto& item : by_handle_)
+    {
+        if (item.value.emitter == emitter)
+        {
+            doomed.Push(item.key);
+        }
+    }
+    for (usize i = 0; i < doomed.Size(); ++i)
+    {
+        Remove(doomed[i]);
+    }
+}
+
 void VoiceTable::PlacedHandles(Vector<u64>* out) const
 {
     out->Clear();
@@ -33,17 +51,7 @@ void VoiceTable::PlacedHandles(Vector<u64>* out) const
             out->Push(item.key);
         }
     }
-    for (usize i = 1; i < out->Size(); ++i)  // ascending: the table's own order is not defined
-    {
-        const u64 held = (*out)[i];
-        usize j = i;
-        while (j > 0 && (*out)[j - 1] > held)
-        {
-            (*out)[j] = (*out)[j - 1];
-            --j;
-        }
-        (*out)[j] = held;
-    }
+    Sort(Span<u64>(out->Data(), out->Size()));  // ascending: the table's own order is not defined
 }
 
 bool VoiceTable::MarkStopping(u64 handle)

@@ -339,6 +339,9 @@ void TerrainTiles::Balance(Vector<TerrainTile>* tiles) const
     Vector<TerrainTile> balanced;
     EmitBalanced(levels_ - 1, 0, 0, grid, &balanced);
     tiles->Swap(balanced);
+    // Splitting a node into four can make a tile finer than the cells the grid lowered inside it, which can leave a
+    // jump of two against a tile beside it: balance what was emitted until nothing changes (each round only refines).
+    Balance(tiles);
 }
 
 void TerrainTiles::EmitBalanced(u32 level, u32 x, u32 z, const Vector<u8>& grid, Vector<TerrainTile>* out) const

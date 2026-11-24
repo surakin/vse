@@ -684,6 +684,29 @@ behavior('attacher', {
     if self.age == 14 then audio.stop(self.h, nil) end
   end,
 })
+behavior('replacer', {
+  on_create = function(self)
+    event.on('on_voice_end', function(me, e)
+      me.ended = (me.ended or 0) + 1
+      component.set(me.entity, 'probe', { ended = me.ended, n = 0 })
+    end)
+  end,
+  on_update = function(self, dt)
+    self.age = (self.age or 0) + 1
+    if self.age == 1 then self.h1 = audio.play('beep', { entity = self.entity }) end
+    if self.age == 30 then self.h2 = audio.play('loud', { entity = self.entity }) end
+  end,
+})
+behavior('placeholder', {
+  on_update = function(self, dt)
+    self.age = (self.age or 0) + 1
+    if self.age == 1 then
+      local e = entity.spawn(nil)
+      transform.set_position(e, vec3.new(2, 0, 0))
+      self.h = audio.play('loud', { entity = e, loop = true })
+    end
+  end,
+})
 behavior('bad_both', { on_update = function(self, dt) audio.play('loud', { position = vec3.new(1, 0, 0), entity = self.entity }) end })
 behavior('bad_pan', { on_update = function(self, dt) audio.play('loud', { position = vec3.new(1, 0, 0), pan = 0.5 }) end })
 behavior('bad_pause', {
@@ -962,6 +985,41 @@ TEST_CASE("Script media: audio.play on an entity follows it, takes set_gain and 
     CHECK(rig.world.Get<Probe>(player)->n == 1);  // `stopped`
     CHECK(rig.voices.Size() == 0);
     CHECK(rig.PlacedFrame() == 0.0f);
+}
+
+TEST_CASE("Script media: a second sound on an entity replaces the first and plays", "[script_media][audio][placed]")
+{
+    RuntimeRig rig(2);
+    rig.Listener();
+    const ecs::Entity player = rig.Spawn(StringView("replacer"));
+    rig.world.Get<ecs::LocalTransform>(player)->position = Vec3d(2, 0, 0);
+    for (u32 t = 0; t < 28; ++t)
+    {
+        rig.PlacedFrame();
+    }
+    CHECK(rig.world.Get<Probe>(player)->ended == 1);  // the first one-shot ended
+    f32 loudest = 0.0f;
+    for (u32 t = 0; t < 4; ++t)
+    {
+        loudest = Max(loudest, rig.PlacedFrame());
+    }
+    REQUIRE(rig.runtime->Stats().errors == 0);
+    CHECK(loudest > 0.0f);  // the second one plays although the first had finished on the same entity
+}
+
+TEST_CASE("Script media: audio.play on an entity made in the same tick", "[script_media][audio][placed]")
+{
+    RuntimeRig rig(2);
+    rig.Listener();
+    rig.Spawn(StringView("placeholder"));
+    f32 loudest = 0.0f;
+    for (u32 t = 0; t < 6; ++t)
+    {
+        loudest = Max(loudest, rig.PlacedFrame());
+    }
+    REQUIRE(rig.runtime->Stats().errors == 0);
+    CHECK(rig.SourceCount() == 1);
+    CHECK(loudest > 0.0f);
 }
 
 TEST_CASE("Script media: the refused forms of a placed sound are script errors", "[script_media][audio][placed]")

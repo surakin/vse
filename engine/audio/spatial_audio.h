@@ -148,6 +148,14 @@ public:
     /// - Returns: true if known.
     bool IsKnown(ecs::Entity entity) const;
 
+    /// Makes the emitter play its `AudioSource` again from the start: a voice it has stops (with the stop fade) and a
+    /// one-shot that had ended is forgotten as ended, so the next update starts the source (for a changed clip or a
+    /// repeated sound on the same entity).
+    ///
+    /// - Param entity: the entity; one the system does not know is ignored.
+    /// - Fails: never.
+    void Restart(ecs::Entity entity);
+
     /// Whether the emitter's one-shot voice has ended (it played to its end and will not start again).
     ///
     /// - Param entity: the entity.

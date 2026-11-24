@@ -299,14 +299,22 @@ engine_status InstanceSetAddManyFn(engine_handle world, u64 set, const engine_in
                     return ok;  // nothing was added
                 }
             }
+            Vector<renderer::InstanceId> made;
             for (u32 i = 0; i < count; ++i)
             {
                 renderer::InstanceId id;
                 const renderer::InstanceStatus added = s.Add(transforms[i], &extras[i], &id);
                 if (added != renderer::InstanceStatus::Ok)
                 {
-                    return MapSetStatus(added);  // cannot happen after the checks above
+                    // The chunk cap (or a refused resize) can refuse an instance below `Capacity()`: take back the ones
+                    // this call added, so that a failed call adds none.
+                    for (usize k = 0; k < made.Size(); ++k)
+                    {
+                        s.Remove(made[k]);
+                    }
+                    return MapSetStatus(added);
                 }
+                made.Push(id);
                 if (out_ids != nullptr)
                 {
                     out_ids[i] = PackId(id);

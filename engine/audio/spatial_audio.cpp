@@ -68,6 +68,23 @@ bool SpatialAudio::IsKnown(Entity entity) const
     return index_.Find(entity.ToU64()) != nullptr;
 }
 
+void SpatialAudio::Restart(Entity entity)
+{
+    const u32* slot = index_.Find(entity.ToU64());
+    if (slot == nullptr)
+    {
+        return;
+    }
+    Emitter& e = emitters_[*slot];
+    if (e.voice.IsValid())
+    {
+        Post(mixer_->Stop(e.voice, config_.stop_fade_frames));
+        report_.stopped += 1;
+        e.voice = VoiceId();
+    }
+    e.finished = false;
+}
+
 bool SpatialAudio::IsFinished(Entity entity) const
 {
     const u32* slot = index_.Find(entity.ToU64());
