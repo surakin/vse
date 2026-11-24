@@ -124,12 +124,14 @@ usize RayCastAll(const PhysicsWorld& world, const Vec3d& origin, const Vec3& dir
 /// Sweeps a shape along a direction and returns the first collider it touches.
 ///
 /// The time of impact is found by sampling the sweep and bisecting the first overlapping interval, to about a
-/// micrometre; the shape does not turn. A shape that starts touching a collider hits it at distance zero.
+/// micrometre; the shape does not turn. A shape that starts touching a collider hits it at distance zero. The sweep is
+/// sampled, not continuous: at most 1024 samples, spaced a quarter of the shape's smallest width apart, so a long cast
+/// can step over a collider thinner than the spacing.
 ///
 /// - Param world: the world.
 /// - Param shape: a sphere, box, capsule or hull of the world's library (not a mesh or a compound).
 /// - Param position: where the shape's origin starts.
-/// - Param rotation: its orientation.
+/// - Param rotation: its orientation, a unit quaternion (within 2e-3 of length 1).
 /// - Param direction: any non-zero direction.
 /// - Param distance: how far to sweep.
 /// - Param filter: what to hit.
@@ -146,13 +148,14 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3d& posit
 /// - Param world: the world.
 /// - Param shape: the shape (any kind of the library).
 /// - Param position: where its origin is.
-/// - Param rotation: its orientation.
+/// - Param rotation: its orientation, a unit quaternion (within 2e-3 of length 1).
 /// - Param filter: what to include.
 /// - Param out: receives the colliders sorted by id key; cleared first.
 /// - Returns: the number found.
 /// - Thread-safety: thread-safe against other queries, while no step or change runs.
 /// - Ownership: `out` is the caller's.
-/// - Fails: an invalid shape returns zero.
+/// - Fails: an invalid shape, a position that is not finite or a rotation that is not a unit quaternion returns
+///   zero.
 usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3d& position, const Quaternion& rotation,
               const PhysicsQueryFilter& filter, Vector<ColliderId>* out);
 

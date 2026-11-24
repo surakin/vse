@@ -119,7 +119,9 @@ public:
     void Stop(PhysicsWorld* world);
 
     /// Moves the character for one step: the capsule goes where `velocity` (horizontal; the `y` part is ignored) and
-    /// gravity take it, and the body's speed is set so the next `Step` carries it there and pushes what it meets.
+    /// gravity take it, and the body's speed is set so the next `Step` carries it there and pushes what it meets. A
+    /// second `Move` before the world steps continues from where the first one took the character: the next `Step`
+    /// carries it through both.
     ///
     /// - Param world: the world.
     /// - Param velocity: the wanted horizontal velocity in metres per second.
@@ -161,9 +163,19 @@ public:
     }
 
 private:
+    // The last `Move` before the world stepped: a second one in the same step continues from `to`.
+    struct PendingMove
+    {
+        BodyId body;
+        u64 steps = 0;
+        Vec3d from = Vec3d(0.0, 0.0, 0.0);
+        Vec3d to = Vec3d(0.0, 0.0, 0.0);
+    };
+
     BodyId body_;
     CharacterConfig config_;
     CharacterState state_;
+    PendingMove pending_;
 };
 
 }  // namespace vse::physics

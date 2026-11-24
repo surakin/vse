@@ -201,3 +201,36 @@ TEST_CASE("Ccd: the state hash does not depend on the thread count", "[physics][
     }
     CHECK(hashes[0] == hashes[1]);
 }
+
+TEST_CASE("Ccd: a joint that keeps two bodies apart is not swept either", "[physics][ccd]")
+{
+    for (const bool jointed : {false, true})
+    {
+        PhysicsWorld world;
+        CcdFast(world);
+        const BodyId wall = CcdStatic(world, Vec3(10, 0, 0), Vec3(0.005f, 5, 5));
+        const BodyId bullet = CcdShot(world, Shape::MakeSphere(0.05f), Vec3(0, 0, 0), Vec3(500, 0, 0), true);
+        if (jointed)
+        {
+            // A slack rope (0 to 100 m) that never pulls in this test and keeps the two from colliding.
+            JointDesc rope = world.MakeDistanceJoint(wall, bullet, Vec3(10, 0, 0), Vec3(0, 0, 0));
+            rope.min_length = 0.0f;
+            rope.max_length = 100.0f;
+            rope.collide_connected = false;
+            REQUIRE(world.CreateJoint(rope).IsValid());
+        }
+        // Two steps of 8.3 m: the second crosses the wall.
+        world.Step();
+        world.Step();
+        const f32 x = static_cast<f32>(world.Find(bullet)->position.x);
+        if (jointed)
+        {
+            CHECK(x > 11.0f);  // the narrow phase skips the pair, so the sweep does as well
+            CHECK(world.GetStepStats().ccd_hits == 0);
+        }
+        else
+        {
+            CHECK(x < 10.0f);
+        }
+    }
+}

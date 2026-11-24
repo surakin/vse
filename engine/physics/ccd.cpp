@@ -38,7 +38,7 @@ Quaternion BlendOrientation(const Quaternion& a, const Quaternion& b, f32 t)
 
 }  // namespace
 
-void PhysicsWorld::SweepContinuous()
+void PhysicsWorld::SweepContinuous(const HashSet<u128, HeapAllocator>& connected)
 {
     if (broad_.Get() == nullptr)
     {
@@ -62,6 +62,15 @@ void PhysicsWorld::SweepContinuous()
         if (records[0] == nullptr || records[1] == nullptr)
         {
             continue;
+        }
+        if (!connected.Empty())
+        {
+            const u64 x = records[0]->owner.ToU64();
+            const u64 y = records[1]->owner.ToU64();
+            if (connected.Contains(x < y ? (u128(x) << 64) | u128(y) : (u128(y) << 64) | u128(x)))
+            {
+                continue;  // a joint keeps these two bodies from colliding
+            }
         }
         for (u32 side = 0; side < 2; ++side)
         {

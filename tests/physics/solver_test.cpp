@@ -4,6 +4,7 @@
 
 #include "lang/scalar.h"
 #include "physics/collide.h"
+#include "physics/snapshot_io.h"
 #include "physics/solver.h"
 #include "physics/world.h"
 
@@ -299,4 +300,40 @@ TEST_CASE("Solver: no body moves faster than the speed limit", "[physics][solver
     const BodyId sliding = Ball(world, Vec3(0, 0.5f, 0), Vec3(500, 0, 0), 0.0f);
     world.Step();
     CHECK(VelocityOf(world, sliding).Length() <= world.GetStepConfig().max_velocity * 1.0001f);
+}
+
+TEST_CASE("Solver: a cache with two points of one feature id saves and loads", "[physics][solver][snapshot]")
+{
+    PhysicsWorld world;
+    const BodyId floor = Slab(world, Vec3(0, -0.5f, 0), Quaternion::Identity(), Vec3(10, 0.5f, 10), BodyType::Static,
+                              0.5f);
+    const BodyId box = Slab(world, Vec3(0, 0.49f, 0), Quaternion::Identity(), Vec3(0.5f, 0.5f, 0.5f), BodyType::Dynamic,
+                            0.5f);
+    const ColliderId ca = world.Find(floor)->first_collider;
+    const ColliderId cb = world.Find(box)->first_collider;
+    ContactInput in;
+    Pose pa;
+    pa.position = world.Find(floor)->position.Narrow();
+    pa.rotation = Quaternion::Identity();
+    Pose pb;
+    pb.position = world.Find(box)->position.Narrow();
+    pb.rotation = Quaternion::Identity();
+    REQUIRE(Collide(world.FindCollider(ca)->value.shape, pa, world.FindCollider(cb)->value.shape, pb, 0.02f,
+                    &in.manifold) == CollideResult::Contact);
+    REQUIRE(in.manifold.count >= 2);
+    in.manifold.points[1].feature_id = in.manifold.points[0].feature_id;  // two points, one feature
+    in.a = ca;
+    in.b = cb;
+    in.body_a = floor;
+    in.body_b = box;
+    ContactSolver solver;
+    solver.Solve(&world, Span<const ContactInput>(&in, 1), SolverConfig());
+    REQUIRE(solver.CacheSize() == in.manifold.count);
+    bytes::ByteWriter writer;
+    SnapshotOut out(&writer);
+    solver.SaveCache(&out);
+    ContactSolver loaded;
+    SnapshotIn reader(writer.Bytes());
+    CHECK(loaded.LoadCache(&reader));
+    CHECK(loaded.CacheSize() == solver.CacheSize());
 }

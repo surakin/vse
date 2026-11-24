@@ -421,3 +421,72 @@ TEST_CASE("Collide compound: the contacts of 20000 random shapes hash to the com
     CHECK(h.inputs == 0xa9fbbe81c8cac993ull);
     CHECK(h.outputs == 0xc9a286265fa0bdc1ull);
 }
+
+TEST_CASE("Broad phase: a mask change while the boxes overlap begins and ends the pair, so every begin has its end",
+          "[physics][compound]")
+{
+    PhysicsWorld world;
+    BroadPhase bp{BroadPhaseConfig()};
+    const auto add = [&](const Vec3& at)
+    {
+        BodyDesc desc;
+        desc.position = at;
+        const BodyId b = world.CreateBody(desc);
+        Collider c;
+        c.shape = Shape::MakeSphere(0.5f);
+        REQUIRE(world.AddCollider(b, c) == BodyStatus::Ok);
+        return b;
+    };
+    const BodyId a = add(Vec3(0, 0, 0));
+    add(Vec3(0.5f, 0, 0));
+    u32 begins = 0;
+    u32 ends = 0;
+    const auto update = [&]()
+    {
+        bp.Update(world);
+        begins += static_cast<u32>(bp.Begun().Size());
+        ends += static_cast<u32>(bp.Ended().Size());
+    };
+    update();
+    CHECK(begins == 1);
+    Collider masked;
+    masked.shape = Shape::MakeSphere(0.5f);
+    masked.mask = 0;  // sees nothing now
+    REQUIRE(world.SetCollider(a, masked) == BodyStatus::Ok);
+    update();
+    CHECK(ends == 1);  // the pair ended when the mask refused it
+    masked.mask = 0xFFFFFFFFu;
+    REQUIRE(world.SetCollider(a, masked) == BodyStatus::Ok);
+    update();
+    CHECK(begins == 2);  // and began again when it let it through
+    masked.mask = 0;
+    REQUIRE(world.SetCollider(a, masked) == BodyStatus::Ok);
+    update();
+    REQUIRE(world.SetTransform(a, Vec3(10, 0, 0), Quaternion::Identity()) == BodyStatus::Ok);
+    update();
+    CHECK(begins == ends);
+}
+
+TEST_CASE("Broad phase: the end of a pair whose trigger is removed is still a trigger pair", "[physics][compound]")
+{
+    PhysicsWorld world;
+    BroadPhase bp{BroadPhaseConfig()};
+    BodyDesc zone;
+    zone.settings.type = BodyType::Static;
+    const BodyId zone_body = world.CreateBody(zone);
+    Collider zc;
+    zc.shape = Shape::MakeBox(Vec3(2, 2, 2));
+    zc.is_trigger = true;
+    REQUIRE(world.AddCollider(zone_body, zc) == BodyStatus::Ok);
+    const BodyId ball = world.CreateBody(BodyDesc());
+    Collider bc;
+    bc.shape = Shape::MakeSphere(0.5f);
+    REQUIRE(world.AddCollider(ball, bc) == BodyStatus::Ok);
+    bp.Update(world);
+    REQUIRE(bp.Begun().Size() == 1);
+    CHECK(bp.Begun()[0].trigger);
+    REQUIRE(world.DestroyBody(zone_body) == BodyStatus::Ok);
+    bp.Update(world);
+    REQUIRE(bp.Ended().Size() == 1);
+    CHECK(bp.Ended()[0].trigger);
+}

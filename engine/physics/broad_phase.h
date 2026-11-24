@@ -153,14 +153,17 @@ public:
     /// - Fails: never.
     const Vector<ColliderPair>& Pairs() const { return pairs_; }
 
-    /// Returns the pairs that began in the last `Update`, in sorted order (every kind, as the tracker reports them).
+    /// Returns the pairs that began in the last `Update`, in sorted order (every kind, as the tracker reports them):
+    /// their boxes began to overlap, or a group, mask or trigger change let a pair whose boxes overlap through. Every
+    /// pair that begins ends once, in `Ended`, with the trigger flag it began with.
     ///
     /// - Returns: the pairs.
     /// - Ownership: owned by the broad phase; valid until the next `Update`.
     /// - Fails: never.
     const Vector<ColliderPair>& Begun() const { return begun_; }
 
-    /// Returns the pairs that ended in the last `Update`, in sorted order.
+    /// Returns the pairs that ended in the last `Update`, in sorted order: their boxes stopped overlapping, a collider
+    /// or body is gone, or a group, mask or trigger change ended them.
     ///
     /// - Returns: the pairs.
     /// - Ownership: owned by the broad phase; valid until the next `Update`.
@@ -200,6 +203,9 @@ private:
     Vector<ColliderPair> pairs_;
     Vector<ColliderPair> begun_;
     Vector<ColliderPair> ended_;
+    // The pairs reported as begun and not yet ended (sorted by key), and this update's list (swapped in at its end).
+    Vector<ColliderPair> reported_;
+    Vector<ColliderPair> reporting_;
     BroadPhaseStats stats_;
 };
 

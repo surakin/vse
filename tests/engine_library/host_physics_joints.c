@@ -231,6 +231,18 @@ static void TestArguments(engine_handle engine)
     j = MakeJoint(ENGINE_JOINT_BALL, a, b, 0.0f, 1.0f, 0.0f);
     j.hertz = nanf("");
     CHECK_STATUS(g_api->component_set(world, a, ENGINE_COMPONENT_JOINT, &j), ENGINE_ERROR_INVALID_ARGUMENT);
+    /* numbers the physics would refuse are refused here, not left pending */
+    j = MakeJoint(ENGINE_JOINT_BALL, a, b, 0.0f, 1.0f, 0.0f);
+    j.hertz = 1.0e-6f;
+    CHECK_STATUS(g_api->component_set(world, a, ENGINE_COMPONENT_JOINT, &j), ENGINE_ERROR_INVALID_ARGUMENT);
+    j = MakeJoint(ENGINE_JOINT_HINGE, a, b, 0.0f, 1.0f, 0.0f);
+    j.flags = ENGINE_JOINT_LIMIT;
+    j.lower_angle = 0.5f;
+    j.upper_angle = -0.5f;
+    CHECK_STATUS(g_api->component_set(world, a, ENGINE_COMPONENT_JOINT, &j), ENGINE_ERROR_INVALID_ARGUMENT);
+    j = MakeJoint(ENGINE_JOINT_HINGE, a, b, 0.0f, 1.0f, 0.0f);
+    j.max_motor_torque = -1.0f;
+    CHECK_STATUS(g_api->component_set(world, a, ENGINE_COMPONENT_JOINT, &j), ENGINE_ERROR_INVALID_ARGUMENT);
     j = MakeJoint(ENGINE_JOINT_HINGE, a, b, 0.0f, 1.0f, 0.0f);
     j.flags = ENGINE_JOINT_LIMIT | ENGINE_JOINT_MOTOR | ENGINE_JOINT_COLLIDE_CONNECTED;
     j.lower_angle = -0.5f;
@@ -364,7 +376,7 @@ static void TestPendulumAndBreak(engine_handle engine)
         t.struct_size = sizeof(t);
         CHECK_STATUS(g_api->component_get(world, ball, ENGINE_COMPONENT_TRANSFORM, &t), ENGINE_OK);
         dist = sqrtf((float)(t.position[0] * t.position[0] + (t.position[1] - 5.0f) * (t.position[1] - 5.0f) +
-                     t.position[2] * t.position[2]));
+                             t.position[2] * t.position[2]));
         if (dist > peak + 0.0f && i > 5)
         {
             peak = dist;
@@ -457,9 +469,65 @@ static void TestCharacter(engine_handle engine)
     CHECK(fabs(t.position[1] - 0.9f) < 0.1f);
     CHECK_STATUS(g_api->character_move(world, hero, still, 1.0f / 60.0f, &st), ENGINE_OK);
     CHECK(st.on_ground == 1);
+    /* a ray and an overlap name the character's entity, not 0, for its capsule */
+    {
+        engine_ray_hit hit;
+        int found = 0;
+        double origin[3];
+        float down[3] = {0.0f, -1.0f, 0.0f};
+        uint64_t keys[4] = {0, 0, 0, 0};
+        size_t total = 0;
+        size_t k;
+        int named = 0;
+        origin[0] = t.position[0];
+        origin[1] = 5.0;
+        origin[2] = t.position[2];
+        memset(&hit, 0, sizeof(hit));
+        hit.struct_size = sizeof(hit);
+        CHECK_STATUS(g_api->physics_raycast(world, origin, down, 10.0f, 0xFFFFFFFFu, &hit, &found), ENGINE_OK);
+        CHECK(found == 1 && hit.entity == hero);
+        origin[1] = t.position[1];
+        CHECK_STATUS(g_api->physics_overlap_sphere(world, origin, 0.1f, 0xFFFFFFFFu, keys, 4, &total), ENGINE_OK);
+        for (k = 0; k < total && k < 4; ++k)
+        {
+            named = named || keys[k] == hero;
+            CHECK(keys[k] != 0);
+        }
+        CHECK(named == 1);
+    }
     /* destroying the entity gives the capsule back: the next frame runs without it */
     CHECK_STATUS(g_api->entity_destroy(world, hero), ENGINE_OK);
     Frames(engine, 2, 1.0 / 60.0);
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+}
+
+static void TestDestroyJointOwner(engine_handle engine)
+{
+    engine_handle world;
+    uint64_t anchor;
+    uint64_t ball;
+    uint64_t pivot = 0;
+    engine_joint j;
+    float force[3];
+    int i;
+
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    anchor = MakeBox(world, ENGINE_BODY_STATIC, 0.0f, 5.0f, 0.0f, 0.2f);
+    ball = MakeBall(world, 5.0f, 0.0f);
+    SetTransform(world, ball, 2.0f, 5.0f, 0.0f);
+    CHECK_STATUS(g_api->entity_create(world, &pivot), ENGINE_OK);
+    j = MakeJoint(ENGINE_JOINT_BALL, anchor, ball, 0.0f, 5.0f, 0.0f);
+    CHECK_STATUS(g_api->component_set(world, pivot, ENGINE_COMPONENT_JOINT, &j), ENGINE_OK);
+    CHECK_STATUS(g_api->joint_reaction(world, pivot, force, NULL), ENGINE_OK);
+    Frames(engine, 10, 1.0 / 60.0);
+    /* the entity that holds the joint goes: so does the physics joint, and the ball falls free */
+    CHECK_STATUS(g_api->entity_destroy(world, pivot), ENGINE_OK);
+    for (i = 0; i < 90; ++i)
+    {
+        Frames(engine, 1, 1.0 / 60.0);
+    }
+    CHECK(PositionY(world, ball) < 1.0f); /* on the rope it never got below 5 - 2.2 */
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
 }
 
@@ -566,6 +634,7 @@ int main(void)
     TestArguments(engine);
     TestPendulumAndBreak(engine);
     TestCharacter(engine);
+    TestDestroyJointOwner(engine);
     TestEventsAndSnapshot(engine);
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     g_api->thread_detach();

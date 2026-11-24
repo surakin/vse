@@ -705,8 +705,8 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3d& posit
 {
     Vec3 d;
     if (shape.Validate() != Validation::Ok || shape.kind == ShapeKind::Mesh || shape.kind == ShapeKind::HeightField ||
-        shape.kind == ShapeKind::Compound || !Finite(position) || !Unit(direction, &d) || !IsFinite(distance) ||
-        !(distance > 0.0f) || distance > 2.0f * kMaxCoordinate)
+        shape.kind == ShapeKind::Compound || !Finite(position) || !IsUnitQuaternion(rotation) || !Unit(direction, &d) ||
+        !IsFinite(distance) || !(distance > 0.0f) || distance > 2.0f * kMaxCoordinate)
     {
         return false;
     }
@@ -804,9 +804,9 @@ usize Overlap(const PhysicsWorld& world, const Shape& shape, const Vec3d& positi
               const PhysicsQueryFilter& filter, Vector<ColliderId>* out)
 {
     out->Clear();
-    if (shape.Validate() != Validation::Ok || !Finite(position))
+    if (shape.Validate() != Validation::Ok || !Finite(position) || !IsUnitQuaternion(rotation))
     {
-        return 0;
+        return 0;  // a rotation that is not a unit quaternion would give a NaN or wrong box
     }
     const Libraries libs = LibrariesOf(world);
     Pose pose;

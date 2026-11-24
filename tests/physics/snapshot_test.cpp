@@ -632,3 +632,64 @@ TEST_CASE("Snapshot: a body's joints are found again after a restore, and stale 
     REQUIRE(churn.DestroyBody(a) == BodyStatus::Ok);
     CHECK(churn.JointCount() == 0);
 }
+
+TEST_CASE("Snapshot: a hull library that holds another hull under the same id is refused", "[physics][snapshot]")
+{
+    PhysicsWorld a;
+    const u32 hull = a.Hulls().Add(physics::testing::BoxHull(Vec3(1, 1, 1)));
+    BodyDesc desc;
+    desc.position = Vec3(0, 3, 0);
+    const BodyId id = a.CreateBody(desc);
+    Collider c;
+    c.shape = Shape::MakeHull(hull, Vec3(1, 1, 1));
+    REQUIRE(a.AddCollider(id, c) == BodyStatus::Ok);
+    a.Step();
+    const Vector<byte> bytes = Bytes(a);
+    // A smaller hull fits the shape's bound, so only its content tells it apart.
+    PhysicsWorld other;
+    other.Hulls().Add(physics::testing::BoxHull(Vec3(0.5f, 0.5f, 0.5f)));
+    CHECK(other.Restore(View(bytes)) == SnapshotStatus::LibraryMismatch);
+    PhysicsWorld same;
+    same.Hulls().Add(physics::testing::BoxHull(Vec3(1, 1, 1)));
+    CHECK(same.Restore(View(bytes)) == SnapshotStatus::Ok);
+}
+
+TEST_CASE("Snapshot: touching pairs out of order are refused", "[physics][snapshot]")
+{
+    PhysicsWorld world;
+    // Two trigger volumes around one ball: two touching trigger pairs, the last records before the library section.
+    for (u32 i = 0; i < 2; ++i)
+    {
+        BodyDesc zone;
+        zone.settings.type = BodyType::Static;
+        zone.position = Vec3(0.1f * static_cast<f32>(i), 0, 0);
+        const BodyId z = world.CreateBody(zone);
+        Collider zc;
+        zc.shape = Shape::MakeBox(Vec3(3, 3, 3));
+        zc.is_trigger = true;
+        REQUIRE(world.AddCollider(z, zc) == BodyStatus::Ok);
+    }
+    BodyDesc ball;
+    ball.settings.gravity_scale = 0.0f;
+    const BodyId b = world.CreateBody(ball);
+    Collider bc;
+    bc.shape = Shape::MakeSphere(0.5f);
+    REQUIRE(world.AddCollider(b, bc) == BodyStatus::Ok);
+    world.Step();
+    REQUIRE(world.Events().triggers.Size() == 2);
+    Vector<byte> bytes = Bytes(world);
+    PhysicsWorld good;
+    REQUIRE(good.Restore(View(bytes)) == SnapshotStatus::Ok);
+    // The tail is: two trigger records of 48 bytes, then the library count (0, one byte). Swap the two records.
+    REQUIRE(bytes[bytes.Size() - 1] == byte{0});
+    const usize second = bytes.Size() - 1 - 48;
+    const usize first = second - 48;
+    for (usize k = 0; k < 48; ++k)
+    {
+        const byte t = bytes[first + k];
+        bytes[first + k] = bytes[second + k];
+        bytes[second + k] = t;
+    }
+    PhysicsWorld swapped;
+    CHECK(swapped.Restore(View(bytes)) == SnapshotStatus::Corrupt);
+}

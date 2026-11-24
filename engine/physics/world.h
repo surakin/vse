@@ -3,9 +3,11 @@
 #pragma once
 
 #include "containers/hash_map.h"
+#include "containers/hash_set.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "ecs/entity.h"
+#include "int128.h"
 #include "mem/heap_allocator.h"
 #include "math/matrix.h"
 #include "math/quaternion.h"
@@ -724,7 +726,8 @@ public:
     /// restored from a snapshot continues bit for bit as the original did.
     ///
     /// Every value is checked (counts against the bytes left, ids against slots, numbers for being finite, shapes
-    /// against the libraries (a height field also by its content hash), chains of colliders against their bodies, the
+    /// against the libraries (a hull, mesh, compound or height field also by the content hash of the entry it names),
+    /// chains of colliders against their bodies, the order of the contact cache and of the touching pairs, the
     /// configuration against `SetStepConfig`), so truncated, corrupt or hostile bytes are refused without a crash.
     ///
     /// - Param data: the bytes `Snapshot` wrote.
@@ -741,7 +744,9 @@ public:
 
     /// The events of the last `Update` (or of the last `Step` called by hand): contact begin, stay and end, trigger
     /// enter and exit, joint breaks, in the order of the steps and of the collider keys. Destroying a body removes the
-    /// pending events that name it.
+    /// pending events that name it, and the pairs it was in end: their end and exit events (naming the destroyed body's
+    /// stale id and its entity) come first in the next update's lists, except for a pair whose begin was cancelled
+    /// with them (a program that never saw the begin sees no end).
     ///
     /// - Returns: the lists, valid until the next `Update`, `Step` or `ClearEvents`.
     /// - Ownership: owned by the world.
@@ -749,7 +754,8 @@ public:
     const PhysicsEvents& Events() const { return events_; }
 
     /// Empties the event lists. `Update` does it at its start and `Step` at its start (unless `Update` called it), so a
-    /// program that reads the events after each call does not need this.
+    /// program that reads the events after each call does not need this. The end events of destroyed bodies' pairs are
+    /// not dropped: they still come with the next update.
     ///
     /// - Fails: never.
     void ClearEvents();
@@ -860,8 +866,9 @@ private:
     void Disturb(Body* body);
     void UpdateSleep(const Vector<u32>& edges, f32 dt);
     // Continuous collision (ccd.cpp): after the step's motion, a continuous body that passed into a static or kinematic
-    // collider goes back to the time of impact.
-    void SweepContinuous();
+    // collider goes back to the time of impact; a pair of bodies in `connected` (the (low id, high id) keys of the
+    // joints that keep their bodies apart) is not swept, as the narrow phase skips it.
+    void SweepContinuous(const HashSet<u128, HeapAllocator>& connected);
     // Whether the body moves things it touches this step: a dynamic body that is awake, a kinematic body with a
     // velocity, and any body changed from outside.
     static bool Disturbing(const Body& body);
@@ -871,6 +878,9 @@ private:
     static void IntegrateVelocity(const Vec3& gravity, Body* body, f32 dt);
     static void LimitVelocity(f32 max_velocity, Body* body);
     static void IntegratePosition(Body* body, f32 dt);
+    // The content hash of the library entry a hull, mesh, compound or height-field shape names (snapshot.cpp), 0 for
+    // another shape or a missing entry.
+    u64 LibraryContentHash(const Shape& shape) const;
     // A hull or mesh shape names an entry of its library, and its extent (the broad phase's bound) covers it; a mesh
     // belongs to a static body.
     bool HullKnown(const Shape& shape, BodyType body_type) const
@@ -935,6 +945,9 @@ private:
     // Events (Day 405): the lists of the last update, the pairs that touch (contacts) and the trigger pairs that
     // overlap, both sorted by collider key; `keep_events_` is set while `Update` runs its steps.
     PhysicsEvents events_;
+    // The end and exit events of the pairs of bodies destroyed since the last update (`DropEventsOf`): `StartEvents`
+    // puts them at the head of the next update's lists. Not state: a snapshot does not hold them.
+    PhysicsEvents departed_;
     Vector<ContactRecord> contacts_;
     Vector<TriggerEvent> triggers_touching_;
     bool keep_events_ = false;
@@ -943,6 +956,8 @@ private:
     void UpdateContactEvents(const Vector<ContactInput>& inputs, const Vector<ColliderPair>& carried);
     void UpdateTriggerEvents(const Vector<ColliderPair>& pairs);
     void DropEventsOf(BodyId id);
+    // Empties the event lists and moves the departed pairs' events into them: the start of an update or a step.
+    void StartEvents();
 };
 
 }  // namespace vse::physics

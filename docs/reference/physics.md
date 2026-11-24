@@ -391,7 +391,7 @@ A pair is listed when its colliders belong to different bodies and at least one 
 const Vector<ColliderPair>& Begun() const;
 ```
 
-Returns the pairs that began in the last `Update`, in sorted order (every kind, as the tracker reports them).
+Returns the pairs that began in the last `Update`, in sorted order (every kind, as the tracker reports them): their boxes began to overlap, or a group, mask or trigger change let a pair whose boxes overlap through. Every pair that begins ends once, in `Ended`, with the trigger flag it began with.
 
 | Field | Value |
 |---|---|
@@ -407,7 +407,7 @@ Returns the pairs that began in the last `Update`, in sorted order (every kind, 
 const Vector<ColliderPair>& Ended() const;
 ```
 
-Returns the pairs that ended in the last `Update`, in sorted order.
+Returns the pairs that ended in the last `Update`, in sorted order: their boxes stopped overlapping, a collider or body is gone, or a group, mask or trigger change ended them.
 
 | Field | Value |
 |---|---|
@@ -737,7 +737,7 @@ Stops the character: the body's speed and the kept vertical speed become zero. T
 CharacterEvents Move(PhysicsWorld* world, const Vec3& velocity, f32 dt);
 ```
 
-Moves the character for one step: the capsule goes where `velocity` (horizontal; the `y` part is ignored) and gravity take it, and the body's speed is set so the next `Step` carries it there and pushes what it meets.
+Moves the character for one step: the capsule goes where `velocity` (horizontal; the `y` part is ignored) and gravity take it, and the body's speed is set so the next `Step` carries it there and pushes what it meets. A second `Move` before the world steps continues from where the first one took the character: the next `Step` carries it through both.
 
 | Field | Value |
 |---|---|
@@ -3798,7 +3798,7 @@ Checks the numbers and makes a hull.
 
 | Field | Value |
 |---|---|
-| Parameter `spec` | the numbers: 4 to 255 vertices, 4 to 512 faces of 3 to 64 vertices each, indices below the vertex count, finite numbers, unit normals (within 1e-3), faces in index order, a volume above zero. |
+| Parameter `spec` | the numbers: 4 to 255 vertices, 4 to 512 faces of 3 to 64 vertices each, indices below the vertex count, finite numbers, unit normals (within 1e-3), faces in index order, a volume above zero, and planes that bound the hull: each face's corners on its plane and wound counter-clockwise about its normal, no vertex in front of any plane (within 0.4 % of the largest coordinate). |
 | Parameter `result` | receives `Ok` or why the numbers were refused. |
 | Returns | the hull, or null when refused. |
 | Fails | a refused spec returns null and sets `result`. |
@@ -5309,6 +5309,21 @@ f32 max_motor_torque;
 
 The most torque the motor may apply.
 
+### `Validate()` {#physics-joint-validate-const}
+
+`method physics::Joint::Validate` — defined in `engine/physics/joint_sync.h`
+
+```cpp
+Validation Validate() const;
+```
+
+Checks the rules that do not depend on where the bodies are: the kind, two different ends (not both the world), finite numbers, the spring, limit, motor and break ranges and the distance lengths of `JointDesc::Validate`. A joint that passes can still be refused when it is made (an anchor too far from its body).
+
+| Field | Value |
+|---|---|
+| Returns | `Ok`, or the first rule broken. |
+| Fails | as the return says. |
+
 ## `JointLink` {#physics-jointlink}
 
 `struct physics::JointLink` — defined in `engine/physics/joint_sync.h`
@@ -5332,6 +5347,16 @@ JointId id;
 ```
 
 The joint in the physics world.
+
+### `made_from` {#physics-jointlink-made-from}
+
+`variable physics::JointLink::made_from` — defined in `engine/physics/joint_sync.h`
+
+```cpp
+Joint made_from;
+```
+
+The component the joint was made from: when the `Joint` differs, `SyncJoints` makes the joint again.
 
 ## `JointSyncReport` {#physics-jointsyncreport}
 
@@ -5397,6 +5422,16 @@ u32 refused;
 
 Joints refused (a description that is not valid).
 
+### `remade` {#physics-jointsyncreport-remade}
+
+`variable physics::JointSyncReport::remade` — defined in `engine/physics/joint_sync.h`
+
+```cpp
+u32 remade;
+```
+
+Joints made again because their `Joint` component was edited (each is also counted in `destroyed` and, when the new one is made, in `created`).
+
 ## `SyncJoints(ecs::World&,PhysicsWorld&)` {#physics-syncjoints-ecs-world-amp-physicsworld-amp}
 
 `function physics::SyncJoints` — defined in `engine/physics/joint_sync.h`
@@ -5407,7 +5442,7 @@ JointSyncReport SyncJoints(ecs::World& ecs, PhysicsWorld& physics);
 
 Makes the physics world's joints follow the `Joint` components.
 
-Call it after `SyncBodies`, at a sync point: it adds and removes `JointLink` (and removes the `Joint` of a joint that broke). Entities are visited in entity order, so two worlds built the same way get the same joint ids.
+Call it after `SyncBodies`, at a sync point: it adds and removes `JointLink` (and removes the `Joint` of a joint that broke). A `Joint` edited after its joint was made (any field) makes the joint again, at the poses the bodies have then, so it starts at rest there; the impulses and the angle the old one had are not kept. Entities are visited in entity order, so two worlds built the same way get the same joint ids. Destroying the entity that holds the `Joint` takes the component away without a sync: remove the `Joint` (and sync) first, or destroy the joint with `PhysicsWorld::DestroyJoint`.
 
 | Field | Value |
 |---|---|
@@ -5913,14 +5948,14 @@ bool ShapeCast(const PhysicsWorld& world, const Shape& shape, const Vec3d& posit
 
 Sweeps a shape along a direction and returns the first collider it touches.
 
-The time of impact is found by sampling the sweep and bisecting the first overlapping interval, to about a micrometre; the shape does not turn. A shape that starts touching a collider hits it at distance zero.
+The time of impact is found by sampling the sweep and bisecting the first overlapping interval, to about a micrometre; the shape does not turn. A shape that starts touching a collider hits it at distance zero. The sweep is sampled, not continuous: at most 1024 samples, spaced a quarter of the shape's smallest width apart, so a long cast can step over a collider thinner than the spacing.
 
 | Field | Value |
 |---|---|
 | Parameter `world` | the world. |
 | Parameter `shape` | a sphere, box, capsule or hull of the world's library (not a mesh or a compound). |
 | Parameter `position` | where the shape's origin starts. |
-| Parameter `rotation` | its orientation. |
+| Parameter `rotation` | its orientation, a unit quaternion (within 2e-3 of length 1). |
 | Parameter `direction` | any non-zero direction. |
 | Parameter `distance` | how far to sweep. |
 | Parameter `filter` | what to hit. |
@@ -5945,11 +5980,11 @@ Finds the colliders a shape touches at a pose.
 | Parameter `world` | the world. |
 | Parameter `shape` | the shape (any kind of the library). |
 | Parameter `position` | where its origin is. |
-| Parameter `rotation` | its orientation. |
+| Parameter `rotation` | its orientation, a unit quaternion (within 2e-3 of length 1). |
 | Parameter `filter` | what to include. |
 | Parameter `out` | receives the colliders sorted by id key; cleared first. |
 | Returns | the number found. |
-| Fails | an invalid shape returns zero. |
+| Fails | an invalid shape, a position that is not finite or a rotation that is not a unit quaternion returns zero. |
 | Thread-safety | thread-safe against other queries, while no step or change runs. |
 | Ownership | `out` is the caller's. |
 
@@ -6950,7 +6985,7 @@ What `PhysicsWorld::Restore` found. The numbers are stored nowhere but are never
 | <a id="physics-snapshotstatus-unknownversion"></a>`UnknownVersion` | `2` | A version this build does not read (older or newer). |
 | <a id="physics-snapshotstatus-truncated"></a>`Truncated` | `3` | The bytes end before the snapshot does. |
 | <a id="physics-snapshotstatus-corrupt"></a>`Corrupt` | `4` | A value is not valid (a count too large, a bad id, a number that is not finite, ...). |
-| <a id="physics-snapshotstatus-librarymismatch"></a>`LibraryMismatch` | `5` | A shape names a hull, mesh or compound the world's libraries do not hold. |
+| <a id="physics-snapshotstatus-librarymismatch"></a>`LibraryMismatch` | `5` | A shape names a hull, mesh, compound or height field the world's libraries do not hold, or hold with other content. |
 | <a id="physics-snapshotstatus-outofmemory"></a>`OutOfMemory` | `6` | Memory ran out while the state was built; the world is unchanged. |
 
 ## `SnapshotStatusName(SnapshotStatus)` {#physics-snapshotstatusname-snapshotstatus}
@@ -7284,21 +7319,6 @@ Solves the contacts and the joints of the world and integrates the bodies that t
 | Parameter `config` | the substeps, iterations and softness. |
 | Fails | a manifold whose body is not found is skipped. |
 | Ownership | `inputs` is read during the call only. |
-
-### `ForgetBody(BodyId)` {#physics-contactsolver-forgetbody-bodyid}
-
-`method physics::ContactSolver::ForgetBody` — defined in `engine/physics/solver.h`
-
-```cpp
-void ForgetBody(BodyId body);
-```
-
-Forgets the cached impulses of a body (it was teleported or destroyed).
-
-| Field | Value |
-|---|---|
-| Parameter `body` | the body. |
-| Fails | never. |
 
 ### `Clear()` {#physics-contactsolver-clear}
 
@@ -9946,7 +9966,7 @@ SnapshotStatus Restore(ByteSpan data);
 
 Replaces the world's state by a snapshot's: the bodies, colliders, joints, contact cache and configuration of the world are dropped and the snapshot's put in their place. The libraries and the scheduler stay. A run restored from a snapshot continues bit for bit as the original did.
 
-Every value is checked (counts against the bytes left, ids against slots, numbers for being finite, shapes against the libraries (a height field also by its content hash), chains of colliders against their bodies, the configuration against `SetStepConfig`), so truncated, corrupt or hostile bytes are refused without a crash.
+Every value is checked (counts against the bytes left, ids against slots, numbers for being finite, shapes against the libraries (a hull, mesh, compound or height field also by the content hash of the entry it names), chains of colliders against their bodies, the order of the contact cache and of the touching pairs, the configuration against `SetStepConfig`), so truncated, corrupt or hostile bytes are refused without a crash.
 
 | Field | Value |
 |---|---|
@@ -9978,7 +9998,7 @@ Everything the world counts, in one value.
 const PhysicsEvents& Events() const;
 ```
 
-The events of the last `Update` (or of the last `Step` called by hand): contact begin, stay and end, trigger enter and exit, joint breaks, in the order of the steps and of the collider keys. Destroying a body removes the pending events that name it.
+The events of the last `Update` (or of the last `Step` called by hand): contact begin, stay and end, trigger enter and exit, joint breaks, in the order of the steps and of the collider keys. Destroying a body removes the pending events that name it, and the pairs it was in end: their end and exit events (naming the destroyed body's stale id and its entity) come first in the next update's lists, except for a pair whose begin was cancelled with them (a program that never saw the begin sees no end).
 
 | Field | Value |
 |---|---|
@@ -9994,7 +10014,7 @@ The events of the last `Update` (or of the last `Step` called by hand): contact 
 void ClearEvents();
 ```
 
-Empties the event lists. `Update` does it at its start and `Step` at its start (unless `Update` called it), so a program that reads the events after each call does not need this.
+Empties the event lists. `Update` does it at its start and `Step` at its start (unless `Update` called it), so a program that reads the events after each call does not need this. The end events of destroyed bodies' pairs are not dropped: they still come with the next update.
 
 | Field | Value |
 |---|---|

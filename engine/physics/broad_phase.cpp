@@ -213,43 +213,19 @@ void BroadPhase::Update(const PhysicsWorld& world)
     tracker_.Update(set_, &events_);
     begun_.Clear();
     ended_.Clear();
-    // The group and mask words and the trigger rule apply on top of the layer matrix; an event for a collider that is
-    // gone (a pair that ends because a body was destroyed) passes.
-    const auto allowed = [&](const ColliderId a, const ColliderId b, bool* trigger)
+    // The group and mask words and the trigger rule apply on top of the layer matrix.
+    const auto allowed = [&](const ColliderRecord& ra, const ColliderRecord& rb)
     {
-        const ColliderRecord* ra = world.FindCollider(a);
-        const ColliderRecord* rb = world.FindCollider(b);
-        *trigger = (ra != nullptr && ra->value.is_trigger) || (rb != nullptr && rb->value.is_trigger);
-        if (ra == nullptr || rb == nullptr)
-        {
-            return true;
-        }
-        if (ra->value.is_trigger && rb->value.is_trigger && !config_.trigger_pairs)
+        if (ra.value.is_trigger && rb.value.is_trigger && !config_.trigger_pairs)
         {
             return false;
         }
-        return GroupsCollide(ra->value.group, ra->value.mask, rb->value.group, rb->value.mask);
+        return GroupsCollide(ra.value.group, ra.value.mask, rb.value.group, rb.value.mask);
     };
-    for (usize i = 0; i < events_.begin.Size(); ++i)
-    {
-        const ColliderId a = ColliderId::FromKey(events_.begin[i].a);
-        const ColliderId b = ColliderId::FromKey(events_.begin[i].b);
-        bool trigger = false;
-        if (allowed(a, b, &trigger))
-        {
-            begun_.Push(ColliderPair{a, b, trigger});
-        }
-    }
-    for (usize i = 0; i < events_.end.Size(); ++i)
-    {
-        const ColliderId a = ColliderId::FromKey(events_.end[i].a);
-        const ColliderId b = ColliderId::FromKey(events_.end[i].b);
-        bool trigger = false;
-        if (allowed(a, b, &trigger))
-        {
-            ended_.Push(ColliderPair{a, b, trigger});
-        }
-    }
+    // Begin and end are told against the pairs reported last time, not the tracker's box events alone: a pair whose
+    // group, mask or trigger flag changes while the boxes keep overlapping begins or ends then, and a pair that ends
+    // (a collider removed, a body destroyed) reports the trigger flag it began with. So every begin has its end.
+    reporting_.Clear();
     pairs_.Clear();
     tracker_.ForEachPair(
         [&](const spatial::KeyPair& pair)
@@ -258,14 +234,19 @@ void BroadPhase::Update(const PhysicsWorld& world)
             const ColliderId b = ColliderId::FromKey(pair.b);
             const ColliderRecord* ra = world.FindCollider(a);
             const ColliderRecord* rb = world.FindCollider(b);
-            if (ra == nullptr || rb == nullptr || ra->owner == rb->owner)
+            if (ra == nullptr || rb == nullptr || !allowed(*ra, *rb))
+            {
+                return;
+            }
+            const bool trigger = ra->value.is_trigger || rb->value.is_trigger;
+            reporting_.Push(ColliderPair{a, b, trigger});
+            if (ra->owner == rb->owner)
             {
                 return;
             }
             const Body* ba = world.Find(ra->owner);
             const Body* bb = world.Find(rb->owner);
-            bool trigger = false;
-            if (!allowed(a, b, &trigger))
+            if (ba == nullptr || bb == nullptr)
             {
                 return;
             }
@@ -277,6 +258,40 @@ void BroadPhase::Update(const PhysicsWorld& world)
             }
             pairs_.Push(ColliderPair{a, b, trigger});
         });
+    // Both lists are sorted by (a, b) key: one merge gives the pairs that began and ended.
+    const auto before = [](const ColliderPair& x, const ColliderPair& y)
+    {
+        const u64 xa = x.a.ToKey();
+        const u64 ya = y.a.ToKey();
+        return xa != ya ? xa < ya : x.b.ToKey() < y.b.ToKey();
+    };
+    usize i = 0;
+    usize j = 0;
+    while (i < reported_.Size() || j < reporting_.Size())
+    {
+        if (j == reporting_.Size() || (i < reported_.Size() && before(reported_[i], reporting_[j])))
+        {
+            ended_.Push(reported_[i]);
+            ++i;
+        }
+        else if (i == reported_.Size() || before(reporting_[j], reported_[i]))
+        {
+            begun_.Push(reporting_[j]);
+            ++j;
+        }
+        else
+        {
+            if (reported_[i].trigger != reporting_[j].trigger)
+            {
+                // The trigger flag changed: the old kind of pair ends and the new one begins.
+                ended_.Push(reported_[i]);
+                begun_.Push(reporting_[j]);
+            }
+            ++i;
+            ++j;
+        }
+    }
+    reported_.Swap(reporting_);
     stats_.begun = static_cast<u32>(begun_.Size());
     stats_.ended = static_cast<u32>(ended_.Size());
     stats_.pairs = static_cast<u32>(tracker_.PairCount());

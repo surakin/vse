@@ -1,4 +1,6 @@
 #include "bytes/byte_writer.h"
+#include "containers/hash.h"
+#include "cstr/mem_ops.h"
 #include "lang/scalar.h"
 #include "lang/utility.h"
 #include "physics/check.h"
@@ -14,7 +16,8 @@ namespace
 {
 
 constexpr u32 kMagic = 0x4e534850u;  // "PHSN"
-constexpr u32 kVersion = 5;          // 5: the content hash of each collider's height field follows the triggers
+// 5: the content hash of each collider's height field follows the triggers; 6: of each hull, mesh and compound too.
+constexpr u32 kVersion = 6;
 constexpr usize kMaxSlots = 1u << 24;
 
 // ---- pools -----------------------------------------------------------------------------------------------------
@@ -192,6 +195,12 @@ void ReadBody(SnapshotIn& in, Body* b)
     b->disturbed = in.Bool();
     b->integrated = in.Bool();
     b->teleports = in.U32();
+}
+
+// Whether the pair (xa, xb) comes strictly before (ya, yb): the order of the contact and trigger lists.
+bool SnapshotKeysBefore(u64 xa, u64 xb, u64 ya, u64 yb)
+{
+    return xa != ya ? xa < ya : xb < yb;
 }
 
 bool UnitQuaternion(const Quaternion& q)
@@ -415,6 +424,63 @@ void ReadTrigger(SnapshotIn& in, TriggerEvent* t)
     t->entity_other.generation = in.U32();
 }
 
+u64 FloatBits(f32 v)
+{
+    u32 b = 0;
+    MemCopy(&b, &v, sizeof(b));
+    return static_cast<u64>(b);
+}
+
+void AddVec(Fnv1a64Builder* h, const Vec3& v)
+{
+    h->AddWord(FloatBits(v.x));
+    h->AddWord(FloatBits(v.y));
+    h->AddWord(FloatBits(v.z));
+}
+
+u64 HullHash(const ConvexHull& hull)
+{
+    Fnv1a64Builder h;
+    h.AddWord(hull.VertexCount());
+    h.AddWord(hull.FaceCount());
+    for (u32 i = 0; i < hull.VertexCount(); ++i)
+    {
+        AddVec(&h, hull.Vertex(i));
+    }
+    for (u32 f = 0; f < hull.FaceCount(); ++f)
+    {
+        const HullFace& face = hull.Face(f);
+        h.AddWord(face.first);
+        h.AddWord(face.count);
+        AddVec(&h, face.normal);
+        h.AddWord(FloatBits(face.offset));
+        for (u32 k = 0; k < face.count; ++k)
+        {
+            h.AddWord(hull.FaceVertex(face.first + k));
+        }
+    }
+    return h.Value();
+}
+
+u64 MeshHash(const TriangleMesh& mesh)
+{
+    Fnv1a64Builder h;
+    h.AddWord(mesh.VertexCount());
+    h.AddWord(mesh.TriangleCount());
+    for (u32 i = 0; i < mesh.VertexCount(); ++i)
+    {
+        AddVec(&h, mesh.Vertex(i));
+    }
+    for (u32 t = 0; t < mesh.TriangleCount(); ++t)
+    {
+        h.AddWord(mesh.Index(t, 0));
+        h.AddWord(mesh.Index(t, 1));
+        h.AddWord(mesh.Index(t, 2));
+        h.AddWord(mesh.Material(t));
+    }
+    return h.Value();
+}
+
 }  // namespace
 
 void WriteColliderValue(SnapshotOut& out, const Collider& c)
@@ -478,6 +544,67 @@ const char* SnapshotStatusName(SnapshotStatus status)
     return "unknown";
 }
 
+// The content of the library entry a shape names (a hull, mesh, compound or height field), so a snapshot can refuse a
+// world whose library holds something else under the same id; 0 for a shape that names no entry or a missing one.
+u64 PhysicsWorld::LibraryContentHash(const Shape& shape) const
+{
+    switch (shape.kind)
+    {
+    case ShapeKind::Hull:
+    {
+        const ConvexHull* hull = hulls_.Find(shape.hull);
+        return hull != nullptr ? HullHash(*hull) : 0;
+    }
+    case ShapeKind::Mesh:
+    {
+        const TriangleMesh* mesh = meshes_.Find(shape.mesh);
+        return mesh != nullptr ? MeshHash(*mesh) : 0;
+    }
+    case ShapeKind::HeightField:
+    {
+        const HeightField* field = height_fields_.Find(shape.height_field);
+        return field != nullptr ? field->ContentHash() : 0;
+    }
+    case ShapeKind::Compound:
+    {
+        const CompoundShape* compound = compounds_.Find(shape.compound);
+        if (compound == nullptr)
+        {
+            return 0;
+        }
+        Fnv1a64Builder h;
+        h.AddWord(compound->ChildCount());
+        for (u32 i = 0; i < compound->ChildCount(); ++i)
+        {
+            const CompoundChild& child = compound->Child(i);
+            h.AddWord(static_cast<u64>(child.shape.kind));
+            h.AddWord(FloatBits(child.shape.radius));
+            h.AddWord(FloatBits(child.shape.half_height));
+            AddVec(&h, child.shape.half_extents);
+            AddVec(&h, child.offset);
+            h.AddWord(FloatBits(child.rotation.x));
+            h.AddWord(FloatBits(child.rotation.y));
+            h.AddWord(FloatBits(child.rotation.z));
+            h.AddWord(FloatBits(child.rotation.w));
+            h.AddWord(FloatBits(child.material.friction));
+            h.AddWord(FloatBits(child.material.restitution));
+            h.AddWord(FloatBits(child.material.density));
+            h.AddWord(child.group);
+            h.AddWord(child.mask);
+            h.AddWord(child.shape.kind == ShapeKind::Hull ? LibraryContentHash(child.shape) : 0);
+        }
+        return h.Value();
+    }
+    default: return 0;
+    }
+}
+
+static bool NamesLibrary(ShapeKind kind)
+{
+    return kind == ShapeKind::Hull || kind == ShapeKind::Mesh || kind == ShapeKind::HeightField ||
+           kind == ShapeKind::Compound;
+}
+
 void PhysicsWorld::Snapshot(bytes::ByteWriter* writer) const
 {
     SnapshotOut out(writer);
@@ -500,26 +627,24 @@ void PhysicsWorld::Snapshot(bytes::ByteWriter* writer) const
     {
         WriteTrigger(out, triggers_touching_[i]);
     }
-    // The height fields the colliders name, by content: a world with another map under the same id refuses the
-    // snapshot.
-    u32 fields = 0;
+    // The library entries the colliders name (hulls, meshes, compounds, height fields), by content: a world with
+    // something else under the same id refuses the snapshot.
+    u32 named = 0;
     for (u32 slot = 0; slot < colliders_.Slots(); ++slot)
     {
         const u32 generation = colliders_.LiveGeneration(slot);
-        fields += generation != 0 && colliders_.Find(slot, generation)->value.shape.kind == ShapeKind::HeightField ? 1u
-                                                                                                                   : 0u;
+        named += generation != 0 && NamesLibrary(colliders_.Find(slot, generation)->value.shape.kind) ? 1u : 0u;
     }
-    out.Count(fields);
+    out.Count(named);
     for (u32 slot = 0; slot < colliders_.Slots(); ++slot)
     {
         const u32 generation = colliders_.LiveGeneration(slot);
-        if (generation == 0 || colliders_.Find(slot, generation)->value.shape.kind != ShapeKind::HeightField)
+        if (generation == 0 || !NamesLibrary(colliders_.Find(slot, generation)->value.shape.kind))
         {
             continue;
         }
-        const HeightField* field = height_fields_.Find(colliders_.Find(slot, generation)->value.shape.height_field);
         out.U32(slot);
-        out.U64(field != nullptr ? field->ContentHash() : 0);
+        out.U64(LibraryContentHash(colliders_.Find(slot, generation)->value.shape));
     }
 }
 
@@ -561,6 +686,8 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
     next.accumulator_ = accumulator;
     next.step_stats_.steps = steps;
     bool library_missing = false;
+    usize named_colliders = 0;
+    usize checked_entries = 0;
     if (!ReadPool(&next.bodies_, in, [&](SnapshotIn& r, Body* b, u32, u32) { ReadBody(r, b); }) ||
         !ReadPool(&next.colliders_, in, [&](SnapshotIn& r, ColliderRecord* c, u32, u32) { ReadCollider(r, c); }) ||
         !ReadPool(&next.joints_, in, [&](SnapshotIn& r, JointRecord* j, u32, u32) { ReadJoint(r, j); }))
@@ -600,6 +727,26 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
     if (in.Remaining() != 0)
     {
         return SnapshotStatus::Corrupt;
+    }
+    // The touching pairs are searched by binary search (events.cpp): each list must be sorted by collider keys, with no
+    // pair twice.
+    for (usize i = 1; i < next.contacts_.Size(); ++i)
+    {
+        const ContactRecord& x = next.contacts_[i - 1];
+        const ContactRecord& y = next.contacts_[i];
+        if (!SnapshotKeysBefore(x.a.ToKey(), x.b.ToKey(), y.a.ToKey(), y.b.ToKey()))
+        {
+            return SnapshotStatus::Corrupt;
+        }
+    }
+    for (usize i = 1; i < next.triggers_touching_.Size(); ++i)
+    {
+        const TriggerEvent& x = next.triggers_touching_[i - 1];
+        const TriggerEvent& y = next.triggers_touching_[i];
+        if (!SnapshotKeysBefore(x.trigger.ToKey(), x.other.ToKey(), y.trigger.ToKey(), y.other.ToKey()))
+        {
+            return SnapshotStatus::Corrupt;
+        }
     }
     // The values are checked as a whole: each body, its chain of colliders, each collider's owner and shape, each
     // joint's bodies.
@@ -655,6 +802,7 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
         {
             library_missing = true;
         }
+        named_colliders += NamesLibrary(record->value.shape.kind) ? 1u : 0u;
     }
     for (u32 slot = 0; slot < next.joints_.Slots(); ++slot)
     {
@@ -682,15 +830,20 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
         const u32 generation = field_slots[i] < next.colliders_.Slots() ? next.colliders_.LiveGeneration(field_slots[i])
                                                                         : 0;
         const ColliderRecord* record = generation != 0 ? next.colliders_.Find(field_slots[i], generation) : nullptr;
-        if (record == nullptr || record->value.shape.kind != ShapeKind::HeightField)
+        if (record == nullptr || !NamesLibrary(record->value.shape.kind) ||
+            (i > 0 && field_slots[i] <= field_slots[i - 1]))
         {
             return SnapshotStatus::Corrupt;
         }
-        const HeightField* field = height_fields_.Find(record->value.shape.height_field);
-        if (field == nullptr || field->ContentHash() != field_hashes[i])
+        if (LibraryContentHash(record->value.shape) != field_hashes[i])
         {
-            return SnapshotStatus::LibraryMismatch;  // the same id names another map here
+            return SnapshotStatus::LibraryMismatch;  // the same id names another hull, mesh, compound or map here
         }
+        ++checked_entries;
+    }
+    if (checked_entries != named_colliders)
+    {
+        return SnapshotStatus::Corrupt;  // a collider that names an entry and has no hash
     }
     // The mass, the centre of mass and the inertia are not stored: they follow from the settings and the shape, so they
     // are made again here (with the libraries of this world), exactly as `RecomputeMass` made them the first time.

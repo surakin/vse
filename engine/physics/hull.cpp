@@ -90,6 +90,48 @@ ConvexHullConstPtr ConvexHull::Create(const ConvexHullSpec& spec, Validation* re
         r = Validation::NotPositive;
         return ConvexHullConstPtr();
     }
+    // The planes must bound the hull: every face's corners on its plane, every vertex on or behind every plane, and
+    // each face wound counter-clockwise about its outward normal (the face's own normal by Newell's method agrees).
+    // The tolerance covers the 1e-3 the normals may be off unit length; a face turned inside out is off by the hull's
+    // size.
+    f32 scale = 0.0f;
+    for (usize i = 0; i < nv; ++i)
+    {
+        scale = FMax(scale, FMax(Abs(spec.vertices[i].x), FMax(Abs(spec.vertices[i].y), Abs(spec.vertices[i].z))));
+    }
+    const f32 tolerance = 4e-3f * scale + 1e-6f;
+    for (usize f = 0; f < nf; ++f)
+    {
+        const Vec3& n = spec.normals[f];
+        const f32 d = spec.offsets[f];
+        for (usize i = 0; i < nv; ++i)
+        {
+            if (n.Dot(spec.vertices[i]) - d > tolerance)
+            {
+                r = Validation::OutOfRange;
+                return ConvexHullConstPtr();
+            }
+        }
+        const u32 first = spec.face_first[f];
+        const u32 count = spec.face_count[f];
+        Vec3 newell(0.0f, 0.0f, 0.0f);
+        for (u32 k = 0; k < count; ++k)
+        {
+            const Vec3& a = spec.vertices[spec.indices[first + k]];
+            const Vec3& b = spec.vertices[spec.indices[first + (k + 1) % count]];
+            if (Abs(n.Dot(a) - d) > tolerance)
+            {
+                r = Validation::OutOfRange;
+                return ConvexHullConstPtr();
+            }
+            newell = newell + Vec3((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y));
+        }
+        if (!(newell.Dot(n) > 0.0f))
+        {
+            r = Validation::OutOfRange;
+            return ConvexHullConstPtr();
+        }
+    }
 
     ConvexHullPtr hull = MakeShared<ConvexHull>();
     Vec3 extent(0.0f, 0.0f, 0.0f);

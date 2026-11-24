@@ -161,7 +161,7 @@ u32 PhysicsWorld::Update(f32 real_seconds)
     const f64 step = 1.0 / static_cast<f64>(step_config_.step_hz);
     accumulator_ += static_cast<f64>(real_seconds);
     u32 ran = 0;
-    ClearEvents();
+    StartEvents();
     keep_events_ = true;
     while (accumulator_ >= step && ran < step_config_.max_substeps)
     {
@@ -188,7 +188,7 @@ void PhysicsWorld::Step()
     // counter, not a silent difference.
     if (!keep_events_)
     {
-        ClearEvents();
+        StartEvents();
     }
     const bool denormals_kept = DenormalsPreserved();
     if (!ENGINE_ENSURE(denormals_kept,
@@ -486,7 +486,7 @@ void PhysicsWorld::Step()
     const u64 after_start = os::MonotonicTimeNanos();
     step_stats_.integrate_ns += after_start - integrate_start;
     UpdateContactEvents(inputs, carried);
-    SweepContinuous();
+    SweepContinuous(connected);
     UpdateSleep(edges, dt);
     for (u32 slot = 0; slot < slots; ++slot)
     {

@@ -403,3 +403,23 @@ TEST_CASE("Character: SetHeight refuses to stand up into a ceiling", "[physics][
     CHECK(Abs(w.Position().y - before.y) < 1e-6f);
     CHECK(w.controller.SetHeight(&w.world, 1.2f) == BodyStatus::Ok);  // 1.2 fits under 1.4
 }
+
+TEST_CASE("Character: two moves before a step add up instead of the second overwriting the first",
+          "[physics][character]")
+{
+    Walker w(Vec3(0, 0.95f, 0));
+    ChFloor(w.world);
+    w.Run(Vec3(0, 0, 0), 20);
+    REQUIRE(w.controller.State().on_ground);
+    const f32 dt = static_cast<f32>(1.0 / static_cast<f64>(w.world.GetStepConfig().step_hz));
+    const Vec3 start = w.Position();
+    for (u32 i = 0; i < 30; ++i)
+    {
+        w.controller.Move(&w.world, Vec3(1, 0, 0), dt);
+        w.controller.Move(&w.world, Vec3(1, 0, 0), dt);
+        w.world.Step();
+    }
+    // 60 moves of dt at 1 m/s: one metre (the second move of each step used to replace the first: half a metre).
+    CHECK(Abs(w.Position().x - start.x - 1.0f) < 0.02f);
+    CHECK(w.controller.State().on_ground);
+}

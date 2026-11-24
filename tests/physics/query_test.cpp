@@ -3,6 +3,7 @@
 
 #include "jobs/parallel_for.h"
 #include "jobs/scheduler.h"
+#include "lang/limits.h"
 #include "lang/scalar.h"
 #include "physics/collide.h"
 #include "physics/query.h"
@@ -400,4 +401,24 @@ TEST_CASE("ShapeCast: a distance beyond the world is refused and a long one is s
                      &hit));
     CHECK(ShapeCast(world, ball, Vec3(0, 0, 0), Quaternion::Identity(), Vec3(0, 0, 1), 10.0f, PhysicsQueryFilter(),
                     &hit));
+}
+
+TEST_CASE("Query: a rotation that is not a unit quaternion is refused, never a NaN box", "[physics][query]")
+{
+    PhysicsWorld world;
+    QPlace(world, Shape::MakeBox(Vec3(1, 1, 1)), Vec3(0, 0, 0));
+    QPlace(world, Shape::MakeSphere(1.0f), Vec3(50, 0, 0));
+    const f32 nan = Limits<f32>::QuietNaN();
+    const Quaternion bad[] = {Quaternion(nan, 0.0f, 0.0f, 1.0f), Quaternion(0.0f, 0.0f, 0.0f, 0.0f),
+                              Quaternion(0.0f, 0.0f, 0.0f, 2.0f)};
+    for (const Quaternion& q : bad)
+    {
+        Vector<ColliderId> found;
+        // Far from both bodies: a NaN box must not reach the narrow phase as an overlap of everything.
+        CHECK(Overlap(world, Shape::MakeBox(Vec3(1, 1, 1)), Vec3(20, 0, 0), q, PhysicsQueryFilter(), &found) == 0);
+        CHECK(Overlap(world, Shape::MakeBox(Vec3(1, 1, 1)), Vec3(0, 0, 0), q, PhysicsQueryFilter(), &found) == 0);
+        PhysicsHit hit;
+        CHECK(!ShapeCast(world, Shape::MakeBox(Vec3(0.5f, 0.5f, 0.5f)), Vec3(20, 0, 0), q, Vec3(1, 0, 0), 10.0f,
+                         PhysicsQueryFilter(), &hit));
+    }
 }

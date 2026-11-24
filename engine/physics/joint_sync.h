@@ -59,6 +59,14 @@ struct Joint
     f32 motor_speed = 0.0f;
     /// The most torque the motor may apply.
     f32 max_motor_torque = 0.0f;
+
+    /// Checks the rules that do not depend on where the bodies are: the kind, two different ends (not both the world),
+    /// finite numbers, the spring, limit, motor and break ranges and the distance lengths of `JointDesc::Validate`. A
+    /// joint that passes can still be refused when it is made (an anchor too far from its body).
+    ///
+    /// - Returns: `Ok`, or the first rule broken.
+    /// - Fails: as the return says.
+    Validation Validate() const;
 };
 
 /// Added to an entity with a `Joint` by `SyncJoints`: the physics joint that belongs to it.
@@ -68,6 +76,8 @@ struct JointLink
 {
     /// The joint in the physics world.
     JointId id;
+    /// The component the joint was made from: when the `Joint` differs, `SyncJoints` makes the joint again.
+    Joint made_from;
 };
 
 /// What one `SyncJoints` call did.
@@ -86,12 +96,19 @@ struct JointSyncReport
     u32 pending = 0;
     /// Joints refused (a description that is not valid).
     u32 refused = 0;
+    /// Joints made again because their `Joint` component was edited (each is also counted in `destroyed` and, when
+    /// the new one is made, in `created`).
+    u32 remade = 0;
 };
 
 /// Makes the physics world's joints follow the `Joint` components.
 ///
 /// Call it after `SyncBodies`, at a sync point: it adds and removes `JointLink` (and removes the `Joint` of a joint
-/// that broke). Entities are visited in entity order, so two worlds built the same way get the same joint ids.
+/// that broke). A `Joint` edited after its joint was made (any field) makes the joint again, at the poses the bodies
+/// have then, so it starts at rest there; the impulses and the angle the old one had are not kept. Entities are visited
+/// in entity order, so two worlds built the same way get the same joint ids. Destroying the entity that holds the
+/// `Joint` takes the component away without a sync: remove the `Joint` (and sync) first, or destroy the joint with
+/// `PhysicsWorld::DestroyJoint`.
 ///
 /// - Param ecs: the ECS world.
 /// - Param physics: the physics world.

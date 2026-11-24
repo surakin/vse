@@ -14,7 +14,8 @@ enum class SnapshotStatus : u8
     UnknownVersion = 2,   ///< A version this build does not read (older or newer).
     Truncated = 3,        ///< The bytes end before the snapshot does.
     Corrupt = 4,          ///< A value is not valid (a count too large, a bad id, a number that is not finite, ...).
-    LibraryMismatch = 5,  ///< A shape names a hull, mesh or compound the world's libraries do not hold.
+    LibraryMismatch = 5,  ///< A shape names a hull, mesh, compound or height field the world's libraries do not hold,
+                          ///< or hold with other content.
     OutOfMemory = 6,      ///< Memory ran out while the state was built; the world is unchanged.
 };
 

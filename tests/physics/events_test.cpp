@@ -462,3 +462,91 @@ TEST_CASE("Joint component: a body lost while its entity lives does not break th
     CHECK(report.created == 1);
     CHECK(physics.JointCount() == 1);
 }
+
+TEST_CASE("Events: destroying a body ends its pairs in the next update", "[physics][events]")
+{
+    PhysicsWorld world;
+    const BodyId floor = EvFloor(world);
+    const BodyId ball = EvBody(world, BodyType::Dynamic, Vec3(0, 0.5f, 0), Shape::MakeSphere(0.5f));
+    const BodyId zone = EvBody(world, BodyType::Static, Vec3(0, 0, 0), Shape::MakeBox(Vec3(5, 5, 5)), true);
+    world.Step();
+    REQUIRE(world.Events().contacts.Size() == 1);
+    REQUIRE(world.Events().triggers.Size() == 1);
+    world.Step();  // the begin and the enter were seen; now the pairs only stay
+    REQUIRE(world.Events().Count() == 0);
+    REQUIRE(world.DestroyBody(ball) == BodyStatus::Ok);
+    CHECK(world.Contacts().Size() == 0);
+    world.Update(1.0f / 60.0f);
+    REQUIRE(world.Events().contacts.Size() == 1);
+    const ContactEvent& end = world.Events().contacts[0];
+    CHECK(end.kind == ContactEventKind::End);
+    CHECK(((end.body_a == ball && end.body_b == floor) || (end.body_a == floor && end.body_b == ball)));
+    REQUIRE(world.Events().triggers.Size() == 1);
+    CHECK(!world.Events().triggers[0].enter);
+    CHECK(world.Events().triggers[0].body_trigger == zone);
+    CHECK(world.Events().triggers[0].body_other == ball);
+    world.Step();
+    CHECK(world.Events().Count() == 0);  // delivered once
+}
+
+TEST_CASE("Joint component: an edited component makes its joint again", "[physics][events][ecs]")
+{
+    ecs::World world;
+    PhysicsWorld physics;
+    RigidBody fixed;
+    fixed.type = BodyType::Static;
+    Collider ball;
+    ball.shape = Shape::MakeSphere(0.3f);
+    ecs::LocalTransform top;
+    top.position = Vec3(0, 10, 0);
+    ecs::LocalTransform low;
+    low.position = Vec3(0, 9, 0);
+    const ecs::Entity a = world.Create(fixed, ball, top);
+    const ecs::Entity b = world.Create(RigidBody(), ball, low);
+    Joint joint;
+    joint.entity_a = a;
+    joint.entity_b = b;
+    joint.type = JointType::Ball;
+    joint.point_a = Vec3(0, 10, 0);
+    const ecs::Entity owner = world.Create(joint);
+    SyncBodies(world, physics);
+    REQUIRE(SyncJoints(world, physics).created == 1);
+    const JointId first = world.Get<JointLink>(owner)->id;
+    REQUIRE(physics.FindJoint(first)->desc.break_force == 0.0f);
+    world.Get<Joint>(owner)->break_force = 500.0f;
+    const JointSyncReport report = SyncJoints(world, physics);
+    CHECK(report.remade == 1);
+    CHECK(report.created == 1);
+    REQUIRE(world.Has<JointLink>(owner));
+    const JointRecord* record = physics.FindJoint(world.Get<JointLink>(owner)->id);
+    REQUIRE(record != nullptr);
+    CHECK(record->desc.break_force == 500.0f);
+    CHECK(physics.JointCount() == 1);
+    CHECK(SyncJoints(world, physics).remade == 0);  // unchanged: kept
+}
+
+TEST_CASE("Joint component: Validate refuses what the sync would refuse", "[physics][events][ecs]")
+{
+    Joint joint;
+    joint.entity_a = ecs::Entity::FromU64(0x100000001ull);
+    joint.entity_b = ecs::Entity::FromU64(0x100000002ull);
+    CHECK(joint.Validate() == Validation::Ok);
+    Joint spring = joint;
+    spring.hertz = 1.0e-6f;  // a denormal-ish frequency the description refuses
+    CHECK(spring.Validate() != Validation::Ok);
+    Joint motor = joint;
+    motor.type = JointType::Hinge;
+    motor.max_motor_torque = -1.0f;
+    CHECK(motor.Validate() != Validation::Ok);
+    Joint limit = joint;
+    limit.type = JointType::Hinge;
+    limit.enable_limit = true;
+    limit.lower_angle = 1.0f;
+    limit.upper_angle = -1.0f;
+    CHECK(limit.Validate() != Validation::Ok);
+    Joint self = joint;
+    self.entity_b = self.entity_a;
+    CHECK(self.Validate() != Validation::Ok);
+    Joint nowhere;
+    CHECK(nowhere.Validate() != Validation::Ok);  // both ends the world
+}

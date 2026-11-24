@@ -80,7 +80,9 @@ public:
     /// Checks the numbers and makes a hull.
     ///
     /// - Param spec: the numbers: 4 to 255 vertices, 4 to 512 faces of 3 to 64 vertices each, indices below the vertex
-    /// count, finite numbers, unit normals (within 1e-3), faces in index order, a volume above zero.
+    /// count, finite numbers, unit normals (within 1e-3), faces in index order, a volume above zero, and planes that
+    /// bound the hull: each face's corners on its plane and wound counter-clockwise about its normal, no vertex in
+    /// front of any plane (within 0.4 % of the largest coordinate).
     /// - Param result: receives `Ok` or why the numbers were refused.
     /// - Returns: the hull, or null when refused.
     /// - Ownership: the hull is shared; `spec` is borrowed for the call only.

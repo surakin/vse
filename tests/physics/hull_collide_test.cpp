@@ -213,7 +213,9 @@ TEST_CASE("ConvexHull: bad numbers are refused with a reason", "[physics][hull]"
     spec.indices = Span<const u16>(idx.Data(), idx.Size());
     spec.volume = 1.0f;
     Validation r = Validation::Ok;
-    CHECK(ConvexHull::Create(spec, &r));  // a made-up but consistent spec is accepted
+    // Made-up planes that do not bound the vertices are refused; every other check below comes before that one.
+    CHECK(!ConvexHull::Create(spec, &r));
+    CHECK(r == Validation::OutOfRange);
     spec.volume = 0.0f;
     CHECK(!ConvexHull::Create(spec, &r));
     CHECK(r == Validation::NotPositive);
@@ -620,4 +622,64 @@ TEST_CASE("Collide hull: the manifolds of 30000 random hull pairs hash to the co
           "[physics][hull][hash]")
 {
     CHECK(HullPairHash() == 0x172dfbee2611621eull);
+}
+
+TEST_CASE("ConvexHull: planes that do not bound the hull or a face wound the wrong way are refused", "[physics][hull]")
+{
+    Vector<Vec3> v;
+    for (u32 i = 0; i < 8; ++i)
+    {
+        v.Push(Vec3((i & 1) != 0 ? 1.0f : -1.0f, (i & 2) != 0 ? 1.0f : -1.0f, (i & 4) != 0 ? 1.0f : -1.0f));
+    }
+    // The six faces of the cube, counter-clockwise seen from outside.
+    const u16 loops[6][4] = {{1, 3, 7, 5}, {0, 4, 6, 2}, {2, 6, 7, 3}, {0, 1, 5, 4}, {4, 5, 7, 6}, {0, 2, 3, 1}};
+    const Vec3 normals[6] = {Vec3(1, 0, 0),  Vec3(-1, 0, 0), Vec3(0, 1, 0),
+                             Vec3(0, -1, 0), Vec3(0, 0, 1),  Vec3(0, 0, -1)};
+    Vector<Vec3> n;
+    Vector<f32> d;
+    Vector<u32> first;
+    Vector<u32> count;
+    Vector<u16> idx;
+    for (u32 f = 0; f < 6; ++f)
+    {
+        n.Push(normals[f]);
+        d.Push(1.0f);
+        first.Push(f * 4);
+        count.Push(4);
+        for (u32 k = 0; k < 4; ++k)
+        {
+            idx.Push(loops[f][k]);
+        }
+    }
+    ConvexHullSpec spec;
+    spec.vertices = Span<const Vec3>(v.Data(), v.Size());
+    spec.normals = Span<const Vec3>(n.Data(), n.Size());
+    spec.offsets = Span<const f32>(d.Data(), d.Size());
+    spec.face_first = Span<const u32>(first.Data(), first.Size());
+    spec.face_count = Span<const u32>(count.Data(), count.Size());
+    spec.indices = Span<const u16>(idx.Data(), idx.Size());
+    spec.volume = 8.0f;
+    spec.inertia = {{16.0f / 3.0f, 16.0f / 3.0f, 16.0f / 3.0f, 0.0f, 0.0f, 0.0f}};
+    Validation r = Validation::Ok;
+    REQUIRE(ConvexHull::Create(spec, &r));
+    // One face wound clockwise (its corners reversed), plane and normal unchanged.
+    const u16 kept = idx[1];
+    idx[1] = idx[3];
+    idx[3] = kept;
+    CHECK(!ConvexHull::Create(spec, &r));
+    CHECK(r == Validation::OutOfRange);
+    idx[3] = idx[1];
+    idx[1] = kept;
+    REQUIRE(ConvexHull::Create(spec, &r));
+    // One face's plane turned inward (normal and offset negated): the other vertices are in front of it.
+    n[2] = Vec3(0, -1, 0);
+    d[2] = -1.0f;
+    CHECK(!ConvexHull::Create(spec, &r));
+    CHECK(r == Validation::OutOfRange);
+    n[2] = Vec3(0, 1, 0);
+    d[2] = 1.0f;
+    // A plane pushed off its face.
+    d[4] = 0.5f;
+    CHECK(!ConvexHull::Create(spec, &r));
+    CHECK(r == Validation::OutOfRange);
 }

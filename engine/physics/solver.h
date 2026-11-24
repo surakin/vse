@@ -112,12 +112,6 @@ public:
     /// - Fails: a manifold whose body is not found is skipped.
     void Solve(PhysicsWorld* world, Span<const ContactInput> inputs, const SolverConfig& config);
 
-    /// Forgets the cached impulses of a body (it was teleported or destroyed).
-    ///
-    /// - Param body: the body.
-    /// - Fails: never.
-    void ForgetBody(BodyId body);
-
     /// Empties the cache.
     /// - Fails: never.
     void Clear();

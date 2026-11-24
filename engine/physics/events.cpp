@@ -47,6 +47,22 @@ void PhysicsWorld::ClearEvents()
     events_.joint_breaks.Clear();
 }
 
+void PhysicsWorld::StartEvents()
+{
+    ClearEvents();
+    // The ends of the pairs of bodies destroyed since the last update come first.
+    for (usize i = 0; i < departed_.contacts.Size(); ++i)
+    {
+        events_.contacts.Push(departed_.contacts[i]);
+    }
+    for (usize i = 0; i < departed_.triggers.Size(); ++i)
+    {
+        events_.triggers.Push(departed_.triggers[i]);
+    }
+    departed_.contacts.Clear();
+    departed_.triggers.Clear();
+}
+
 void PhysicsWorld::DropEventsOf(BodyId id)
 {
     const auto drop = [&](auto& list, auto&& names)
@@ -68,10 +84,60 @@ void PhysicsWorld::DropEventsOf(BodyId id)
             list.Pop();
         }
     };
+    // The pairs that touched it end: their end (or exit) events are delivered with the next update's events, so every
+    // begin a program saw has its end. A pair whose begin is in the current list (cancelled below, unseen) gets none.
+    for (usize i = 0; i < contacts_.Size(); ++i)
+    {
+        const ContactRecord& r = contacts_[i];
+        if (!(r.body_a == id || r.body_b == id))
+        {
+            continue;
+        }
+        bool unseen = false;
+        for (usize k = 0; k < events_.contacts.Size() && !unseen; ++k)
+        {
+            const ContactEvent& e = events_.contacts[k];
+            unseen = e.kind == ContactEventKind::Begin && e.a == r.a && e.b == r.b;
+        }
+        if (unseen)
+        {
+            continue;
+        }
+        ContactEvent e;
+        e.kind = ContactEventKind::End;
+        e.a = r.a;
+        e.b = r.b;
+        e.body_a = r.body_a;
+        e.body_b = r.body_b;
+        const Body* ba = Find(r.body_a);
+        const Body* bb = Find(r.body_b);
+        e.entity_a = ba != nullptr ? ba->entity : ecs::Entity();
+        e.entity_b = bb != nullptr ? bb->entity : ecs::Entity();
+        departed_.contacts.Push(e);
+    }
+    for (usize i = 0; i < triggers_touching_.Size(); ++i)
+    {
+        const TriggerEvent& t = triggers_touching_[i];
+        if (!(t.body_trigger == id || t.body_other == id))
+        {
+            continue;
+        }
+        bool unseen = false;
+        for (usize k = 0; k < events_.triggers.Size() && !unseen; ++k)
+        {
+            const TriggerEvent& e = events_.triggers[k];
+            unseen = e.enter && e.trigger == t.trigger && e.other == t.other;
+        }
+        if (!unseen)
+        {
+            TriggerEvent e = t;
+            e.enter = false;
+            departed_.triggers.Push(e);
+        }
+    }
     drop(events_.contacts, [&](const ContactEvent& e) { return e.body_a == id || e.body_b == id; });
     drop(events_.triggers, [&](const TriggerEvent& e) { return e.body_trigger == id || e.body_other == id; });
     drop(events_.joint_breaks, [&](const JointBreakEvent& e) { return e.body_a == id || e.body_b == id; });
-    // The pairs that touched it are forgotten without an end event: the body is gone.
     drop(contacts_, [&](const ContactRecord& r) { return r.body_a == id || r.body_b == id; });
     drop(triggers_touching_, [&](const TriggerEvent& e) { return e.body_trigger == id || e.body_other == id; });
 }

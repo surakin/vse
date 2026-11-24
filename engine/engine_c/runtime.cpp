@@ -773,6 +773,12 @@ engine_status EntityDestroyFn(engine_handle world, u64 key)
     return WithWorld(world, true, key,
                      [&](WorldObject& object, ecs::Entity entity)
                      {
+                         // The physics joint of a `Joint` component goes with its entity: the sync cannot find a
+                         // link whose entity is gone.
+                         if (const physics::JointLink* link = object.world.Peek<physics::JointLink>(entity))
+                         {
+                             object.world.Resource<physics::PhysicsWorld>().DestroyJoint(link->id);
+                         }
                          return object.world.Destroy(entity) == ecs::Status::Ok
                                     ? ENGINE_OK
                                     : Fail(ENGINE_ERROR_STALE_HANDLE, "the entity was destroyed");
@@ -1210,6 +1216,12 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                 joint.enable_motor = (in->flags & ENGINE_JOINT_MOTOR) != 0;
                 joint.motor_speed = in->motor_speed;
                 joint.max_motor_torque = in->max_motor_torque;
+                if (joint.Validate() != physics::Validation::Ok)
+                {
+                    // Refused now, not left pending and retried by every frame's sync.
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT,
+                                "the joint's numbers are out of range (spring, limit, motor, break or lengths)");
+                }
                 object.physics_used = true;
                 // New numbers (or a new pair) for a joint the physics already made: it is made again, as the sync keeps
                 // a joint whose two bodies are the same; a joint that broke is not revived by the sync, so its stale
@@ -3910,6 +3922,22 @@ physics::PhysicsQueryFilter FilterOf(u32 layer_mask)
     return filter;
 }
 
+// The entity a body stands for: its own link, or the entity whose character owns the capsule (a capsule's body has no
+// entity of its own); 0 for neither.
+u64 EntityKeyOfBody(const WorldObject& object, const physics::Body* body)
+{
+    if (body == nullptr)
+    {
+        return 0;
+    }
+    if (body->entity.IsValid())
+    {
+        return body->entity.ToU64();
+    }
+    const ecs::Entity owner = object.characters->EntityOfBody(body->id);
+    return owner.IsValid() ? owner.ToU64() : 0;
+}
+
 engine_status OverlapKeys(WorldObject& object, const physics::Shape& shape, const Vec3d& center, u32 layer_mask,
                           u64* keys, size_t capacity, size_t* total)
 {
@@ -3931,7 +3959,7 @@ engine_status OverlapKeys(WorldObject& object, const physics::Shape& shape, cons
         }
         if (count < capacity)
         {
-            keys[count] = body->entity.ToU64();
+            keys[count] = EntityKeyOfBody(object, body);
         }
         ++count;
     }
@@ -4129,7 +4157,7 @@ engine_status PhysicsRaycastFn(engine_handle world, const double* origin, const 
                              return ENGINE_OK;
                          }
                          const physics::Body* body = physics.Find(result.body);
-                         hit->entity = body == nullptr ? 0 : body->entity.ToU64();
+                         hit->entity = EntityKeyOfBody(object, body);
                          hit->point[0] = result.point.x;
                          hit->point[1] = result.point.y;
                          hit->point[2] = result.point.z;
@@ -4230,7 +4258,7 @@ void FillCharacterState(WorldObject& object, ecs::Entity entity, const physics::
     result.ended_ground = e.ended_ground ? 1u : 0u;
     result.wall_hits = e.wall_hits;
     const physics::Body* ground = object.world.Resource<physics::PhysicsWorld>().Find(state.ground_body);
-    result.ground_entity = ground != nullptr && ground->entity.IsValid() ? ground->entity.ToU64() : 0;
+    result.ground_entity = EntityKeyOfBody(object, ground);
     result.ground_normal[0] = state.ground_normal.x;
     result.ground_normal[1] = state.ground_normal.y;
     result.ground_normal[2] = state.ground_normal.z;

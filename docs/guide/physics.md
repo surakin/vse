@@ -75,7 +75,7 @@ material holds friction, restitution, density and how two values combine (`Combi
 order of the two colliders never matters. The material is inline in the collider for now: a minted `PMAT` asset is deferred (see `KNOWN-ISSUES.md`).
 A **convex hull** is the `Hull` kind: `Shape::MakeHull(id, extent)` names a `ConvexHull` held by the world's `HullLibrary` (`PhysicsWorld::Hulls()`; ids count from 1, and a collider that names an unknown hull, or whose extent does not cover the hull, is `BodyStatus::Invalid`). A **triangle mesh** is the `Mesh` kind for level geometry: `Shape::MakeMesh(id, extent)` names a `TriangleMesh` of the world's `MeshLibrary` (`PhysicsWorld::Meshes()`). A mesh belongs to a **static** body only (a collider that names an unknown mesh, a non-covering extent or a non-static body is `BodyStatus::Invalid`, and a body that holds one cannot be made dynamic); it has no mass. A **height field** is the `HeightField` kind for terrain: `Shape::MakeHeightField(id, extent)` names a `HeightField` of the world's `HeightFieldLibrary` (`PhysicsWorld::HeightFields()`). Like a mesh it belongs to a **static** body only, has no mass, and is `BodyStatus::Invalid` for an unknown field or a non-covering extent. A **compound** is the `Compound` kind: several shapes (spheres, boxes, capsules and hulls, up to 64) with local transforms on one body. `CompoundShape::Create` computes the whole's mass, centre of mass and principal inertia once (each child's own density, the parallel-axis theorem; `PrincipalAxes` finds the axes) and the world's `RecomputeMass` puts the body's centre of mass there, so the body turns about its true centre; the collider's own `density` is ignored for a compound. `PhysicsWorld::Compounds()` holds them; a collider whose bound does not cover the compound, or that names an unknown one, is `BodyStatus::Invalid`.
 
-A `ConvexHull` is immutable data shared by `ConvexHullConstPtr`: vertices, polygon faces (outward normal, offset, up to 64 vertices each), the volume, the centroid and the inertia tensor about the centroid, all computed offline by the `HULL` minter (`asset_mint mint-hull`, `docs/guide/assets.md`). `ConvexHull::Create` checks what it is given and refuses anything the narrow phase could not use (`Validation`). The mass of a hull body is the hull's own: its centre of mass is the centroid and its principal axes come from a Jacobi eigen-decomposition of the stored tensor, so a body's `RecomputeMass` places the centre at `offset + rotation * centroid`.
+A `ConvexHull` is immutable data shared by `ConvexHullConstPtr`: vertices, polygon faces (outward normal, offset, up to 64 vertices each), the volume, the centroid and the inertia tensor about the centroid, all computed offline by the `HULL` minter (`asset_mint mint-hull`, `docs/guide/assets.md`). `ConvexHull::Create` checks what it is given and refuses anything the narrow phase could not use (`Validation`), the planes included: every face's corners must lie on its plane and be wound counter-clockwise about its outward normal, and no vertex may lie in front of any plane (within 0.4 % of the largest coordinate), so a hostile `HULL` blob with a face turned inside out is refused, not trusted. The mass of a hull body is the hull's own: its centre of mass is the centroid and its principal axes come from a Jacobi eigen-decomposition of the stored tensor, so a body's `RecomputeMass` places the centre at `offset + rotation * centroid`.
 
 ## The world: bodies, colliders and ids
 
@@ -131,7 +131,9 @@ updates the pairs.
 A changed layer re-adds the collider (a layer is fixed when an item is added) and keeps the pairs that still meet. `Pairs()` is the narrow phase's work list: sorted by key (a collider's key is its slot, then its generation: `ColliderId::ToKey()`), the smaller key first,
 and only pairs that can matter: different bodies, at least one dynamic body (a kinematic body against a static one is dropped), layers that meet
 (`CollisionFilter::SetMeets`, 32 layers), and trigger pairs flagged `trigger` (a trigger never reaches the solver; a kinematic body in a static trigger is
-listed). `Begun()` and `Ended()` are the pairs that changed in the last update. A body flagged `kBodyContinuous` has a box that also covers its motion over
+listed). `Begun()` and `Ended()` are the pairs that changed in the last update, told against the pairs reported before: a group, mask or trigger
+change while the boxes overlap begins or ends a pair then, and a pair that ends because a collider or body is gone keeps the trigger flag it began
+with, so every begin has exactly one end. A body flagged `kBodyContinuous` has a box that also covers its motion over
 one step, so a fast body meets a thin wall before it is through it. The pair margin gives a pair that stays at the edge of contact a hysteresis: boxes
 0.02 m apart half the time begin one pair and end none in 120 steps (`BroadPhase: a pair at the edge of contact...`).
 
@@ -321,7 +323,8 @@ path from the step's start pose to its end pose is sampled at a quarter of the s
 overlaps is bisected 24 times, and the body is moved back to the last pose that does not overlap, keeping its velocity, so the
 next step's speculative contact removes the approach. A body already within the contact margin at the start is left to the contact
 solver. The sweep uses the same `Collide` as the step, so every shape pair works, a mesh included. Only linear motion is swept (the
-orientation is blended), dynamic targets are not swept, and a body is clamped once per step. `StepStats::ccd_queries` and `ccd_hits`
+orientation is blended), dynamic targets are not swept, a pair whose bodies a joint keeps apart (`collide_connected` false) is not swept
+either (the narrow phase skips it), and a body is clamped once per step. `StepStats::ccd_queries` and `ccd_hits`
 count the work; both stay zero when no body is continuous.
 
 ## Queries
@@ -329,9 +332,12 @@ count the work; both stay zero when no body is continuous.
 `physics/query.h` has free functions over a `const PhysicsWorld&` that read the world as it is now (after the last step and any change made since): `RayCast` (the closest hit
 with collider, body, point, normal, distance and, for a mesh, the triangle), `RayCastAll` (every collider the ray meets, nearest first,
 ties by collider key), `ShapeCast` (sweeps a sphere, box, capsule or hull and returns the first collider it touches, by the same sampling
-and bisection as continuous collision), `Overlap` (the colliders a shape touches, sorted by id key) and `ClosestPoint` (the nearest
+and bisection as continuous collision: at most 1024 samples a quarter of the shape's smallest width apart, so a long cast can step over a collider
+thinner than the spacing), `Overlap` (the colliders a shape touches, sorted by id key) and `ClosestPoint` (the nearest
 surface point of any collider within a distance). A `PhysicsQueryFilter` selects colliders by layer mask, group and mask words, triggers
 (`include_triggers`, off by default), the body class (`include_static`, `include_kinematic`, `include_dynamic`) and an ignore list of bodies.
+`ShapeCast` and `Overlap` refuse a rotation that is not a unit quaternion (within 2e-3 of length 1, finite), as they refuse a position that is not
+finite: such a rotation would give a box of NaN.
 A ray that starts inside a solid collider hits it at distance zero with the normal against the ray. The exact ray tests are the quadratic
 for a sphere, slabs for a box, the cylinder and the two end spheres for a capsule, the face planes for a hull, the box query and
 Moller-Trumbore for a mesh and the children for a compound. The queries change nothing and may run from several threads while no step or
@@ -361,7 +367,9 @@ snaps to the ground when walking down within the step height, treats a surface s
 wall that the character slides down, and adds the velocity of the body it stands on (a lift or a conveyor). Gravity and jumps are kept as a
 vertical speed. The result is not written as a position: it is set as the body's velocity (displacement over `dt`), so the step carries the
 character there and the solver pushes dynamic bodies out of its way, while nothing pushes the character. `Move` returns `CharacterEvents`
-(`began_ground`, `ended_ground`, the walls hit and the last wall normal); `State()` has `on_ground`, `ground_body`, `ground_normal`. The
+(`began_ground`, `ended_ground`, the walls hit and the last wall normal); `State()` has `on_ground`, `ground_body`, `ground_normal`. A second
+`Move` before the world steps continues from where the first one took the character, and the next step carries it through both (the moves add
+up; the second no longer overwrites the first). The
 walk is the same at 60 and 120 steps per second to a few centimetres (`tests/physics/character_test.cpp`).
 
 **On imported ground** (glTF colliders, 2026-11-20): a triangle mesh has no inside (a body whose centre passes through a triangle is pushed out the
@@ -378,14 +386,19 @@ colliders, with the body and entity of each, the number of points, the deepest p
 impulse), `triggers` (`TriggerEvent`: enter and exit of a collider that overlaps a trigger collider, tested exactly with the narrow phase and
 not by the broad phase's fat boxes) and `joint_breaks` (`JointBreakEvent`: the joint, its bodies and entities, the force and torque of its last
 step). Each list is in step order and, within a step, in order of the collider keys, so two runs give the same events. A pair of bodies at rest
-keeps its contact (no end event when an island falls asleep); destroying a body removes the events that name it and forgets its pairs without an
-end event. `PhysicsWorld::Contacts()` is the view of every pair that touches now, with the manifold of the last step, and `AllStats()` gathers
+keeps its contact (no end event when an island falls asleep); destroying a body removes the events that name it, and its pairs end: their end
+and exit events (with the destroyed body's stale id and its entity) come first in the next update's lists. A pair whose begin was in the lists the
+destroy cancelled gets no end either, so a program sees every begin it was shown end exactly once. `ClearEvents` does not drop those ends. `PhysicsWorld::Contacts()` is the view of every pair that touches now, with the manifold of the last step, and `AllStats()` gathers
 the world's counters in one value.
 
 **Joints as components.** An entity with a `Joint` (`physics/joint_sync.h`) names two entities and the joint's kind, anchors and limits;
 `SyncJoints` (after `SyncBodies`, at a sync point) makes the physics joint when both entities have a body, adds `JointLink` and destroys the
 joint when the component, an entity or a body goes. A joint that broke is noticed on the next call: its `Joint` is removed so it is not made
-again.
+again. `JointLink::made_from` keeps the component the joint was made from: a `Joint` edited later (any field) makes the joint again, at the poses
+the bodies have then (`JointSyncReport::remade`). `Joint::Validate` checks the rules that do not depend on the bodies' poses (the kind, two
+different ends, the spring, limit, motor, break and length ranges) before anything is made. Destroying the entity that holds the `Joint` takes
+the component with it and the sync cannot see it: remove the `Joint` and sync first, or call `DestroyJoint` (the C API's `entity_destroy` does
+this).
 
 **Transform write-back.** The step system and `WriteBackTransforms` write a dynamic body's pose into `LocalTransform` only when it differs,
 and stamp the chunk as written only then (`LazyWrite`), so a sleeping body does not mark its transform changed for `Changed<LocalTransform>`.
@@ -408,13 +421,18 @@ the ids a program holds stay valid and the next id made is the same one), the co
 overlaps. The layout is canonical: little-endian, floats as their bit patterns, counts as varints, a magic (`PHSN`) and a version first. The mass,
 the centre of mass and the inertia are not stored: they follow from the settings and the shapes, and `Restore` makes them again. The hull, mesh and
 compound libraries are content, not state, and are not in the snapshot: a snapshot names the shapes by their ids and `Restore` refuses
-(`SnapshotStatus::LibraryMismatch`) one whose shapes the world's own libraries do not hold. A height-field collider also stores the
-`ContentHash()` of its map, so a world whose library holds another map under the same id refuses the snapshot the same way.
+(`SnapshotStatus::LibraryMismatch`) one whose shapes the world's own libraries do not hold. Every hull, mesh, compound and height-field collider
+also stores a hash of the content of the entry it names (the hull's vertices and planes, the mesh's vertices, triangles and materials, the
+compound's children, the height field's `ContentHash()`), so a world whose library holds something else under the same id refuses the snapshot the
+same way, even when the other entry fits the shape's bound.
 
 `Restore(bytes)` builds a world of its own from the bytes, checks everything and swaps it in only then, so a refusal leaves the world as it was.
 The data is not trusted: counts are bounded by the bytes left, every float must be finite and within a bound the step can survive (positions
 within `kMaxWorldCoordinate`, sizes, offsets and anchors within `kMaxExtent`, masses between a nanogram and 1e15 kilograms), quaternions must be unit,
-collider chains, owners and joint bodies must name live slots, the configuration must pass `SetStepConfig`, and trailing bytes are refused. The
+collider chains, owners and joint bodies must name live slots, the contact cache and the touching contact and trigger pairs must be in the
+order their searches need (sorted by key; two cached points of one feature id are allowed), the configuration must pass `SetStepConfig`, and
+trailing bytes are refused. Two bodies may name one entity (`CreateBody` allows it), so that is not checked. Dead slots keep their generations
+and free-list order (the ids and the next id made must stay the same), so a snapshot of many destroyed bodies allocates their slots again. The
 answer is a `SnapshotStatus`: `Ok`, `BadMagic`, `UnknownVersion`, `Truncated`, `Corrupt`, `LibraryMismatch` or `OutOfMemory`. The same bounds are
 checked by `Validate()` of `RigidBody`, `PhysicsMaterial`, `Collider`, `Shape` and `JointDesc` when a program creates the objects, so a world that
 could not be built by hand cannot be restored either.

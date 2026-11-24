@@ -76,7 +76,38 @@ JointDesc Describe(const PhysicsWorld& physics, const Joint& joint, BodyId a, Bo
     return desc;
 }
 
+bool SameVec3(const Vec3& a, const Vec3& b)
+{
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+// Whether a component still describes the joint that was made from `made`: any field changed makes it again.
+bool SameJoint(const Joint& a, const Joint& b)
+{
+    return a.entity_a == b.entity_a && a.entity_b == b.entity_b && a.type == b.type && SameVec3(a.point_a, b.point_a) &&
+           SameVec3(a.point_b, b.point_b) && SameVec3(a.axis, b.axis) && a.min_length == b.min_length &&
+           a.max_length == b.max_length && a.hertz == b.hertz && a.damping_ratio == b.damping_ratio &&
+           a.break_force == b.break_force && a.break_torque == b.break_torque &&
+           a.collide_connected == b.collide_connected && a.enable_limit == b.enable_limit &&
+           a.lower_angle == b.lower_angle && a.upper_angle == b.upper_angle && a.enable_motor == b.enable_motor &&
+           a.motor_speed == b.motor_speed && a.max_motor_torque == b.max_motor_torque;
+}
+
 }  // namespace
+
+Validation Joint::Validate() const
+{
+    if (type != JointType::Ball && type != JointType::Distance && type != JointType::Fixed && type != JointType::Hinge)
+    {
+        return Validation::UnknownKind;
+    }
+    // The description the sync would make, with stand-in bodies at the origin: every rule that does not depend on
+    // where the bodies are is checked by `JointDesc::Validate` itself.
+    const PhysicsWorld empty;
+    const BodyId a = entity_a.IsValid() ? BodyId{0, 1} : BodyId();
+    const BodyId b = entity_b.IsValid() ? (entity_b == entity_a ? BodyId{0, 1} : BodyId{1, 1}) : BodyId();
+    return Describe(empty, *this, a, b).Validate();
+}
 
 JointSyncReport SyncJoints(ecs::World& ecs, PhysicsWorld& physics)
 {
@@ -122,9 +153,28 @@ JointSyncReport SyncJoints(ecs::World& ecs, PhysicsWorld& physics)
             BodyId a;
             BodyId b;
             const bool ready = has_joint && BodyOf(ecs, f.joint.entity_a, &a) && BodyOf(ecs, f.joint.entity_b, &b);
-            const bool same = record != nullptr && ready && record->desc.body_a == a && record->desc.body_b == b;
+            const bool same = record != nullptr && ready && record->desc.body_a == a && record->desc.body_b == b &&
+                              SameJoint(f.joint, f.link.made_from);
             if (same)
             {
+                continue;
+            }
+            if (record != nullptr && ready && record->desc.body_a == a && record->desc.body_b == b)
+            {
+                // The component was edited: the joint is made again from it, at the poses the bodies have now.
+                physics.DestroyJoint(f.link.id);
+                ecs.Remove<JointLink>(f.entity);
+                ++report.destroyed;
+                ++report.remade;
+                BodyStatus remade_status = BodyStatus::Ok;
+                const JointId remade = physics.CreateJoint(Describe(physics, f.joint, a, b), &remade_status);
+                if (!remade.IsValid())
+                {
+                    ++report.refused;
+                    continue;
+                }
+                ecs.Add(f.entity, JointLink{remade, f.joint});
+                ++report.created;
                 continue;
             }
             if (record != nullptr)
@@ -165,7 +215,7 @@ JointSyncReport SyncJoints(ecs::World& ecs, PhysicsWorld& physics)
             ++report.refused;
             continue;
         }
-        ecs.Add(f.entity, JointLink{id});
+        ecs.Add(f.entity, JointLink{id, f.joint});
         ++report.created;
     }
     return report;

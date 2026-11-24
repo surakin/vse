@@ -204,6 +204,7 @@ void CharacterController::Destroy(PhysicsWorld* world)
 void CharacterController::Stop(PhysicsWorld* world)
 {
     state_.vertical_speed = 0.0f;
+    pending_ = PendingMove();
     if (body_.IsValid())
     {
         world->SetVelocity(body_, Velocity());
@@ -232,7 +233,12 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
     mover.self = body_;
     mover.skin = config_.skin_width;
     mover.min_ground_y = config_.min_ground_y;
-    const Vec3d start = body->position;
+    // A second move before the world steps goes on from where the first one took the character, so the two add up
+    // instead of the second overwriting the first.
+    const u64 steps = world->GetStepStats().steps;
+    const bool continues = pending_.body == body_ && pending_.steps == steps && body->position.x == pending_.from.x &&
+                           body->position.y == pending_.from.y && body->position.z == pending_.from.z;
+    const Vec3d start = continues ? pending_.to : body->position;
     const bool was_grounded = state_.on_ground;
     // The velocity of what the character stands on, at the character.
     Vec3 platform(0.0f, 0.0f, 0.0f);
@@ -351,7 +357,11 @@ CharacterEvents CharacterController::Move(PhysicsWorld* world, const Vec3& veloc
     events.wall_normal = wall_normal;
     // The body carries the character there in the step, pushing what is in the way.
     Velocity v;
-    v.linear = (position - start).Narrow() * (1.0f / dt);
+    v.linear = (position - body->position).Narrow() * (1.0f / dt);
+    pending_.body = body_;
+    pending_.steps = steps;
+    pending_.from = body->position;
+    pending_.to = position;
     world->SetVelocity(body_, v);
     return events;
 }

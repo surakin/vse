@@ -1030,13 +1030,15 @@ bool ContactSolver::LoadCache(SnapshotIn* in)
         {
             in->Fail();
         }
-        // The cache is searched by binary search: it must be sorted by (key_a, key_b, feature) with no duplicate.
+        // The cache is searched by binary search: it must be sorted by (key_a, key_b, feature). Equal keys are kept:
+        // two points of one manifold can carry the same feature id (the solve writes both, and the search takes the
+        // first), so a snapshot of such a step must load.
         if (!cache_.Empty())
         {
             const CacheEntry& last = cache_[cache_.Size() - 1];
             const bool ordered = last.key_a != e.key_a
                                      ? last.key_a < e.key_a
-                                     : (last.key_b != e.key_b ? last.key_b < e.key_b : last.feature < e.feature);
+                                     : (last.key_b != e.key_b ? last.key_b < e.key_b : last.feature <= e.feature);
             if (!ordered)
             {
                 in->Fail();
@@ -1077,22 +1079,6 @@ f32 ContactSolver::PairImpulse(ColliderId a, ColliderId b) const
         total += cache_[lo].normal_impulse;
     }
     return total;
-}
-
-void ContactSolver::ForgetBody(BodyId body)
-{
-    next_cache_.Clear();
-    for (usize i = 0; i < cache_.Size(); ++i)
-    {
-        const CacheEntry& e = cache_[i];
-        const bool mine = (e.body_a.index == body.index && e.body_a.generation == body.generation) ||
-                          (e.body_b.index == body.index && e.body_b.generation == body.generation);
-        if (!mine)
-        {
-            next_cache_.Push(e);
-        }
-    }
-    cache_.Swap(next_cache_);  // next_cache_ is cleared before its next use (container audit Day 8: a copy every step)
 }
 
 void ContactSolver::Clear()
