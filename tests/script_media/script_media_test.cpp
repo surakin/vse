@@ -13,6 +13,7 @@
 #include "ecs/transform.h"
 #include "jobs/scheduler.h"
 #include "lang/initializer_list.h"
+#include "lang/limits.h"
 #include "lang/scalar.h"
 #include "script/backend_registry.h"
 #include "script/bindings.h"
@@ -321,6 +322,35 @@ TEST_CASE("Script media: a stopped or finished voice's handle is an error value"
     const Outcome gone = rig.RunAndMerge("audio.set_gain(a, 1)", &read, other);
     REQUIRE_FALSE(gone.IsOk());
     CHECK(gone.message.View().Contains(Text("has ended")));
+}
+
+TEST_CASE("Script media: a voice handle works only for the entity whose script started it", "[script_media][audio]")
+{
+    StateRig rig;
+    CallOutput out;
+    REQUIRE(rig.RunAndMerge("return audio.play('beep', nil)", &out).IsOk());
+    const i64 handle = out.results[0].AsInt();
+    const u64 owner = rig.context.current_entity_key;
+    // Another entity's script that guessed the number cannot stop it or change it.
+    rig.context.current_entity_key = owner + 1;
+    CallOutput read;
+    const Outcome stolen = rig.RunAndMerge("audio.stop(a, 0)", &read, handle);
+    REQUIRE_FALSE(stolen.IsOk());
+    CHECK(stolen.message.View().Contains(Text("another entity")));
+    CHECK_FALSE(rig.RunAndMerge("audio.set_gain(a, 0)", &read, handle).IsOk());
+    // A handle of this tick from another partition is refused too.
+    rig.buffer.Begin(1);
+    REQUIRE(rig.Run("return audio.play('beep', nil)", &out, nullptr, 0).IsOk());
+    const Value fresh[1] = {out.results[0]};
+    rig.buffer.Begin(0);
+    const Outcome cross = rig.Run("audio.stop(a, 0)", &read, fresh, 1);
+    REQUIRE_FALSE(cross.IsOk());
+    CHECK(cross.message.View().Contains(Text("another entity")));
+    // The owner still can.
+    rig.context.current_entity_key = owner;
+    rig.buffer.Begin(0);
+    rig.context.tick += 1;
+    REQUIRE(rig.RunAndMerge("audio.stop(a, 0)", &read, handle).IsOk());
 }
 
 namespace media_test
@@ -1204,7 +1234,7 @@ void Record(usize threads, ReplayLog* log)
     for (u32 t = 1; t <= kReplayTicks; ++t)
     {
         rig.Frame(LiveInput(t), &scheduler);
-        log->Record(t, rig.snapshot, rig.StateHash());
+        REQUIRE(log->Record(t, rig.snapshot, rig.StateHash()));
     }
     REQUIRE(rig.runtime->Stats().errors == 0);
 }
@@ -1247,6 +1277,31 @@ TEST_CASE("Script media: a session recorded at one thread count replays to the s
     Record(1, &second);
     CHECK(second.Equals(first));
     CHECK(Replay(second, 16) == kReplayTicks);
+}
+
+TEST_CASE("Script media: a log refuses a tick it could not read back", "[script_media][replay]")
+{
+    InputMap map;
+    os::InputState state;
+    InputSnapshot good;
+    good.Capture(1, state, StringView(), map);
+    ReplayLog log;
+    log.Begin(5, 1, 0);
+    REQUIRE(log.Record(1, good, 11));
+    // A pointer position that is not a number: Deserialize would refuse the whole log.
+    state.mouse_x = Limits<f64>::QuietNaN();
+    InputSnapshot bad;
+    bad.Capture(2, state, StringView(), map);
+    CHECK_FALSE(log.Record(2, bad, 12));
+    // A tick that does not follow the last one.
+    CHECK_FALSE(log.Record(5, good, 13));
+    CHECK(log.Size() == 1);
+    bytes::ByteWriter writer;
+    log.Serialize(&writer);
+    ReplayLog back;
+    bytes::ByteReader reader(writer.Bytes());
+    CHECK(back.Deserialize(&reader));
+    CHECK(back.Equals(log));
 }
 
 TEST_CASE("Script media: a log survives its bytes and a damaged log is refused", "[script_media][replay]")

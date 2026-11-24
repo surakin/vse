@@ -2,6 +2,8 @@
 
 #include "cstr/cstr.h"
 #include "cstr/format.h"
+#include "script/backend.h"
+#include "script/partition_context.h"
 
 namespace vse::script
 {
@@ -133,6 +135,27 @@ usize FlushLogBuffers(Span<LogBuffer* const> buffers)
         }
     }
     return written;
+}
+
+void EmitScriptLog(ScriptLogLevel level, StringView text)
+{
+    if (!LogScript.ShouldLog(LogVerbosityOf(level)))
+    {
+        return;
+    }
+    SourceLocation where;
+    const bool known = CurrentCallerLocation(&where);
+    const StringView script = known ? StringView(where.chunk, CStrLength(where.chunk)) : StringView("script");
+    const u32 line = known ? where.line : 0u;
+    PartitionContext* context = CurrentPartitionContext();
+    if (context != nullptr && context->log != nullptr)
+    {
+        context->log->Add(level, script, line, text);
+    }
+    else
+    {
+        WriteScriptLog(level, script, line, text);
+    }
 }
 
 }  // namespace vse::script

@@ -49,7 +49,7 @@ A **partition** is a group of entities that share one script state (default 64 p
 
 - **Do the work of one entity in that entity's callback.** A loop over a thousand neighbors is fine (it reads the tick-start view); a loop that changes a thousand neighbors is not possible, and that is the point: send each one an event.
 - **Read, compute, write once.** Several `component.set` calls for one component in one callback cost more than one with a table.
-- **Use `wait` instead of polling.** `wait(0.5)` or `wait_event('switch')` parks the call and costs nothing until it is due; a flag checked every tick costs a call per entity per tick.
+- **Use `wait` instead of polling.** `wait(0.5)` or `wait_event('switch')` parks the call and costs nothing until it is due; a flag checked every tick costs a call per entity per tick. A handler that calls `wait_event` for the event it is handling waits for the next one.
 - **Put big pure computations in tasks.** `task.parallel_for(...)` and `task.map(...)` run a chunked function over many indices on every core and give the result back to a waiting call (`wait_task`). A task sees no world: it gets values in and returns values out, so it cannot race either ([Using every core](../tutorials/using-every-core.md)).
 - **Do not count on the order between entities within a tick.** The merge order is fixed, so the result repeats, but "entity 5 ran before entity 6" is not something you can use: neither saw the other's writes.
 - **Do not let `pairs` order reach the world.** The order of `pairs` over a table with string keys differs from run to run; collect the keys, `table.sort` them, and loop over the sorted list when what you do depends on the order (`ipairs` over an array is fine).
@@ -57,7 +57,11 @@ A **partition** is a group of entities that share one script state (default 64 p
 
 ## When two scripts write the same thing
 
-If two entities (in different partitions) write the same component of the same target in one tick, both writes are valid and one has to win. By default the higher partition's write applies, and the count of such conflicts is in the stats; `script.conflicts = error` refuses the later one instead. Design so that one entity owns each piece of state, and tell the others by event.
+If two entities (in different partitions) write the same component of the same target in one tick, both writes are valid and one has to win. By default the higher partition's write applies, and the count of such conflicts is in the stats; `script.conflicts = error` refuses the later one instead. A conflict is about the same thing: two partitions setting *different* components of one entity do not conflict, while a `component.add` and a `component.set` (or a `remove`) of the same component do. Design so that one entity owns each piece of state, and tell the others by event.
+
+- **An entity made this tick is a placeholder until the merge.** `entity.spawn` returns a handle you can use for the rest of the tick; do not keep it in `self` for the next tick, where it would name another tick's spawn. Find the new entity again after the merge (a name, a query or an event).
+- **`print` and `log.*` are buffered per partition** and written in partition order at the sync point, at most `script.log_limit` messages per script and tick, so the log reads the same at any thread count.
+- **The engine's script helpers are sealed.** `behavior`, `event`, `task`, `spawn`, the waits and the rest of the behavior host cannot be replaced by a script; a script's own globals are its own.
 
 ## What the engine does *not* do
 

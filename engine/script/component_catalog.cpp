@@ -305,6 +305,58 @@ bool Less(StringView a, StringView b)
     return a < b;
 }
 
+// The ECS type slots the catalogs of this process took (the ECS registry never frees one). A slot depends only on the
+// name, the size class and the alignment (the storage layout is each world's own, in its registry), so a catalog that
+// defines a component another catalog already defined the same way reuses the slot: worlds made one after another do
+// not use up the 128 slots.
+struct EcsSlot
+{
+    String<HeapAllocator> name{HeapAllocator::Default()};
+    usize bytes = 0;
+    usize align = 0;
+    bool is_tag = false;
+    ecs::ComponentId id = ecs::kInvalidComponent;
+};
+
+struct EcsSlots
+{
+    Mutex lock;
+    Vector<EcsSlot> slots;
+};
+
+EcsSlots& ProcessSlots()
+{
+    static EcsSlots slots;  // one per library: the ECS registry it mirrors is one per library too
+    return slots;
+}
+
+// The ECS type for a script component: the slot taken before for the same shape, or a new one.
+ecs::ComponentId EcsTypeFor(const ecs::TypeInfo& info, StringView name)
+{
+    EcsSlots& process = ProcessSlots();
+    LockGuard<Mutex> guard(process.lock);
+    for (usize i = 0; i < process.slots.Size(); ++i)
+    {
+        const EcsSlot& s = process.slots[i];
+        if (s.is_tag == info.is_tag && s.bytes == info.size && s.align == info.align && s.name.View() == name)
+        {
+            return s.id;
+        }
+    }
+    const ecs::ComponentId id = ecs::ComponentRegistry::Global().Register(info);
+    if (id != ecs::kInvalidComponent)
+    {
+        EcsSlot slot;
+        slot.name.Append(name);
+        slot.bytes = info.size;
+        slot.align = info.align;
+        slot.is_tag = info.is_tag;
+        slot.id = id;
+        process.slots.Push(Move(slot));
+    }
+    return id;
+}
+
 }  // namespace
 
 struct ComponentCatalog::Definition
@@ -568,7 +620,7 @@ bool ComponentCatalog::Define(StringView name, const Value& fields, String<HeapA
         info.destroy = &NoDestroy;
         info.default_construct = size_class->construct;
         info.name = def->name.CStr();  // the ECS registry copies it
-        def->ecs_id = ecs::ComponentRegistry::Global().Register(info);
+        def->ecs_id = EcsTypeFor(info, def->name.View());
     }
     else
     {
@@ -579,7 +631,7 @@ bool ComponentCatalog::Define(StringView name, const Value& fields, String<HeapA
         info.destroy = &NoDestroy;
         info.default_construct = &ZeroConstruct<0>;
         info.name = def->name.CStr();
-        def->ecs_id = ecs::ComponentRegistry::Global().Register(info);
+        def->ecs_id = EcsTypeFor(info, def->name.View());
     }
     if (def->ecs_id == ecs::kInvalidComponent)
     {

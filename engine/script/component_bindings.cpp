@@ -1285,6 +1285,13 @@ bool StoreRecord(MergeContext& context, ecs::Entity target, const RegisteredComp
     return true;
 }
 
+// The component a component command names: what it writes inside its entity.
+u32 ComponentConflictKey(Span<const u8> payload)
+{
+    u32 id = 0;
+    return ReadStoredId(payload, &id) ? id : 0;
+}
+
 bool ApplyComponentSet(MergeContext& context, ecs::Entity target, Span<const u8> payload)
 {
     const RegisteredComponent* rc = MergeComponent(context, payload);
@@ -1302,14 +1309,20 @@ bool ApplyComponentAdd(MergeContext& context, ecs::Entity target, Span<const u8>
     {
         return false;
     }
-    if (!context.World()->HasById(target, rc->EcsId()))
+    const bool added = !context.World()->HasById(target, rc->EcsId());
+    if (added && context.World()->AddDefault(target, rc->EcsId()) != ecs::Status::Ok)
     {
-        if (context.World()->AddDefault(target, rc->EcsId()) != ecs::Status::Ok)
-        {
-            return false;
-        }
+        return false;
     }
-    return StoreRecord(context, target, *rc, Span<const u8>(payload.Data() + 4, payload.Size() - 4));
+    if (!StoreRecord(context, target, *rc, Span<const u8>(payload.Data() + 4, payload.Size() - 4)))
+    {
+        if (added)
+        {
+            context.World()->RemoveById(target, rc->EcsId());  // no default component is left behind
+        }
+        return false;
+    }
+    return true;
 }
 
 bool ApplyComponentRemove(MergeContext& context, ecs::Entity target, Span<const u8> payload)
@@ -1323,9 +1336,13 @@ bool ApplyComponentRemove(MergeContext& context, ecs::Entity target, Span<const 
 bool RegisterComponentCommandKinds(CommandKindTable* kinds)
 {
     bool ok = true;
-    ok &= kinds->Register(kCommandComponentSet, CommandKind{"component.set", &ApplyComponentSet, false, true});
-    ok &= kinds->Register(kCommandComponentAdd, CommandKind{"component.add", &ApplyComponentAdd, false, true});
-    ok &= kinds->Register(kCommandComponentRemove, CommandKind{"component.remove", &ApplyComponentRemove, false, true});
+    // The three kinds conflict with each other on one component of one entity, and not across components.
+    ok &= kinds->Register(kCommandComponentSet, CommandKind{"component.set", &ApplyComponentSet, false, true, false,
+                                                            &ComponentConflictKey, kCommandComponentSet});
+    ok &= kinds->Register(kCommandComponentAdd, CommandKind{"component.add", &ApplyComponentAdd, false, true, false,
+                                                            &ComponentConflictKey, kCommandComponentSet});
+    ok &= kinds->Register(kCommandComponentRemove, CommandKind{"component.remove", &ApplyComponentRemove, false, true,
+                                                               false, &ComponentConflictKey, kCommandComponentSet});
     return ok;
 }
 

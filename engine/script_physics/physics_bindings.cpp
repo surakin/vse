@@ -75,6 +75,35 @@ bool Finite3d(const Vec3d& v)
     return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
 }
 
+// The largest float, for checks made in double before a cast to f32.
+constexpr f64 kMaxF32 = 3.4028234663852886e38;
+
+// The largest component a script may give a force, an impulse or a torque (newtons, newton-seconds, newton-metres),
+// and a linear or angular velocity (metres or radians per second); beyond it the step would overflow to infinity.
+constexpr f32 kMaxPushComponent = 1.0e12f;
+constexpr f32 kMaxSpeedComponent = 1.0e5f;
+
+// Whether every component of `v` is finite and within `limit` of zero.
+bool Bounded3(const Vec3& v, f32 limit)
+{
+    return Abs(v.x) <= limit && Abs(v.y) <= limit && Abs(v.z) <= limit;  // NaN fails every comparison
+}
+
+// Checks a rotation given to a query and makes it unit length: a quaternion that is zero, not finite or absurdly
+// long is refused with a script error.
+bool UnitRotation(Quaternion* q)
+{
+    const f32 length_squared = q->x * q->x + q->y * q->y + q->z * q->z + q->w * q->w;
+    if (!(length_squared > 1.0e-12f && length_squared < 1.0e12f))
+    {
+        script::RaiseScriptError("the rotation must be a non-zero finite quaternion");
+        return false;
+    }
+    const f32 inverse = 1.0f / Sqrt(length_squared);
+    *q = Quaternion(q->x * inverse, q->y * inverse, q->z * inverse, q->w * inverse);
+    return true;
+}
+
 bool Finite3(const Vec3& v)
 {
     return IsFinite(v.x) && IsFinite(v.y) && IsFinite(v.z);
@@ -153,6 +182,11 @@ void RecordPush(u16 kind, ecs::Entity e, const Vec3& value, const Vec3d* point, 
         Raise("the ", StringView(what), " must be finite");
         return;
     }
+    if (!Bounded3(value, kMaxPushComponent))
+    {
+        Raise("the ", StringView(what), " is too large (each component at most 1e12)");
+        return;
+    }
     physics::BodyId id;
     if (!BodyOfEntity(context, services, e, &id))
     {
@@ -203,6 +237,11 @@ void RecordVelocity(u16 kind, ecs::Entity e, const Vec3& velocity)
     if (!Finite3(velocity))
     {
         script::RaiseScriptError("the velocity must be finite");
+        return;
+    }
+    if (!Bounded3(velocity, kMaxSpeedComponent))
+    {
+        script::RaiseScriptError("the velocity is too large (each component at most 1e5 per second)");
         return;
     }
     physics::BodyId id;
@@ -285,7 +324,8 @@ bool ReadNumber(const Value& map, StringView what, StringView key, f32* out)
     {
         return true;
     }
-    if (!v->IsNumber() || !IsFinite(static_cast<f32>(v->ToDouble())))
+    // Checked in double first: a cast to f32 of a value beyond its range is undefined.
+    if (!v->IsNumber() || !(v->ToDouble() >= -kMaxF32 && v->ToDouble() <= kMaxF32))
     {
         Raise("the ", what, "'s `", key, "` must be a finite number");
         return false;
@@ -733,7 +773,7 @@ Value PhysicsShapeCast(Value shape_desc, Vec3d position, Quaternion rotation, Ve
     PartitionContext* context = Context();
     const PhysicsScriptServices* services = context != nullptr ? NeedServices(context) : nullptr;
     physics::Shape shape;
-    if (services == nullptr || !ParseShape(shape_desc, &shape))
+    if (services == nullptr || !ParseShape(shape_desc, &shape) || !UnitRotation(&rotation))
     {
         return Value();
     }
@@ -811,6 +851,10 @@ Value PhysicsOverlapBox(Vec3d center, Vec3 half_extents, Quaternion rotation, Va
     if (!Finite3d(center) || box.Validate() != physics::Validation::Ok)
     {
         script::RaiseScriptError("the box needs a finite centre and half extents above zero");
+        return Value();
+    }
+    if (!UnitRotation(&rotation))
+    {
         return Value();
     }
     return Overlapping(box, center, rotation, layers);
@@ -956,6 +1000,11 @@ void CharacterMove(ecs::Entity e, Vec3 velocity)
     if (!Finite3(velocity))
     {
         script::RaiseScriptError("the velocity must be finite");
+        return;
+    }
+    if (!Bounded3(velocity, kMaxSpeedComponent))
+    {
+        script::RaiseScriptError("the velocity is too large (each component at most 1e5 per second)");
         return;
     }
     const VectorPayload payload = MakeVector(velocity, nullptr);
@@ -1351,7 +1400,7 @@ bool RegisterPhysicsBindings(script::BindingRegistry* registry)
     ok &= registry->Add<&PhysicsAddForce>("physics", "add_force", ThreadRule::WorldWrite, "e, force",
                                           "Adds a force in newtons at the body's centre of mass, kept until the next "
                                           "physics step takes it. Forces from every script add up. The body must be "
-                                          "dynamic.");
+                                          "dynamic; a component over 1e12 (as for impulses and torques) is an error.");
     ok &= registry->Add<&PhysicsAddForceAt>("physics", "add_force_at", ThreadRule::WorldWrite, "e, force, point",
                                             "Adds a force at a world point (it also turns the body).");
     ok &= registry->Add<&PhysicsAddImpulse>("physics", "add_impulse", ThreadRule::WorldWrite, "e, impulse",
@@ -1363,9 +1412,11 @@ bool RegisterPhysicsBindings(script::BindingRegistry* registry)
                                            "Adds a torque, kept until the next physics step takes it.");
     ok &= registry->Add<&PhysicsSetVelocity>("physics", "set_velocity", ThreadRule::WorldWrite, "e, velocity",
                                              "Sets the linear velocity (metres per second) of a dynamic or kinematic "
-                                             "body.");
+                                             "body; a component over 1e5 is an error.");
     ok &= registry->Add<&PhysicsSetAngularVelocity>("physics", "set_angular_velocity", ThreadRule::WorldWrite,
-                                                    "e, velocity", "Sets the angular velocity (radians per second).");
+                                                    "e, velocity",
+                                                    "Sets the angular velocity (radians per second); a component over "
+                                                    "1e5 is an error.");
     ok &= registry->Add<&PhysicsSetGravityScale>("physics", "set_gravity_scale", ThreadRule::WorldWrite, "e, scale",
                                                  "Sets how much gravity pulls the body (0 floats it).");
     ok &= registry->Add<&PhysicsWake>("physics", "wake", ThreadRule::WorldWrite, "e",
@@ -1412,13 +1463,15 @@ bool RegisterPhysicsBindings(script::BindingRegistry* registry)
     ok &= registry->Add<&PhysicsShapeCast>(
         "physics", "shape_cast", ThreadRule::WorldRead, "shape, position, rotation, direction, distance, layers",
         "Sweeps {kind=\"sphere\", radius=} / {kind=\"box\", half_extents=} / {kind=\"capsule\", half_height=, "
-        "radius=} along a direction; returns nil or the first hit, `distance` being how far the shape moved.");
+        "radius=} along a direction; returns nil or the first hit, `distance` being how far the shape moved. "
+        "The rotation is normalized; a zero or non-finite quaternion is an error.");
     ok &= registry->Add<&PhysicsOverlapSphere>("physics", "overlap_sphere", ThreadRule::WorldRead,
                                                "center, radius, layers",
                                                "Returns an array of the entities whose colliders touch the sphere.");
     ok &= registry->Add<&PhysicsOverlapBox>("physics", "overlap_box", ThreadRule::WorldRead,
                                             "center, half_extents, rotation, layers",
-                                            "Returns an array of the entities whose colliders touch the box.");
+                                            "Returns an array of the entities whose colliders touch the box (the "
+                                            "rotation is normalized; a zero or non-finite one is an error).");
     ok &= registry->Add<&PhysicsClosestPoint>("physics", "closest_point", ThreadRule::WorldRead,
                                               "point, max_distance, layers",
                                               "Returns nil or {entity=, point=, normal=, distance=}: the nearest point "
@@ -1432,7 +1485,8 @@ bool RegisterPhysicsBindings(script::BindingRegistry* registry)
                                            "Removes the entity's character.");
     ok &= registry->Add<&CharacterMove>("character", "move", ThreadRule::WorldWrite, "e, velocity",
                                         "Sets the horizontal velocity the character walks at (the y part is ignored); "
-                                        "it holds until set again. The move runs inside the physics step.");
+                                        "it holds until set again. The move runs inside the physics step. A "
+                                        "component over 1e5 is an error.");
     ok &= registry->Add<&CharacterJump>("character", "jump", ThreadRule::WorldWrite, "e, speed",
                                         "Gives the character an upward speed (m/s) at the start of the next step; "
                                         "check `is_grounded` first for a jump from the ground only.");

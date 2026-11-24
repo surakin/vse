@@ -58,7 +58,7 @@ ecs::Entity FindImpl(void*, const ecs::World& world, StringView wanted)
 
 bool HasPrefabImpl(void*, StringView prefab)
 {
-    return prefab == StringView("crate");
+    return prefab == StringView("crate") || prefab == StringView("broken");  // "broken" fails at the merge
 }
 
 struct Crate
@@ -334,6 +334,19 @@ TEST_CASE("Entity bindings: names, find and prefabs come from the scene's servic
     CHECK_FALSE(rig.Run("entity.spawn('crate')", &out).IsOk());
     REQUIRE(rig.Run("return entity.find('hero'), entity.name(entity.self())", &out).IsOk());
     CHECK(out.results[0].IsNil());
+}
+
+TEST_CASE("Entity bindings: a spawn whose prefab fails at the merge leaves no entity behind", "[script][entity]")
+{
+    EntityRig rig;
+    CallOutput out;
+    const usize before = rig.world.Query<ecs::Read<ecs::LocalTransform>>().Count();
+    REQUIRE(rig.Run("local e = entity.spawn('broken') transform.set_position(e, vec3.new(1, 2, 3))", &out).IsOk());
+    const MergeReport report = rig.Merge();
+    CHECK(report.applied == 0);
+    CHECK(report.skipped == 1);   // the spawn
+    CHECK(report.dangling == 1);  // the position names a placeholder that was never bound
+    CHECK(rig.world.Query<ecs::Read<ecs::LocalTransform>>().Count() == before);
 }
 
 // ---- the definition of done: scripts spawn and move entities, the same world for any thread count.

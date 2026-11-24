@@ -15,18 +15,29 @@ void ReplayLog::Begin(u32 random_seed, u64 start_tick, u64 start_hash)
     entries_.Clear();
 }
 
-void ReplayLog::Record(u64 tick, const InputSnapshot& snapshot, u64 hash)
+bool ReplayLog::Record(u64 tick, const InputSnapshot& snapshot, u64 hash)
 {
+    if (entries_.Size() >= kMaxReplayTicks || tick != start_tick_ + entries_.Size())
+    {
+        return false;
+    }
     ReplayEntry entry;
     entry.tick = tick;
     entry.hash = hash;
     bytes::ByteWriter writer;
     snapshot.Serialize(&writer);
+    InputSnapshot check;
+    bytes::ByteReader back(writer.Bytes());
+    if (!check.Deserialize(&back) || !back.AtEnd())
+    {
+        return false;  // Deserialize would refuse the log: keep it readable
+    }
     for (usize i = 0; i < writer.Size(); ++i)
     {
         entry.input.Push(static_cast<u8>(writer.Bytes()[i]));
     }
     entries_.Push(Move(entry));
+    return true;
 }
 
 const ReplayEntry& ReplayLog::At(usize index) const

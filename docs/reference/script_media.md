@@ -1589,17 +1589,18 @@ Starts a log: forgets the entries and keeps what the session started from.
 `method script_media::ReplayLog::Record` — defined in `engine/script_media/replay_log.h`
 
 ```cpp
-void Record(u64 tick, const InputSnapshot& snapshot, u64 hash);
+bool Record(u64 tick, const InputSnapshot& snapshot, u64 hash);
 ```
 
-Adds a tick.
+Adds a tick, unless the log could not be read back: the entry is refused when the log already holds [`script_media::kMaxReplayTicks`](#script-media-kmaxreplayticks) ticks, when `tick` does not follow the last one (`StartTick() + Size()`), or when the snapshot does not survive its bytes (a value `Deserialize` refuses, such as a mouse position that is not finite). A recorded log is therefore always one `Deserialize` accepts.
 
 | Field | Value |
 |---|---|
 | Parameter `tick` | the tick number. |
 | Parameter `snapshot` | the input the scripts read this tick. |
 | Parameter `hash` | the world's hash after the tick. |
-| Fails | never. |
+| Returns | whether the tick was added. |
+| Fails | returns false (and the log is unchanged), as described. |
 
 ### `RandomSeed()` {#script-media-replaylog-randomseed-const}
 

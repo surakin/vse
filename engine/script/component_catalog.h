@@ -19,7 +19,9 @@ namespace vse::script
 {
 
 /// The most components one catalog lets scripts define (the ECS holds 128 component types for the whole process, and a
-/// script must not be able to use them up).
+/// script must not be able to use them up). A component type is never freed, but catalogs that define a component of
+/// the same name, size class and alignment share one type, so worlds made one after another with the same scripts use
+/// no more of them; only distinct component names add up across worlds.
 inline constexpr usize kMaxScriptComponents = 32;
 
 /// The most fields a script-defined component can have.

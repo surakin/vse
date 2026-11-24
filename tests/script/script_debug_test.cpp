@@ -589,6 +589,9 @@ TEST_CASE("Debugger: a bad command is an error event, and detach lets a stopped 
     Value bad = Cmd("set_breakpoints");
     transport.Send(bad);
     REQUIRE(WaitEvent(&transport, "error", &ev));
+    // A line over 32 bits is an error, not line 4 after a cut to 32 bits.
+    transport.Send(BreakpointAt("stepper", (i64{1} << 32) + 4));
+    REQUIRE(WaitEvent(&transport, "error", &ev));
     REQUIRE(transport.Send(BreakpointAt("stepper", 4)));
     bool stopped = false;
     Thread client(

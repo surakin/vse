@@ -324,6 +324,11 @@ TEST_CASE("Script physics: a push that cannot work is an error at the call", "[s
         {"physics.set_velocity(b, vec3.new(0, 1, 0))", "static body"},
         {"physics.set_gravity_scale(c, 0)", "no `rigid_body`"},
         {"physics.add_force(a, 5)", "Vec3"},
+        {"physics.add_force(a, vec3.new(0, 1e13, 0))", "too large"},
+        {"physics.add_impulse(a, vec3.new(-1e20, 0, 0))", "too large"},
+        {"physics.add_torque(a, vec3.new(0, 0, 1e30))", "too large"},
+        {"physics.set_velocity(a, vec3.new(0, 1e6, 0))", "too large"},
+        {"physics.set_angular_velocity(a, vec3.new(0, 0, -1e6))", "too large"},
     };
     for (const Case& c : cases)
     {
@@ -488,6 +493,11 @@ TEST_CASE("Script physics: bad query arguments are errors that name the problem"
         {"physics.overlap_sphere(vec3.new(0, 0, 0), -1, nil)", "radius above zero"},
         {"physics.overlap_box(vec3.new(0, 0, 0), vec3.new(1, 0, 1), quat.identity(), nil)", "above zero"},
         {"physics.closest_point(vec3.new(0, 0, 0), 0, nil)", "above zero"},
+        {"physics.shape_cast({kind = 'sphere', radius = 1}, vec3.new(0, 0, 0), (function() local q = quat.identity() q.w = 0 return q end)(), "
+         "vec3.new(1, 0, 0), 1, nil)",
+         "non-zero finite quaternion"},
+        {"physics.overlap_box(vec3.new(0, 0, 0), vec3.new(1, 1, 1), (function() local q = quat.identity() q.w = 0 return q end)(), nil)",
+         "non-zero finite quaternion"},
         {"physics.layer('nowhere')", "no physics layer"},
         {"physics.shape_cast({kind = 'sphere', radius = 'big'}, vec3.new(0, 0, 0), quat.identity(), vec3.new(1, 0, 0), 1, "
          "nil)",

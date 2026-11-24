@@ -107,10 +107,46 @@ static int g_tag_sum = 0;
 static int g_halfway = 0;
 static int64_t g_halfway_sum = 0;
 static int g_pure_calls = 0;
+static engine_handle g_world; /* for the re-entry checks of the callbacks */
+static void OnReentry(void* user, engine_string name, uint64_t sender, const engine_value_pool* payload)
+{
+    (void)user;
+    (void)name;
+    (void)sender;
+    (void)payload;
+}
+static int g_reentry_checks = 0;
+
+/* A world call from inside a callback (the frame holds the world) is refused with NOT_READY, never a deadlock. */
+static void CheckReentryRefused(void)
+{
+    engine_script_stats stats;
+    engine_script_budget budget;
+    engine_script_load load;
+    uint32_t id = 0;
+    memset(&stats, 0, sizeof(stats));
+    stats.struct_size = sizeof(stats);
+    memset(&budget, 0, sizeof(budget));
+    budget.struct_size = sizeof(budget);
+    memset(&load, 0, sizeof(load));
+    load.struct_size = sizeof(load);
+    load.source = Str("x = 1");
+    CHECK_STATUS(g_api->script_stats(g_world, &stats), ENGINE_ERROR_NOT_READY);
+    CHECK_STATUS(g_api->script_set_budget(g_world, &budget), ENGINE_ERROR_NOT_READY);
+    CHECK_STATUS(g_api->script_load(g_world, &load, NULL), ENGINE_ERROR_NOT_READY);
+    CHECK_STATUS(g_api->script_event_unsubscribe(g_world, 1), ENGINE_ERROR_NOT_READY);
+    CHECK_STATUS(g_api->script_event_subscribe(g_world, Str("y"), &OnReentry, NULL, &id), ENGINE_ERROR_NOT_READY);
+    CHECK_STATUS(g_api->script_call(g_world, Str("nothing"), NULL, NULL), ENGINE_ERROR_NOT_READY);
+    host_atomic_add(&g_reentry_checks, 1);
+}
 
 static engine_status HostTag(void* user, const engine_value_pool* args, engine_value_pool* results)
 {
     (void)user;
+    if (args->items[0].i == 0)
+    {
+        CheckReentryRefused(); /* from a host function */
+    }
     host_atomic_add(&g_tags, 1);
     host_atomic_add(&g_tag_sum, (int)args->items[0].i);
     results->root_count = 0;
@@ -149,6 +185,10 @@ static void OnAnything(void* user, engine_string name, uint64_t sender, const en
     (void)name;
     (void)sender;
     (void)payload;
+    if (g_everything == 0)
+    {
+        CheckReentryRefused(); /* from an event callback */
+    }
     ++g_everything;
 }
 
@@ -417,7 +457,7 @@ static uint64_t RunScenario(const char* partitions, int with_threads)
     uint32_t halfway_id = 0, anything_id = 0;
     int i;
 
-    g_tags = g_tag_sum = g_halfway = g_everything = g_pure_calls = 0;
+    g_tags = g_tag_sum = g_halfway = g_everything = g_pure_calls = g_reentry_checks = 0;
     g_halfway_sum = 0;
     entry.key = Str("script.partitions");
     entry.value = Str(partitions);
@@ -429,6 +469,7 @@ static uint64_t RunScenario(const char* partitions, int with_threads)
     CHECK_STATUS(g_api->create(&create, &engine), ENGINE_OK);
     memset(&world, 0, sizeof(world));
     CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    g_world = world;
 
     CHECK_STATUS(g_api->script_register_function(world, Str("host.tag"), 1, 0, &HostTag, NULL), ENGINE_OK);
     CHECK_STATUS(
@@ -490,6 +531,7 @@ static uint64_t RunScenario(const char* partitions, int with_threads)
     CHECK(g_tags == ENTITY_COUNT && g_tag_sum == 499500);
     CHECK(g_halfway == ENTITY_COUNT && g_halfway_sum == 499500);
     CHECK(g_everything >= ENTITY_COUNT + 1); /* the 'halfway' events and the host's 'boost' */
+    CHECK(g_reentry_checks == 2);            /* one from the host function, one from the event callback */
     memset(&stats, 0, sizeof(stats));
     stats.struct_size = sizeof(stats);
     CHECK_STATUS(g_api->script_stats(world, &stats), ENGINE_OK);

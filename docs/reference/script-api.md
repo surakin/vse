@@ -166,7 +166,7 @@ Gives the character an upward speed (m/s) at the start of the next step; check `
 
 Thread rule: **world-write**. Id: `0xbe094bb7`.
 
-Sets the horizontal velocity the character walks at (the y part is ignored); it holds until set again. The move runs inside the physics step.
+Sets the horizontal velocity the character walks at (the y part is ignored); it holds until set again. The move runs inside the physics step. A component over 1e5 is an error.
 
 ### `character.set_height`
 
@@ -622,7 +622,7 @@ Returns the square root of `x`, or 0 for a negative `x`.
 
 Thread rule: **world-write**. Id: `0xc77f2a93`.
 
-Adds a force in newtons at the body's centre of mass, kept until the next physics step takes it. Forces from every script add up. The body must be dynamic.
+Adds a force in newtons at the body's centre of mass, kept until the next physics step takes it. Forces from every script add up. The body must be dynamic; a component over 1e12 (as for impulses and torques) is an error.
 
 ### `physics.add_force_at`
 
@@ -718,7 +718,7 @@ Returns the bit mask of layer names: nil is all layers, a name is one, an array 
 
 Thread rule: **world-read**. Id: `0x79559151`.
 
-Returns an array of the entities whose colliders touch the box.
+Returns an array of the entities whose colliders touch the box (the rotation is normalized; a zero or non-finite one is an error).
 
 ### `physics.overlap_sphere`
 
@@ -758,7 +758,7 @@ Takes the joint component off `owner`; the physics joint goes at the next sync.
 
 Thread rule: **world-write**. Id: `0x513024bd`.
 
-Sets the angular velocity (radians per second).
+Sets the angular velocity (radians per second); a component over 1e5 is an error.
 
 ### `physics.set_gravity_scale`
 
@@ -774,7 +774,7 @@ Sets how much gravity pulls the body (0 floats it).
 
 Thread rule: **world-write**. Id: `0xa98319de`.
 
-Sets the linear velocity (metres per second) of a dynamic or kinematic body.
+Sets the linear velocity (metres per second) of a dynamic or kinematic body; a component over 1e5 is an error.
 
 ### `physics.shape_cast`
 
@@ -782,7 +782,7 @@ Sets the linear velocity (metres per second) of a dynamic or kinematic body.
 
 Thread rule: **world-read**. Id: `0x60d451a1`.
 
-Sweeps {kind="sphere", radius=} / {kind="box", half_extents=} / {kind="capsule", half_height=, radius=} along a direction; returns nil or the first hit, `distance` being how far the shape moved.
+Sweeps {kind="sphere", radius=} / {kind="box", half_extents=} / {kind="capsule", half_height=, radius=} along a direction; returns nil or the first hit, `distance` being how far the shape moved. The rotation is normalized; a zero or non-finite quaternion is an error.
 
 ### `physics.sleep`
 

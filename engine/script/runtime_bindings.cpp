@@ -66,24 +66,7 @@ Vec3 RandomUnitVec3()
 
 void Emit(ScriptLogLevel level, StringView text)
 {
-    // A level the channel would drop is not buffered and does not use up the script's limit.
-    if (!LogScript.ShouldLog(LogVerbosityOf(level)))
-    {
-        return;
-    }
-    SourceLocation where;
-    const bool known = CurrentCallerLocation(&where);
-    const StringView script = known ? StringView(where.chunk, CStrLength(where.chunk)) : StringView("script");
-    const u32 line = known ? where.line : 0u;
-    PartitionContext* context = CurrentPartitionContext();
-    if (context != nullptr && context->log != nullptr)
-    {
-        context->log->Add(level, script, line, text);
-    }
-    else
-    {
-        WriteScriptLog(level, script, line, text);
-    }
+    EmitScriptLog(level, text);  // a level the channel would drop is not buffered and does not use up the limit
 }
 
 void LogDebug(StringView text)

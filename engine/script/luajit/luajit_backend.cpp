@@ -333,6 +333,13 @@ int TagOf(lua_State* L, int index)
     return found;
 }
 
+// Whether a Lua number may become an f32 field: a finite number beyond the float range is refused (its cast would be
+// undefined); NaN and the infinities pass as they are, for the bindings' own checks.
+bool CastsToF32(f64 d)
+{
+    return (d >= -3.4028234663852886e38 && d <= 3.4028234663852886e38) || !IsFinite(d);
+}
+
 // Reads a number field of the table at `table` (absolute); false when it is missing or not a number.
 bool ReadField(lua_State* L, int table, const char* name, f64* out)
 {
@@ -436,6 +443,10 @@ bool ReadValue(lua_State* L, int index, Value* out, Marshal* m, u32 depth)
         {
             return Fail(m, "a vec2 needs numeric x and y");
         }
+        if (!CastsToF32(a) || !CastsToF32(b))
+        {
+            return Fail(m, "a vec2's x and y must fit 32-bit floats");
+        }
         *out = Value::FromVec2(Vec2{static_cast<f32>(a), static_cast<f32>(b)});
         return true;
     case kTagVec3:
@@ -451,6 +462,10 @@ bool ReadValue(lua_State* L, int index, Value* out, Marshal* m, u32 depth)
             !ReadField(L, index, "w", &d))
         {
             return Fail(m, "a vec4 or quat needs numeric x, y, z and w");
+        }
+        if (!CastsToF32(a) || !CastsToF32(b) || !CastsToF32(c) || !CastsToF32(d))
+        {
+            return Fail(m, "a vec4's or quat's x, y, z and w must fit 32-bit floats");
         }
         if (tag == kTagVec4)
         {
@@ -1042,6 +1057,7 @@ enum class Op : int
     LoadHost,
     Eval,
     JitInfo,
+    Seal,
 };
 
 // The input and output of one protected operation; it lives in the frame that calls `lua_cpcall`.
@@ -1136,6 +1152,38 @@ int ReadOnlyError(lua_State* L)
     return luaL_error(L, "attempt to modify a read-only table");
 }
 
+// Whether the key at `index` is a sealed global name (registry `engine.sealed`); leaves the stack as it was.
+bool SealedName(lua_State* L, int index)
+{
+    if (lua_type(L, index) != LUA_TSTRING)
+    {
+        return false;
+    }
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.sealed");
+    if (lua_type(L, -1) != LUA_TTABLE)
+    {
+        lua_pop(L, 1);
+        return false;
+    }
+    lua_pushvalue(L, index);
+    lua_rawget(L, -2);
+    const bool sealed = lua_toboolean(L, -1) != 0;
+    lua_pop(L, 2);
+    return sealed;
+}
+
+// The __newindex of the scripts' globals once sealed: a new global is stored; a sealed name raises an error.
+int SealedNewIndex(lua_State* L)
+{
+    if (SealedName(L, 2))
+    {
+        return luaL_error(L, "attempt to replace the engine's global '%s'", lua_tostring(L, 2));
+    }
+    lua_settop(L, 3);
+    lua_rawset(L, 1);
+    return 0;
+}
+
 // rawset(t, k, v) except on the engine's read-only views (rawset would write into the proxy itself).
 int GuardedRawSet(lua_State* L)
 {
@@ -1149,6 +1197,13 @@ int GuardedRawSet(lua_State* L)
     {
         return luaL_error(L, "attempt to modify a read-only table");
     }
+    // The sealed names of the scripts' globals (SealGlobals) are refused here too.
+    lua_settop(L, 3);
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.globals");
+    if (lua_rawequal(L, 1, -1) != 0 && SealedName(L, 2))
+    {
+        return luaL_error(L, "attempt to replace the engine's global '%s'", lua_tostring(L, 2));
+    }
     lua_settop(L, 3);
     lua_rawset(L, 1);
     lua_settop(L, 1);
@@ -1161,7 +1216,8 @@ int TrippedFunction(lua_State* L)
     return 1;
 }
 
-// print(...) goes to the engine log (channel LogScript, Info), arguments separated by tabs.
+// print(...) is `log.info` of its arguments separated by tabs: buffered per partition, flushed in partition order and
+// held to `script.log_limit` like the log bindings.
 int PrintFunction(lua_State* L)
 {
     char line[400];
@@ -1192,7 +1248,9 @@ int PrintFunction(lua_State* L)
         MemCopy(line + used, text, len);
         used += len;
     }
-    Log(LogScript, LogVerbosity::Info, StringView(line, used));
+    SetCallerLocationProvider(&LuaCallerLocation, L);
+    EmitScriptLog(ScriptLogLevel::Info, StringView(line, used));
+    SetCallerLocationProvider(nullptr, nullptr);
     return 0;
 }
 
@@ -1481,6 +1539,15 @@ void OpenLibs(lua_State* L, Request* r)
         lua_getfield(L, LUA_REGISTRYINDEX, kTagNames[t]);
     }
     lua_call(L, 5, 0);
+    // The other tags (bytes, arrays, maps) have no operators, but their metatables are hidden and locked the same way:
+    // getmetatable answers false and setmetatable refuses, so a script cannot change how every engine value behaves.
+    for (int t = kTagBytes; t <= kTagMap; ++t)
+    {
+        lua_getfield(L, LUA_REGISTRYINDEX, kTagNames[t]);
+        lua_pushboolean(L, 0);
+        lua_setfield(L, -2, "__metatable");
+        lua_pop(L, 1);
+    }
     // The libraries become read-only views (their real tables stay in the registry only through the views).
     static const char* const libraries[] = {"string", "math", "table", "bit", "coroutine"};
     for (const char* name : libraries)
@@ -1505,7 +1572,61 @@ void OpenLibs(lua_State* L, Request* r)
     lua_setmetatable(L, -2);
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "_G");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, LUA_REGISTRYINDEX, "engine.globals");  // GuardedRawSet compares with it
     lua_replace(L, LUA_GLOBALSINDEX);
+}
+
+// Moves the globals the scripts defined so far (S) into the engine environment E and seals their names: a table
+// becomes a read-only view, and S refuses a later assignment to a sealed name (its __newindex, and rawset).
+void SealGlobals(lua_State* L)
+{
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.env");  // E
+    const int env = lua_gettop(L);
+    lua_getfield(L, LUA_REGISTRYINDEX, "engine.sealed");
+    if (lua_type(L, -1) != LUA_TTABLE)
+    {
+        lua_pop(L, 1);
+        lua_newtable(L);
+        lua_pushvalue(L, -1);
+        lua_setfield(L, LUA_REGISTRYINDEX, "engine.sealed");
+    }
+    const int sealed = lua_gettop(L);
+    lua_newtable(L);  // the names, collected first: S is changed after the walk
+    const int names = lua_gettop(L);
+    int count = 0;
+    lua_pushnil(L);
+    while (lua_next(L, LUA_GLOBALSINDEX) != 0)
+    {
+        lua_pop(L, 1);
+        if (lua_type(L, -1) == LUA_TSTRING && CStrCompare(lua_tostring(L, -1), "_G") != 0)
+        {
+            lua_pushvalue(L, -1);
+            lua_rawseti(L, names, ++count);
+        }
+    }
+    for (int i = 1; i <= count; ++i)
+    {
+        lua_rawgeti(L, names, i);  // name
+        lua_pushvalue(L, -1);
+        lua_rawget(L, LUA_GLOBALSINDEX);  // name value
+        if (lua_type(L, -1) == LUA_TTABLE)
+        {
+            MakeReadOnlyProxy(L);  // a table (`event`, `task`): its view; the host keeps the table itself
+        }
+        lua_pushvalue(L, -2);
+        lua_insert(L, -2);
+        lua_rawset(L, env);  // E[name] = value
+        lua_pushvalue(L, -1);
+        lua_pushboolean(L, 1);
+        lua_rawset(L, sealed);  // sealed[name] = true
+        lua_pushnil(L);
+        lua_rawset(L, LUA_GLOBALSINDEX);  // S[name] = nil
+    }
+    lua_getmetatable(L, LUA_GLOBALSINDEX);
+    lua_pushcfunction(L, &SealedNewIndex);
+    lua_setfield(L, -2, "__newindex");
+    lua_settop(L, env - 1);
 }
 
 // Pushes the value at the end of a dotted path, or nil when a step is missing. The first name is looked up in the
@@ -1931,6 +2052,7 @@ int ProtectedBody(lua_State* L)
     case Op::OpenLibs: OpenLibs(L, r); break;
     case Op::JitInfo: ReadJit(L, r); break;
     case Op::Collect: lua_gc(L, LUA_GCCOLLECT, 0); break;
+    case Op::Seal: SealGlobals(L); break;
     case Op::Unref: luaL_unref(L, LUA_REGISTRYINDEX, r->ref); break;
     case Op::Register: RegisterNative(L, r); break;
     case Op::Load: LoadChunk(L, r); break;
@@ -2166,6 +2288,17 @@ protected:
             natives_.Push(Move(entry));
         }
         return o;
+    }
+
+    Outcome DoSealGlobals() override
+    {
+        if (L_ == nullptr)
+        {
+            return Outcome(Status::Invalid, "the state is closed");
+        }
+        Request r;
+        r.op = Op::Seal;
+        return Execute(&r);
     }
 
     void DoCollect() override

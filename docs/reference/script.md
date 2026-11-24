@@ -911,6 +911,21 @@ Drops the suspended call `coroutine` and frees what it holds; an id that is not 
 |---|---|
 | Aborts | the caller's thread does not own the state (debug checks). |
 
+### `SealGlobals()` {#script-state-sealglobals}
+
+`method script::State::SealGlobals` — defined in `engine/script/backend.h`
+
+```cpp
+Outcome SealGlobals();
+```
+
+Seals the globals the scripts defined so far: each becomes part of the engine environment, a table among them becomes a read-only view, and a later assignment to one of those names (plain or through `rawset`) raises an error. Scripts loaded afterwards keep defining globals of their own. The runtime seals its behavior host, so `behavior`, `event`, `task`, `spawn`, the waits and the `__behavior_*` entry points cannot be replaced.
+
+| Field | Value |
+|---|---|
+| Returns | `Ok`, `OutOfMemory`, `Invalid` for a closed state, or `Unsupported` from a backend without sealing. |
+| Aborts | the caller's thread does not own the state (debug checks). |
+
 ### `RegisterFunction(StringView,NativeFunction,void*)` {#script-state-registerfunction-stringview-nativefunction-void-star}
 
 `method script::State::RegisterFunction` — defined in `engine/script/backend.h`
@@ -2421,7 +2436,7 @@ Adds `component.get/set/add/remove/has/exists/define` and `query.each/all/page`.
 inline constexpr usize kMaxScriptComponents;
 ```
 
-The most components one catalog lets scripts define (the ECS holds 128 component types for the whole process, and a script must not be able to use them up).
+The most components one catalog lets scripts define (the ECS holds 128 component types for the whole process, and a script must not be able to use them up). A component type is never freed, but catalogs that define a component of the same name, size class and alignment share one type, so worlds made one after another with the same scripts use no more of them; only distinct component names add up across worlds.
 
 ## `kMaxScriptComponentFields` {#script-kmaxscriptcomponentfields}
 
@@ -3148,7 +3163,7 @@ Subscribes native code to an event name.
 bool Unsubscribe(u32 id);
 ```
 
-Removes a native subscription.
+Removes a native subscription. A handler may remove itself or another subscription while it is being called: a removed subscription receives nothing more, not even the rest of the event being delivered, and every other subscription still receives that event.
 
 | Field | Value |
 |---|---|
@@ -3207,7 +3222,7 @@ Moves a partition's emitted events into the bus (the sync point calls it for eac
 void Take(Vector<EventRecord>* out);
 ```
 
-Takes the waiting events for delivery and calls the native subscribers for them, in order.
+Takes the waiting events for delivery and calls the native subscribers for them, in order. A subscription a handler adds during the call receives the events after the one being delivered.
 
 | Field | Value |
 |---|---|
@@ -3419,6 +3434,21 @@ Writes one script log message straight to [`script::LogScript`](#script-logscrip
 | Fails | never. |
 | Thread-safety | thread-safe (the log is). |
 
+## `EmitScriptLog(ScriptLogLevel,StringView)` {#script-emitscriptlog-scriptloglevel-stringview}
+
+`function script::EmitScriptLog` — defined in `engine/script/log_buffer.h`
+
+```cpp
+void EmitScriptLog(ScriptLogLevel level, StringView text);
+```
+
+Logs one message a script wrote (`log.*` and `print`): tagged with the caller's script and line when the backend knows them ([`script::CurrentCallerLocation`](#script-currentcallerlocation-sourcelocation-star)), added to the running partition's buffer (so it counts toward `script.log_limit` and is written in partition order at the sync point), or written at once outside a partition job. A level the channel drops is neither buffered nor counted.
+
+| Field | Value |
+|---|---|
+| Fails | never; a message over the limit is counted, not kept. |
+| Thread-safety | thread-safe; the buffer belongs to the job that runs the partition. |
+
 ## `ConflictPolicy` {#script-conflictpolicy}
 
 `enum script::ConflictPolicy` — defined in `engine/script/merge.h`
@@ -3552,6 +3582,16 @@ using ApplyFunction = bool (*)(MergeContext& context, ecs::Entity target, Span<c
 
 Applies one command: `target` is the resolved entity (the placeholder itself for a creating kind); returns whether the command changed the world (false counts as skipped: a dead entity, a missing component).
 
+## `ConflictKeyFunction` {#script-conflictkeyfunction}
+
+`alias script::ConflictKeyFunction` — defined in `engine/script/merge.h`
+
+```cpp
+using ConflictKeyFunction = u32 (*)(Span<const u8> payload);
+```
+
+Reads from a writing command's payload what it writes inside its entity (a component id), so that writes of different things to one entity do not conflict.
+
 ## `CommandKind` {#script-commandkind}
 
 `struct script::CommandKind` — defined in `engine/script/merge.h`
@@ -3616,6 +3656,26 @@ bool global;
 ```
 
 Whether the command is not about an entity: its target is ignored (it may be the null entity), and two partitions issuing it is not a conflict (the later one applies, as in a sequence).
+
+### `conflict_key` {#script-commandkind-conflict-key}
+
+`variable script::CommandKind::conflict_key` — defined in `engine/script/merge.h`
+
+```cpp
+ConflictKeyFunction conflict_key;
+```
+
+For a writing kind: what inside the entity it writes, read from the payload; null means the whole kind (two partitions using the kind on one entity conflict whatever they write).
+
+### `conflict_group` {#script-commandkind-conflict-group}
+
+`variable script::CommandKind::conflict_group` — defined in `engine/script/merge.h`
+
+```cpp
+u16 conflict_group;
+```
+
+Kinds that write the same things share a non-zero group and conflict with each other (`component.set`, `add` and `remove` of one component); 0 keys the conflicts on the kind alone.
 
 ## `CommandKindTable` {#script-commandkindtable}
 
@@ -6160,6 +6220,35 @@ Sets how many fixed steps the next ticks hold and how long each is (`on_fixed_up
 | Parameter `steps` | the number of calls per tick. |
 | Parameter `fixed_dt` | the step length in seconds. |
 
+### `SetReplayRecording(bool)` {#script-scriptruntime-setreplayrecording-bool}
+
+`method script::ScriptRuntime::SetReplayRecording` — defined in `engine/script/script_runtime.h`
+
+```cpp
+void SetReplayRecording(bool on);
+```
+
+Says whether a replay of the session is being recorded (the host's replay log, docs/guide/scripting.md, "Saving scripted state"). While it is, `time.real` raises an error in every script: a wall-clock reading would make the recorded run impossible to repeat. The default is off.
+
+| Field | Value |
+|---|---|
+| Parameter `on` | whether the next ticks are recorded. |
+| Fails | never. |
+
+### `ReplayRecording()` {#script-scriptruntime-replayrecording-const}
+
+`method script::ScriptRuntime::ReplayRecording` — defined in `engine/script/script_runtime.h`
+
+```cpp
+bool ReplayRecording() const;
+```
+
+Whether a replay is being recorded (see `SetReplayRecording`).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `Scripts()` {#script-scriptruntime-scripts}
 
 `method script::ScriptRuntime::Scripts` — defined in `engine/script/script_runtime.h`
@@ -7456,12 +7545,12 @@ The number of partitions.
 |---|---|
 | Fails | never. |
 
-### `AddScript(StringView,SharedBytesPtr)` {#script-scriptworld-addscript-stringview-sharedbytesptr}
+### `AddScript(StringView,SharedBytesPtr,bool)` {#script-scriptworld-addscript-stringview-sharedbytesptr-bool}
 
 `method script::ScriptWorld::AddScript` — defined in `engine/script/script_world.h`
 
 ```cpp
-void AddScript(StringView name, SharedBytesPtr source);
+void AddScript(StringView name, SharedBytesPtr source, bool seal = false);
 ```
 
 Adds a script every partition loads (now in the partitions that already have a state, at their next checkout; in a new state as part of its creation).
@@ -7470,6 +7559,7 @@ Adds a script every partition loads (now in the partitions that already have a s
 |---|---|
 | Parameter `name` | the chunk name for messages; copied. |
 | Parameter `source` | the script text, shared and immutable. |
+| Parameter `seal` | after the script loads, the globals defined so far are sealed ([`script::State::SealGlobals`](#script-state-sealglobals)): later scripts read them and cannot replace them. The runtime seals its behavior host this way; a backend without sealing loads the script as usual. |
 | Fails | never; a script that fails to load makes the checkouts of the partitions fail with its outcome. |
 
 ### `AddModule(StringView,StringView,SharedBytesPtr,usize,usize,StringView,bool)` {#script-scriptworld-addmodule-stringview-stringview-sharedbytesptr-usize-usize-stringview-bool}

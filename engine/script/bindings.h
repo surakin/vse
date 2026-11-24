@@ -7,6 +7,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "ecs/entity.h"
+#include "lang/scalar.h"
 #include "lang/traits.h"
 #include "mem/heap_allocator.h"
 #include "math/matrix.h"
@@ -192,11 +193,18 @@ template <class R, class... A> Signature<R, A...> SignatureOf(R (*)(A...));
 // How one parameter or result type is checked, read and written.
 template <class T> struct Codec;
 
+// Whether a number may be read as an f32: a finite number beyond the float range is refused (its cast is undefined);
+// NaN and the infinities pass, for the binding's own checks.
+inline bool FitsF32(f64 d)
+{
+    return (d >= -3.4028234663852886e38 && d <= 3.4028234663852886e38) || !IsFinite(d);
+}
+
 template <> struct Codec<f32>
 {
     static constexpr const char* kName = "f32";
     static constexpr bool kIsEntity = false;
-    static bool Check(const Value& v) { return v.IsNumber(); }
+    static bool Check(const Value& v) { return v.IsNumber() && FitsF32(v.ToDouble()); }
     static f32 Get(const Value& v) { return static_cast<f32>(v.ToDouble()); }
     static Value Put(f32 x) { return Value::FromFloat(x); }
 };
@@ -255,7 +263,15 @@ template <> struct Codec<Vec3>
 {
     static constexpr const char* kName = "Vec3";
     static constexpr bool kIsEntity = false;
-    static bool Check(const Value& v) { return v.Kind() == ValueKind::Vec3; }
+    static bool Check(const Value& v)
+    {
+        if (v.Kind() != ValueKind::Vec3)
+        {
+            return false;
+        }
+        const Vec3d d = v.AsVec3d();
+        return FitsF32(d.x) && FitsF32(d.y) && FitsF32(d.z);
+    }
     static Vec3 Get(const Value& v) { return v.AsVec3(); }
     static Value Put(Vec3 x) { return Value::FromVec3(x); }
 };
@@ -305,7 +321,7 @@ template <> struct Codec<Mat4>
         }
         for (usize i = 0; i < 16; ++i)
         {
-            if (!v.At(i).IsNumber())
+            if (!v.At(i).IsNumber() || !FitsF32(v.At(i).ToDouble()))
             {
                 return false;
             }

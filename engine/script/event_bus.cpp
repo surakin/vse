@@ -60,21 +60,31 @@ bool EventBus::Unsubscribe(u32 id)
 {
     for (usize i = 0; i < natives_.Size(); ++i)
     {
-        if (natives_[i].id == id)
+        if (natives_[i].id == id && natives_[i].handler != nullptr)
         {
-            Vector<NativeSub> kept;
-            for (usize k = 0; k < natives_.Size(); ++k)
+            if (delivering_)
             {
-                if (k != i)
-                {
-                    kept.Push(Move(natives_[k]));
-                }
+                natives_[i].handler = nullptr;  // Take skips it and drops it when the delivery ends
+                return true;
             }
-            natives_ = Move(kept);
+            RemoveCleared(i);
             return true;
         }
     }
     return false;
+}
+
+void EventBus::RemoveCleared(usize also)
+{
+    Vector<NativeSub> kept;
+    for (usize k = 0; k < natives_.Size(); ++k)
+    {
+        if (k != also && natives_[k].handler != nullptr)
+        {
+            kept.Push(Move(natives_[k]));
+        }
+    }
+    natives_ = Move(kept);
 }
 
 usize EventBus::Accept(EventOutbox* outbox)
@@ -102,17 +112,26 @@ void EventBus::Take(Vector<EventRecord>* out)
     {
         return;
     }
+    delivering_ = true;
     for (usize i = 0; i < out->Size(); ++i)
     {
         const EventRecord& event = (*out)[i];
-        for (usize k = 0; k < natives_.Size(); ++k)
+        // The count is read once per event: a subscription added by a handler starts with the next event.
+        const usize count = natives_.Size();
+        for (usize k = 0; k < count; ++k)
         {
-            if (natives_[k].name.Length() == 0 || natives_[k].name.View() == event.name.View())
+            // Read by index on every step: a handler may add subscriptions (the vector may move).
+            const NativeSub& sub = natives_[k];
+            if (sub.handler != nullptr && (sub.name.Length() == 0 || sub.name.View() == event.name.View()))
             {
-                natives_[k].handler(natives_[k].user, event);
+                const NativeEventHandler handler = sub.handler;
+                void* const user = sub.user;
+                handler(user, event);
             }
         }
     }
+    delivering_ = false;
+    RemoveCleared(natives_.Size());
 }
 
 }  // namespace vse::script

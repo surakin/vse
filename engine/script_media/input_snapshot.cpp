@@ -61,7 +61,7 @@ void Copy(Vector<InputBinding>* to, Span<const InputBinding> from)
 
 bool Finite(f64 v)
 {
-    return IsFinite(static_cast<f32>(v)) && v > -1.0e15 && v < 1.0e15;
+    return v > -1.0e15 && v < 1.0e15;  // NaN and the infinities fail; no f32 cast of a value out of its range
 }
 
 }  // namespace

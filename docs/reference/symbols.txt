@@ -2144,25 +2144,26 @@ script::State::DefineModule(StringView,StringView,StringView,StringView)	functio
 script::State::Call(StringView,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-call-stringview-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:389
 script::State::Resume(u64,Span<const Value>,const Budget&,CallOutput*)	function	script	script-state-resume-u64-span-lt-const-value-gt-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:406
 script::State::Abandon(u64)	function	script	script-state-abandon-u64	script.md	engine/script/backend.h:420
-script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:432
-script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:441
-script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:450
-script::State::SetDebugSession(DebugSession*)	function	script	script-state-setdebugsession-debugsession-star	script.md	engine/script/backend.h:463
-script::State::SetProfiling(bool)	function	script	script-state-setprofiling-bool	script.md	engine/script/backend.h:474
-script::State::ProfileReport(Vector<ProfileEntry>*)	function	script	script-state-profilereport-vector-lt-profileentry-gt-star	script.md	engine/script/backend.h:486
-script::State::JitReport(JitStats*)	function	script	script-state-jitreport-jitstats-star	script.md	engine/script/backend.h:499
-script::State::Eval(StringView,StringView,const Budget&,CallOutput*)	function	script	script-state-eval-stringview-stringview-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:517
-script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:532
-script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:539
-script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:547
-script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:556
-script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:561
-script::Backend	class	script	script-backend	script.md	engine/script/backend.h:659
-script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:663
-script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:666
-script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:668
-script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:670
-script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:675
+script::State::SealGlobals()	function	script	script-state-sealglobals	script.md	engine/script/backend.h:433
+script::State::RegisterFunction(StringView,NativeFunction,void*)	function	script	script-state-registerfunction-stringview-nativefunction-void-star	script.md	engine/script/backend.h:445
+script::State::Collect()	function	script	script-state-collect	script.md	engine/script/backend.h:454
+script::State::MemoryUsed()	function	script	script-state-memoryused	script.md	engine/script/backend.h:463
+script::State::SetDebugSession(DebugSession*)	function	script	script-state-setdebugsession-debugsession-star	script.md	engine/script/backend.h:476
+script::State::SetProfiling(bool)	function	script	script-state-setprofiling-bool	script.md	engine/script/backend.h:487
+script::State::ProfileReport(Vector<ProfileEntry>*)	function	script	script-state-profilereport-vector-lt-profileentry-gt-star	script.md	engine/script/backend.h:499
+script::State::JitReport(JitStats*)	function	script	script-state-jitreport-jitstats-star	script.md	engine/script/backend.h:512
+script::State::Eval(StringView,StringView,const Budget&,CallOutput*)	function	script	script-state-eval-stringview-stringview-const-budget-amp-calloutput-star	script.md	engine/script/backend.h:530
+script::State::Close()	function	script	script-state-close	script.md	engine/script/backend.h:545
+script::State::Caps() const	function	script	script-state-caps-const	script.md	engine/script/backend.h:552
+script::State::HandOver()	function	script	script-state-handover	script.md	engine/script/backend.h:560
+script::State::Acquire()	function	script	script-state-acquire	script.md	engine/script/backend.h:569
+script::State::OwnedByCaller() const	function	script	script-state-ownedbycaller-const	script.md	engine/script/backend.h:574
+script::Backend	class	script	script-backend	script.md	engine/script/backend.h:674
+script::Backend::~Backend()	function	script	script-backend-tilde-backend	script.md	engine/script/backend.h:678
+script::Backend::Name() const	function	script	script-backend-name-const	script.md	engine/script/backend.h:681
+script::Backend::Version() const	function	script	script-backend-version-const	script.md	engine/script/backend.h:683
+script::Backend::Caps() const	function	script	script-backend-caps-const	script.md	engine/script/backend.h:685
+script::Backend::CreateState(u64)	function	script	script-backend-createstate-u64	script.md	engine/script/backend.h:690
 script::BackendDescriptor	struct	script	script-backenddescriptor	script.md	engine/script/backend_registry.h:18
 script::BackendDescriptor::name	variable	script	script-backenddescriptor-name	script.md	engine/script/backend_registry.h:21
 script::BackendDescriptor::create	variable	script	script-backenddescriptor-create	script.md	engine/script/backend_registry.h:23
@@ -2173,60 +2174,60 @@ script::BackendCount()	function	script	script-backendcount	script.md	engine/scri
 script::BackendAt(usize)	function	script	script-backendat-usize	script.md	engine/script/backend_registry.h:58
 script::CreateBackend(StringView,Outcome*)	function	script	script-createbackend-stringview-outcome-star	script.md	engine/script/backend_registry.h:68
 script::ClearBackendRegistryForTest()	function	script	script-clearbackendregistryfortest	script.md	engine/script/backend_registry.h:74
-script::ThreadRule	enum	script	script-threadrule	script.md	engine/script/bindings.h:27
-script::ThreadRule::Unmarked	enumerator	script	script-threadrule-unmarked	script.md	engine/script/bindings.h:30
-script::ThreadRule::Pure	enumerator	script	script-threadrule-pure	script.md	engine/script/bindings.h:32
-script::ThreadRule::WorldRead	enumerator	script	script-threadrule-worldread	script.md	engine/script/bindings.h:34
-script::ThreadRule::WorldWrite	enumerator	script	script-threadrule-worldwrite	script.md	engine/script/bindings.h:36
-script::ThreadRule::MainThreadOnly	enumerator	script	script-threadrule-mainthreadonly	script.md	engine/script/bindings.h:38
-script::ThreadRuleName(ThreadRule)	function	script	script-threadrulename-threadrule	script.md	engine/script/bindings.h:46
-script::ValueKindText(ValueKind)	function	script	script-valuekindtext-valuekind	script.md	engine/script/bindings.h:53
-script::EntityCheck	struct	script	script-entitycheck	script.md	engine/script/bindings.h:59
-script::EntityCheck::is_alive	variable	script	script-entitycheck-is-alive	script.md	engine/script/bindings.h:62
-script::EntityCheck::user	variable	script	script-entitycheck-user	script.md	engine/script/bindings.h:64
-script::InstallProfile	struct	script	script-installprofile	script.md	engine/script/bindings.h:70
-script::InstallProfile::rules	variable	script	script-installprofile-rules	script.md	engine/script/bindings.h:74
-script::InstallProfile::main_thread	variable	script	script-installprofile-main-thread	script.md	engine/script/bindings.h:77
-script::InstallProfile::entities	variable	script	script-installprofile-entities	script.md	engine/script/bindings.h:79
-script::InstallProfile::Bit(ThreadRule)	function	script	script-installprofile-bit-threadrule	script.md	engine/script/bindings.h:84
-script::InstallProfile::Partition(EntityCheck)	function	script	script-installprofile-partition-entitycheck	script.md	engine/script/bindings.h:89
-script::InstallProfile::Main(EntityCheck)	function	script	script-installprofile-main-entitycheck	script.md	engine/script/bindings.h:101
-script::InstallProfile::Task()	function	script	script-installprofile-task	script.md	engine/script/bindings.h:111
-script::BindingInfo	struct	script	script-bindinginfo	script.md	engine/script/bindings.h:125
-script::BindingInfo::id	variable	script	script-bindinginfo-id	script.md	engine/script/bindings.h:128
-script::BindingInfo::ns	variable	script	script-bindinginfo-ns	script.md	engine/script/bindings.h:130
-script::BindingInfo::name	variable	script	script-bindinginfo-name	script.md	engine/script/bindings.h:132
-script::BindingInfo::full_name	variable	script	script-bindinginfo-full-name	script.md	engine/script/bindings.h:134
-script::BindingInfo::signature	variable	script	script-bindinginfo-signature	script.md	engine/script/bindings.h:136
-script::BindingInfo::params	variable	script	script-bindinginfo-params	script.md	engine/script/bindings.h:138
-script::BindingInfo::doc	variable	script	script-bindinginfo-doc	script.md	engine/script/bindings.h:140
-script::BindingInfo::rule	variable	script	script-bindinginfo-rule	script.md	engine/script/bindings.h:142
-script::BindingInfo::arity	variable	script	script-bindinginfo-arity	script.md	engine/script/bindings.h:144
-script::BindingInfo::BindingInfo()	function	script	script-bindinginfo-bindinginfo	script.md	engine/script/bindings.h:147
-script::Installation	class	script	script-installation	script.md	engine/script/bindings.h:492
-script::Installation::Installed() const	function	script	script-installation-installed-const	script.md	engine/script/bindings.h:498
-script::Installation::Refusing() const	function	script	script-installation-refusing-const	script.md	engine/script/bindings.h:502
-script::Installation::Skipped() const	function	script	script-installation-skipped-const	script.md	engine/script/bindings.h:506
-script::Installation::~Installation()	function	script	script-installation-tilde-installation	script.md	engine/script/bindings.h:509
-script::Installation::Installation(const Installation&)	function	script	script-installation-installation-const-installation-amp	script.md	engine/script/bindings.h:510
-script::Installation::operator=(const Installation&)	function	script	script-installation-operator-eq-const-installation-amp	script.md	engine/script/bindings.h:511
-script::Installation::Installation()	function	script	script-installation-installation	script.md	engine/script/bindings.h:513
-script::BindingRegistry	class	script	script-bindingregistry	script.md	engine/script/bindings.h:541
-script::BindingRegistry::BindingRegistry()	function	script	script-bindingregistry-bindingregistry	script.md	engine/script/bindings.h:545
-script::BindingRegistry::~BindingRegistry()	function	script	script-bindingregistry-tilde-bindingregistry	script.md	engine/script/bindings.h:547
-script::BindingRegistry::BindingRegistry(const BindingRegistry&)	function	script	script-bindingregistry-bindingregistry-const-bindingregistry-amp	script.md	engine/script/bindings.h:548
-script::BindingRegistry::operator=(const BindingRegistry&)	function	script	script-bindingregistry-operator-eq-const-bindingregistry-amp	script.md	engine/script/bindings.h:549
-script::BindingRegistry::Add(StringView,StringView,ThreadRule,StringView,StringView,Outcome*)	function	script	script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star	script.md	engine/script/bindings.h:565
-script::BindingRegistry::AddDynamic(StringView,StringView,ThreadRule,StringView,StringView,Outcome(*)(void*,Span<const Value>,Vector<Value>*),void*,Outcome*)	function	script	script-bindingregistry-adddynamic-stringview-stringview-threadrule-stringview-stringview-outcome-star-void-star-span-lt-const-value-gt-vector-lt-value-gt-star-void-star-outcome-star	script.md	engine/script/bindings.h:592
-script::BindingRegistry::Count() const	function	script	script-bindingregistry-count-const	script.md	engine/script/bindings.h:599
-script::BindingRegistry::At(usize) const	function	script	script-bindingregistry-at-usize-const	script.md	engine/script/bindings.h:604
-script::BindingRegistry::Find(StringView) const	function	script	script-bindingregistry-find-stringview-const	script.md	engine/script/bindings.h:611
-script::BindingRegistry::FindById(u32) const	function	script	script-bindingregistry-findbyid-u32-const	script.md	engine/script/bindings.h:618
-script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:630
-script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:638
-script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:657
-script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:668
-script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:679
+script::ThreadRule	enum	script	script-threadrule	script.md	engine/script/bindings.h:28
+script::ThreadRule::Unmarked	enumerator	script	script-threadrule-unmarked	script.md	engine/script/bindings.h:31
+script::ThreadRule::Pure	enumerator	script	script-threadrule-pure	script.md	engine/script/bindings.h:33
+script::ThreadRule::WorldRead	enumerator	script	script-threadrule-worldread	script.md	engine/script/bindings.h:35
+script::ThreadRule::WorldWrite	enumerator	script	script-threadrule-worldwrite	script.md	engine/script/bindings.h:37
+script::ThreadRule::MainThreadOnly	enumerator	script	script-threadrule-mainthreadonly	script.md	engine/script/bindings.h:39
+script::ThreadRuleName(ThreadRule)	function	script	script-threadrulename-threadrule	script.md	engine/script/bindings.h:47
+script::ValueKindText(ValueKind)	function	script	script-valuekindtext-valuekind	script.md	engine/script/bindings.h:54
+script::EntityCheck	struct	script	script-entitycheck	script.md	engine/script/bindings.h:60
+script::EntityCheck::is_alive	variable	script	script-entitycheck-is-alive	script.md	engine/script/bindings.h:63
+script::EntityCheck::user	variable	script	script-entitycheck-user	script.md	engine/script/bindings.h:65
+script::InstallProfile	struct	script	script-installprofile	script.md	engine/script/bindings.h:71
+script::InstallProfile::rules	variable	script	script-installprofile-rules	script.md	engine/script/bindings.h:75
+script::InstallProfile::main_thread	variable	script	script-installprofile-main-thread	script.md	engine/script/bindings.h:78
+script::InstallProfile::entities	variable	script	script-installprofile-entities	script.md	engine/script/bindings.h:80
+script::InstallProfile::Bit(ThreadRule)	function	script	script-installprofile-bit-threadrule	script.md	engine/script/bindings.h:85
+script::InstallProfile::Partition(EntityCheck)	function	script	script-installprofile-partition-entitycheck	script.md	engine/script/bindings.h:90
+script::InstallProfile::Main(EntityCheck)	function	script	script-installprofile-main-entitycheck	script.md	engine/script/bindings.h:102
+script::InstallProfile::Task()	function	script	script-installprofile-task	script.md	engine/script/bindings.h:112
+script::BindingInfo	struct	script	script-bindinginfo	script.md	engine/script/bindings.h:126
+script::BindingInfo::id	variable	script	script-bindinginfo-id	script.md	engine/script/bindings.h:129
+script::BindingInfo::ns	variable	script	script-bindinginfo-ns	script.md	engine/script/bindings.h:131
+script::BindingInfo::name	variable	script	script-bindinginfo-name	script.md	engine/script/bindings.h:133
+script::BindingInfo::full_name	variable	script	script-bindinginfo-full-name	script.md	engine/script/bindings.h:135
+script::BindingInfo::signature	variable	script	script-bindinginfo-signature	script.md	engine/script/bindings.h:137
+script::BindingInfo::params	variable	script	script-bindinginfo-params	script.md	engine/script/bindings.h:139
+script::BindingInfo::doc	variable	script	script-bindinginfo-doc	script.md	engine/script/bindings.h:141
+script::BindingInfo::rule	variable	script	script-bindinginfo-rule	script.md	engine/script/bindings.h:143
+script::BindingInfo::arity	variable	script	script-bindinginfo-arity	script.md	engine/script/bindings.h:145
+script::BindingInfo::BindingInfo()	function	script	script-bindinginfo-bindinginfo	script.md	engine/script/bindings.h:148
+script::Installation	class	script	script-installation	script.md	engine/script/bindings.h:508
+script::Installation::Installed() const	function	script	script-installation-installed-const	script.md	engine/script/bindings.h:514
+script::Installation::Refusing() const	function	script	script-installation-refusing-const	script.md	engine/script/bindings.h:518
+script::Installation::Skipped() const	function	script	script-installation-skipped-const	script.md	engine/script/bindings.h:522
+script::Installation::~Installation()	function	script	script-installation-tilde-installation	script.md	engine/script/bindings.h:525
+script::Installation::Installation(const Installation&)	function	script	script-installation-installation-const-installation-amp	script.md	engine/script/bindings.h:526
+script::Installation::operator=(const Installation&)	function	script	script-installation-operator-eq-const-installation-amp	script.md	engine/script/bindings.h:527
+script::Installation::Installation()	function	script	script-installation-installation	script.md	engine/script/bindings.h:529
+script::BindingRegistry	class	script	script-bindingregistry	script.md	engine/script/bindings.h:557
+script::BindingRegistry::BindingRegistry()	function	script	script-bindingregistry-bindingregistry	script.md	engine/script/bindings.h:561
+script::BindingRegistry::~BindingRegistry()	function	script	script-bindingregistry-tilde-bindingregistry	script.md	engine/script/bindings.h:563
+script::BindingRegistry::BindingRegistry(const BindingRegistry&)	function	script	script-bindingregistry-bindingregistry-const-bindingregistry-amp	script.md	engine/script/bindings.h:564
+script::BindingRegistry::operator=(const BindingRegistry&)	function	script	script-bindingregistry-operator-eq-const-bindingregistry-amp	script.md	engine/script/bindings.h:565
+script::BindingRegistry::Add(StringView,StringView,ThreadRule,StringView,StringView,Outcome*)	function	script	script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star	script.md	engine/script/bindings.h:581
+script::BindingRegistry::AddDynamic(StringView,StringView,ThreadRule,StringView,StringView,Outcome(*)(void*,Span<const Value>,Vector<Value>*),void*,Outcome*)	function	script	script-bindingregistry-adddynamic-stringview-stringview-threadrule-stringview-stringview-outcome-star-void-star-span-lt-const-value-gt-vector-lt-value-gt-star-void-star-outcome-star	script.md	engine/script/bindings.h:608
+script::BindingRegistry::Count() const	function	script	script-bindingregistry-count-const	script.md	engine/script/bindings.h:615
+script::BindingRegistry::At(usize) const	function	script	script-bindingregistry-at-usize-const	script.md	engine/script/bindings.h:620
+script::BindingRegistry::Find(StringView) const	function	script	script-bindingregistry-find-stringview-const	script.md	engine/script/bindings.h:627
+script::BindingRegistry::FindById(u32) const	function	script	script-bindingregistry-findbyid-u32-const	script.md	engine/script/bindings.h:634
+script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:646
+script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:654
+script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:673
+script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:684
+script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:695
 script::kPlaceholdersPerPartition	variable	script	script-kplaceholdersperpartition	script.md	engine/script/command_buffer.h:19
 script::CommandRecord	struct	script	script-commandrecord	script.md	engine/script/command_buffer.h:24
 script::CommandRecord::order_key	variable	script	script-commandrecord-order-key	script.md	engine/script/command_buffer.h:27
@@ -2262,25 +2263,25 @@ script::kFieldComponentBase	variable	script	script-kfieldcomponentbase	script.md
 script::kMaxQueryResults	variable	script	script-kmaxqueryresults	script.md	engine/script/component_bindings.h:32
 script::RegisterComponentCommandKinds(CommandKindTable*)	function	script	script-registercomponentcommandkinds-commandkindtable-star	script.md	engine/script/component_bindings.h:41
 script::RegisterComponentBindings(BindingRegistry*)	function	script	script-registercomponentbindings-bindingregistry-star	script.md	engine/script/component_bindings.h:50
-script::kMaxScriptComponents	variable	script	script-kmaxscriptcomponents	script.md	engine/script/component_catalog.h:23
-script::kMaxScriptComponentFields	variable	script	script-kmaxscriptcomponentfields	script.md	engine/script/component_catalog.h:26
-script::kMaxScriptComponentBytes	variable	script	script-kmaxscriptcomponentbytes	script.md	engine/script/component_catalog.h:30
-script::kFirstScriptWritableComponentId	variable	script	script-kfirstscriptwritablecomponentid	script.md	engine/script/component_catalog.h:35
-script::ComponentValidator	alias	script	script-componentvalidator	script.md	engine/script/component_catalog.h:44
-script::ComponentCatalog	class	script	script-componentcatalog	script.md	engine/script/component_catalog.h:52
-script::ComponentCatalog::ComponentCatalog(storage::ComponentRegistry*)	function	script	script-componentcatalog-componentcatalog-storage-componentregistry-star	script.md	engine/script/component_catalog.h:59
-script::ComponentCatalog::~ComponentCatalog()	function	script	script-componentcatalog-tilde-componentcatalog	script.md	engine/script/component_catalog.h:61
-script::ComponentCatalog::ComponentCatalog(const ComponentCatalog&)	function	script	script-componentcatalog-componentcatalog-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:62
-script::ComponentCatalog::operator=(const ComponentCatalog&)	function	script	script-componentcatalog-operator-eq-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:63
-script::ComponentCatalog::FindByName(StringView) const	function	script	script-componentcatalog-findbyname-stringview-const	script.md	engine/script/component_catalog.h:69
-script::ComponentCatalog::FindById(u32) const	function	script	script-componentcatalog-findbyid-u32-const	script.md	engine/script/component_catalog.h:74
-script::ComponentCatalog::FindByEcsId(ecs::ComponentId) const	function	script	script-componentcatalog-findbyecsid-ecs-componentid-const	script.md	engine/script/component_catalog.h:79
-script::ComponentCatalog::Define(StringView,const Value&,String<HeapAllocator>*)	function	script	script-componentcatalog-define-stringview-const-value-amp-string-lt-heapallocator-gt-star	script.md	engine/script/component_catalog.h:94
-script::ComponentCatalog::SetValidator(u32,ComponentValidator)	function	script	script-componentcatalog-setvalidator-u32-componentvalidator	script.md	engine/script/component_catalog.h:103
-script::ComponentCatalog::ValidatorFor(u32) const	function	script	script-componentcatalog-validatorfor-u32-const	script.md	engine/script/component_catalog.h:108
-script::ComponentCatalog::Freeze()	function	script	script-componentcatalog-freeze	script.md	engine/script/component_catalog.h:113
-script::ComponentCatalog::IsFrozen() const	function	script	script-componentcatalog-isfrozen-const	script.md	engine/script/component_catalog.h:121
-script::ComponentCatalog::DefinedCount() const	function	script	script-componentcatalog-definedcount-const	script.md	engine/script/component_catalog.h:125
+script::kMaxScriptComponents	variable	script	script-kmaxscriptcomponents	script.md	engine/script/component_catalog.h:25
+script::kMaxScriptComponentFields	variable	script	script-kmaxscriptcomponentfields	script.md	engine/script/component_catalog.h:28
+script::kMaxScriptComponentBytes	variable	script	script-kmaxscriptcomponentbytes	script.md	engine/script/component_catalog.h:32
+script::kFirstScriptWritableComponentId	variable	script	script-kfirstscriptwritablecomponentid	script.md	engine/script/component_catalog.h:37
+script::ComponentValidator	alias	script	script-componentvalidator	script.md	engine/script/component_catalog.h:46
+script::ComponentCatalog	class	script	script-componentcatalog	script.md	engine/script/component_catalog.h:54
+script::ComponentCatalog::ComponentCatalog(storage::ComponentRegistry*)	function	script	script-componentcatalog-componentcatalog-storage-componentregistry-star	script.md	engine/script/component_catalog.h:61
+script::ComponentCatalog::~ComponentCatalog()	function	script	script-componentcatalog-tilde-componentcatalog	script.md	engine/script/component_catalog.h:63
+script::ComponentCatalog::ComponentCatalog(const ComponentCatalog&)	function	script	script-componentcatalog-componentcatalog-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:64
+script::ComponentCatalog::operator=(const ComponentCatalog&)	function	script	script-componentcatalog-operator-eq-const-componentcatalog-amp	script.md	engine/script/component_catalog.h:65
+script::ComponentCatalog::FindByName(StringView) const	function	script	script-componentcatalog-findbyname-stringview-const	script.md	engine/script/component_catalog.h:71
+script::ComponentCatalog::FindById(u32) const	function	script	script-componentcatalog-findbyid-u32-const	script.md	engine/script/component_catalog.h:76
+script::ComponentCatalog::FindByEcsId(ecs::ComponentId) const	function	script	script-componentcatalog-findbyecsid-ecs-componentid-const	script.md	engine/script/component_catalog.h:81
+script::ComponentCatalog::Define(StringView,const Value&,String<HeapAllocator>*)	function	script	script-componentcatalog-define-stringview-const-value-amp-string-lt-heapallocator-gt-star	script.md	engine/script/component_catalog.h:96
+script::ComponentCatalog::SetValidator(u32,ComponentValidator)	function	script	script-componentcatalog-setvalidator-u32-componentvalidator	script.md	engine/script/component_catalog.h:105
+script::ComponentCatalog::ValidatorFor(u32) const	function	script	script-componentcatalog-validatorfor-u32-const	script.md	engine/script/component_catalog.h:110
+script::ComponentCatalog::Freeze()	function	script	script-componentcatalog-freeze	script.md	engine/script/component_catalog.h:115
+script::ComponentCatalog::IsFrozen() const	function	script	script-componentcatalog-isfrozen-const	script.md	engine/script/component_catalog.h:123
+script::ComponentCatalog::DefinedCount() const	function	script	script-componentcatalog-definedcount-const	script.md	engine/script/component_catalog.h:127
 script::EntityCommandKind	enum	script	script-entitycommandkind	script.md	engine/script/entity_bindings.h:16
 script::kCommandSetPosition	enumerator	script	script-kcommandsetposition	script.md	engine/script/entity_bindings.h:19
 script::kCommandSetRotation	enumerator	script	script-kcommandsetrotation	script.md	engine/script/entity_bindings.h:21
@@ -2328,11 +2329,11 @@ script::EventBus::SetChainLimit(u32)	function	script	script-eventbus-setchainlim
 script::EventBus::ChainLimit() const	function	script	script-eventbus-chainlimit-const	script.md	engine/script/event_bus.h:115
 script::EventBus::Emit(StringView,Value,u64)	function	script	script-eventbus-emit-stringview-value-u64	script.md	engine/script/event_bus.h:124
 script::EventBus::Subscribe(StringView,NativeEventHandler,void*)	function	script	script-eventbus-subscribe-stringview-nativeeventhandler-void-star	script.md	engine/script/event_bus.h:133
-script::EventBus::Unsubscribe(u32)	function	script	script-eventbus-unsubscribe-u32	script.md	engine/script/event_bus.h:139
-script::EventBus::Pending() const	function	script	script-eventbus-pending-const	script.md	engine/script/event_bus.h:144
-script::EventBus::Dropped() const	function	script	script-eventbus-dropped-const	script.md	engine/script/event_bus.h:149
-script::EventBus::Accept(EventOutbox*)	function	script	script-eventbus-accept-eventoutbox-star	script.md	engine/script/event_bus.h:157
-script::EventBus::Take(Vector<EventRecord>*)	function	script	script-eventbus-take-vector-lt-eventrecord-gt-star	script.md	engine/script/event_bus.h:163
+script::EventBus::Unsubscribe(u32)	function	script	script-eventbus-unsubscribe-u32	script.md	engine/script/event_bus.h:141
+script::EventBus::Pending() const	function	script	script-eventbus-pending-const	script.md	engine/script/event_bus.h:146
+script::EventBus::Dropped() const	function	script	script-eventbus-dropped-const	script.md	engine/script/event_bus.h:151
+script::EventBus::Accept(EventOutbox*)	function	script	script-eventbus-accept-eventoutbox-star	script.md	engine/script/event_bus.h:159
+script::EventBus::Take(Vector<EventRecord>*)	function	script	script-eventbus-take-vector-lt-eventrecord-gt-star	script.md	engine/script/event_bus.h:166
 script::LogScript	variable	script	script-logscript	script.md	engine/script/log_buffer.h:18
 script::ScriptLogLevel	enum	script	script-scriptloglevel	script.md	engine/script/log_buffer.h:23
 script::ScriptLogLevel::Debug	enumerator	script	script-scriptloglevel-debug	script.md	engine/script/log_buffer.h:26
@@ -2351,6 +2352,7 @@ script::LogBuffer::DroppedSinceFlush() const	function	script	script-logbuffer-dr
 script::LogBuffer::Flush()	function	script	script-logbuffer-flush	script.md	engine/script/log_buffer.h:91
 script::FlushLogBuffers(Span<LogBuffer* const>)	function	script	script-flushlogbuffers-span-lt-logbuffer-star-const-gt	script.md	engine/script/log_buffer.h:123
 script::WriteScriptLog(ScriptLogLevel,StringView,u32,StringView)	function	script	script-writescriptlog-scriptloglevel-stringview-u32-stringview	script.md	engine/script/log_buffer.h:130
+script::EmitScriptLog(ScriptLogLevel,StringView)	function	script	script-emitscriptlog-scriptloglevel-stringview	script.md	engine/script/log_buffer.h:139
 script::ConflictPolicy	enum	script	script-conflictpolicy	script.md	engine/script/merge.h:19
 script::ConflictPolicy::LastWins	enumerator	script	script-conflictpolicy-lastwins	script.md	engine/script/merge.h:22
 script::ConflictPolicy::Error	enumerator	script	script-conflictpolicy-error	script.md	engine/script/merge.h:24
@@ -2362,24 +2364,27 @@ script::MergeContext::Partition() const	function	script	script-mergecontext-part
 script::MergeContext::Bind(ecs::Entity,ecs::Entity)	function	script	script-mergecontext-bind-ecs-entity-ecs-entity	script.md	engine/script/merge.h:63
 script::MergeContext::Resolve(ecs::Entity) const	function	script	script-mergecontext-resolve-ecs-entity-const	script.md	engine/script/merge.h:69
 script::ApplyFunction	alias	script	script-applyfunction	script.md	engine/script/merge.h:89
-script::CommandKind	struct	script	script-commandkind	script.md	engine/script/merge.h:95
-script::CommandKind::name	variable	script	script-commandkind-name	script.md	engine/script/merge.h:98
-script::CommandKind::apply	variable	script	script-commandkind-apply	script.md	engine/script/merge.h:100
-script::CommandKind::creates	variable	script	script-commandkind-creates	script.md	engine/script/merge.h:102
-script::CommandKind::writes	variable	script	script-commandkind-writes	script.md	engine/script/merge.h:104
-script::CommandKind::global	variable	script	script-commandkind-global	script.md	engine/script/merge.h:107
-script::CommandKindTable	class	script	script-commandkindtable	script.md	engine/script/merge.h:114
-script::CommandKindTable::kMaxKinds	variable	script	script-commandkindtable-kmaxkinds	script.md	engine/script/merge.h:118
-script::CommandKindTable::Register(u16,const CommandKind&)	function	script	script-commandkindtable-register-u16-const-commandkind-amp	script.md	engine/script/merge.h:126
-script::CommandKindTable::Find(u16) const	function	script	script-commandkindtable-find-u16-const	script.md	engine/script/merge.h:141
-script::MergeReport	struct	script	script-mergereport	script.md	engine/script/merge.h:153
-script::MergeReport::applied	variable	script	script-mergereport-applied	script.md	engine/script/merge.h:156
-script::MergeReport::skipped	variable	script	script-mergereport-skipped	script.md	engine/script/merge.h:158
-script::MergeReport::dangling	variable	script	script-mergereport-dangling	script.md	engine/script/merge.h:160
-script::MergeReport::unknown	variable	script	script-mergereport-unknown	script.md	engine/script/merge.h:162
-script::MergeReport::conflicts	variable	script	script-mergereport-conflicts	script.md	engine/script/merge.h:164
-script::MergeReport::refused	variable	script	script-mergereport-refused	script.md	engine/script/merge.h:166
-script::Merge(ecs::World*,Span<CommandBuffer* const>,const CommandKindTable&,ConflictPolicy,void*)	function	script	script-merge-ecs-world-star-span-lt-commandbuffer-star-const-gt-const-commandkindtable-amp-conflictpolicy-void-star	script.md	engine/script/merge.h:183
+script::ConflictKeyFunction	alias	script	script-conflictkeyfunction	script.md	engine/script/merge.h:93
+script::CommandKind	struct	script	script-commandkind	script.md	engine/script/merge.h:99
+script::CommandKind::name	variable	script	script-commandkind-name	script.md	engine/script/merge.h:102
+script::CommandKind::apply	variable	script	script-commandkind-apply	script.md	engine/script/merge.h:104
+script::CommandKind::creates	variable	script	script-commandkind-creates	script.md	engine/script/merge.h:106
+script::CommandKind::writes	variable	script	script-commandkind-writes	script.md	engine/script/merge.h:108
+script::CommandKind::global	variable	script	script-commandkind-global	script.md	engine/script/merge.h:111
+script::CommandKind::conflict_key	variable	script	script-commandkind-conflict-key	script.md	engine/script/merge.h:114
+script::CommandKind::conflict_group	variable	script	script-commandkind-conflict-group	script.md	engine/script/merge.h:117
+script::CommandKindTable	class	script	script-commandkindtable	script.md	engine/script/merge.h:124
+script::CommandKindTable::kMaxKinds	variable	script	script-commandkindtable-kmaxkinds	script.md	engine/script/merge.h:128
+script::CommandKindTable::Register(u16,const CommandKind&)	function	script	script-commandkindtable-register-u16-const-commandkind-amp	script.md	engine/script/merge.h:136
+script::CommandKindTable::Find(u16) const	function	script	script-commandkindtable-find-u16-const	script.md	engine/script/merge.h:151
+script::MergeReport	struct	script	script-mergereport	script.md	engine/script/merge.h:163
+script::MergeReport::applied	variable	script	script-mergereport-applied	script.md	engine/script/merge.h:166
+script::MergeReport::skipped	variable	script	script-mergereport-skipped	script.md	engine/script/merge.h:168
+script::MergeReport::dangling	variable	script	script-mergereport-dangling	script.md	engine/script/merge.h:170
+script::MergeReport::unknown	variable	script	script-mergereport-unknown	script.md	engine/script/merge.h:172
+script::MergeReport::conflicts	variable	script	script-mergereport-conflicts	script.md	engine/script/merge.h:174
+script::MergeReport::refused	variable	script	script-mergereport-refused	script.md	engine/script/merge.h:176
+script::Merge(ecs::World*,Span<CommandBuffer* const>,const CommandKindTable&,ConflictPolicy,void*)	function	script	script-merge-ecs-world-star-span-lt-commandbuffer-star-const-gt-const-commandkindtable-amp-conflictpolicy-void-star	script.md	engine/script/merge.h:193
 script::PrefabSource	struct	script	script-prefabsource	script.md	engine/script/merge_services.h:20
 script::PrefabSource::spawn	variable	script	script-prefabsource-spawn	script.md	engine/script/merge_services.h:24
 script::PrefabSource::user	variable	script	script-prefabsource-user	script.md	engine/script/merge_services.h:26
@@ -2586,28 +2591,30 @@ script::ScriptRuntime::ScriptRuntime(const ScriptRuntime&)	function	script	scrip
 script::ScriptRuntime::operator=(const ScriptRuntime&)	function	script	script-scriptruntime-operator-eq-const-scriptruntime-amp	script.md	engine/script/script_runtime.h:277
 script::ScriptRuntime::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptruntime-addscript-stringview-sharedbytesptr	script.md	engine/script/script_runtime.h:283
 script::ScriptRuntime::SetFixedSteps(u32,f64)	function	script	script-scriptruntime-setfixedsteps-u32-f64	script.md	engine/script/script_runtime.h:290
-script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:295
-script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:299
-script::ScriptRuntime::LastPartitionLoad(Vector<PartitionLoad>*) const	function	script	script-scriptruntime-lastpartitionload-vector-lt-partitionload-gt-star-const	script.md	engine/script/script_runtime.h:306
-script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:310
-script::ScriptRuntime::HasHandler(u64,StringView) const	function	script	script-scriptruntime-hashandler-u64-stringview-const	script.md	engine/script/script_runtime.h:321
-script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:325
-script::ScriptRuntime::Kinds()	function	script	script-scriptruntime-kinds	script.md	engine/script/script_runtime.h:330
-script::ScriptRuntime::RecentErrors() const	function	script	script-scriptruntime-recenterrors-const	script.md	engine/script/script_runtime.h:336
-script::ScriptRuntime::AttachDebugger(DebugTransport*)	function	script	script-scriptruntime-attachdebugger-debugtransport-star	script.md	engine/script/script_runtime.h:346
-script::ScriptRuntime::DetachDebugger()	function	script	script-scriptruntime-detachdebugger	script.md	engine/script/script_runtime.h:351
-script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script	script-scriptruntime-consolerun-u32-stringview-consoleresult-star	script.md	engine/script/script_runtime.h:364
-script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:373
-script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:382
-script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:388
-script::ScriptRuntime::JitTotals(JitStats*)	function	script	script-scriptruntime-jittotals-jitstats-star	script.md	engine/script/script_runtime.h:397
-script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:406
-script::ScriptRuntime::CapturePersistent(ecs::World*,const storage::KeyIndex&,PersistReport*)	function	script	script-scriptruntime-capturepersistent-ecs-world-star-const-storage-keyindex-amp-persistreport-star	script.md	engine/script/script_runtime.h:424
-script::ScriptRuntime::ResolveLoaded(ecs::World*,const storage::KeyIndex&,LoadReport*)	function	script	script-scriptruntime-resolveloaded-ecs-world-star-const-storage-keyindex-amp-loadreport-star	script.md	engine/script/script_runtime.h:437
-script::ScriptRuntime::Clock(u64*,f64*) const	function	script	script-scriptruntime-clock-u64-star-f64-star-const	script.md	engine/script/script_runtime.h:446
-script::ScriptRuntime::RestoreClock(u64,f64)	function	script	script-scriptruntime-restoreclock-u64-f64	script.md	engine/script/script_runtime.h:454
-script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:466
-script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:479
+script::ScriptRuntime::SetReplayRecording(bool)	function	script	script-scriptruntime-setreplayrecording-bool	script.md	engine/script/script_runtime.h:298
+script::ScriptRuntime::ReplayRecording() const	function	script	script-scriptruntime-replayrecording-const	script.md	engine/script/script_runtime.h:303
+script::ScriptRuntime::Scripts()	function	script	script-scriptruntime-scripts	script.md	engine/script/script_runtime.h:308
+script::ScriptRuntime::Stats() const	function	script	script-scriptruntime-stats-const	script.md	engine/script/script_runtime.h:312
+script::ScriptRuntime::LastPartitionLoad(Vector<PartitionLoad>*) const	function	script	script-scriptruntime-lastpartitionload-vector-lt-partitionload-gt-star-const	script.md	engine/script/script_runtime.h:319
+script::ScriptRuntime::Events()	function	script	script-scriptruntime-events	script.md	engine/script/script_runtime.h:323
+script::ScriptRuntime::HasHandler(u64,StringView) const	function	script	script-scriptruntime-hashandler-u64-stringview-const	script.md	engine/script/script_runtime.h:334
+script::ScriptRuntime::Services()	function	script	script-scriptruntime-services	script.md	engine/script/script_runtime.h:338
+script::ScriptRuntime::Kinds()	function	script	script-scriptruntime-kinds	script.md	engine/script/script_runtime.h:343
+script::ScriptRuntime::RecentErrors() const	function	script	script-scriptruntime-recenterrors-const	script.md	engine/script/script_runtime.h:349
+script::ScriptRuntime::AttachDebugger(DebugTransport*)	function	script	script-scriptruntime-attachdebugger-debugtransport-star	script.md	engine/script/script_runtime.h:359
+script::ScriptRuntime::DetachDebugger()	function	script	script-scriptruntime-detachdebugger	script.md	engine/script/script_runtime.h:364
+script::ScriptRuntime::ConsoleRun(u32,StringView,ConsoleResult*)	function	script	script-scriptruntime-consolerun-u32-stringview-consoleresult-star	script.md	engine/script/script_runtime.h:377
+script::ScriptRuntime::ConsoleSubmit(u32,StringView)	function	script	script-scriptruntime-consolesubmit-u32-stringview	script.md	engine/script/script_runtime.h:386
+script::ScriptRuntime::ConsoleTake(u64,ConsoleResult*)	function	script	script-scriptruntime-consoletake-u64-consoleresult-star	script.md	engine/script/script_runtime.h:395
+script::ScriptRuntime::SetProfiling(bool)	function	script	script-scriptruntime-setprofiling-bool	script.md	engine/script/script_runtime.h:401
+script::ScriptRuntime::JitTotals(JitStats*)	function	script	script-scriptruntime-jittotals-jitstats-star	script.md	engine/script/script_runtime.h:410
+script::ScriptRuntime::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptruntime-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_runtime.h:419
+script::ScriptRuntime::CapturePersistent(ecs::World*,const storage::KeyIndex&,PersistReport*)	function	script	script-scriptruntime-capturepersistent-ecs-world-star-const-storage-keyindex-amp-persistreport-star	script.md	engine/script/script_runtime.h:437
+script::ScriptRuntime::ResolveLoaded(ecs::World*,const storage::KeyIndex&,LoadReport*)	function	script	script-scriptruntime-resolveloaded-ecs-world-star-const-storage-keyindex-amp-loadreport-star	script.md	engine/script/script_runtime.h:450
+script::ScriptRuntime::Clock(u64*,f64*) const	function	script	script-scriptruntime-clock-u64-star-f64-star-const	script.md	engine/script/script_runtime.h:459
+script::ScriptRuntime::RestoreClock(u64,f64)	function	script	script-scriptruntime-restoreclock-u64-f64	script.md	engine/script/script_runtime.h:467
+script::ScriptRuntime::Tick(ecs::World*,f64,jobs::Scheduler*)	function	script	script-scriptruntime-tick-ecs-world-star-f64-jobs-scheduler-star	script.md	engine/script/script_runtime.h:479
+script::MakeScriptSystem()	function	script	script-makescriptsystem	script.md	engine/script/script_runtime.h:492
 script::OnScriptError	enum	script	script-onscripterror	script.md	engine/script/script_settings.h:16
 script::OnScriptError::Disable	enumerator	script	script-onscripterror-disable	script.md	engine/script/script_settings.h:19
 script::OnScriptError::Retry	enumerator	script	script-onscripterror-retry	script.md	engine/script/script_settings.h:21
@@ -2685,19 +2692,19 @@ script::ScriptWorld::~ScriptWorld()	function	script	script-scriptworld-tilde-scr
 script::ScriptWorld::ScriptWorld(const ScriptWorld&)	function	script	script-scriptworld-scriptworld-const-scriptworld-amp	script.md	engine/script/script_world.h:245
 script::ScriptWorld::operator=(const ScriptWorld&)	function	script	script-scriptworld-operator-eq-const-scriptworld-amp	script.md	engine/script/script_world.h:246
 script::ScriptWorld::PartitionCount() const	function	script	script-scriptworld-partitioncount-const	script.md	engine/script/script_world.h:251
-script::ScriptWorld::AddScript(StringView,SharedBytesPtr)	function	script	script-scriptworld-addscript-stringview-sharedbytesptr	script.md	engine/script/script_world.h:259
-script::ScriptWorld::AddModule(StringView,StringView,SharedBytesPtr,usize,usize,StringView,bool)	function	script	script-scriptworld-addmodule-stringview-stringview-sharedbytesptr-usize-usize-stringview-bool	script.md	engine/script/script_world.h:276
-script::ScriptWorld::ReloadModules(Span<const ModuleReplacement>,ReloadResult*)	function	script	script-scriptworld-reloadmodules-span-lt-const-modulereplacement-gt-reloadresult-star	script.md	engine/script/script_world.h:295
-script::ScriptWorld::TryCheckout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-trycheckout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:305
-script::ScriptWorld::Checkout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-checkout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:312
-script::ScriptWorld::Counters(u32) const	function	script	script-scriptworld-counters-u32-const	script.md	engine/script/script_world.h:318
-script::ScriptWorld::Total() const	function	script	script-scriptworld-total-const	script.md	engine/script/script_world.h:323
-script::ScriptWorld::SetDebugger(ScriptDebugger*)	function	script	script-scriptworld-setdebugger-scriptdebugger-star	script.md	engine/script/script_world.h:335
-script::ScriptWorld::Debugger() const	function	script	script-scriptworld-debugger-const	script.md	engine/script/script_world.h:341
-script::ScriptWorld::SetProfiling(bool)	function	script	script-scriptworld-setprofiling-bool	script.md	engine/script/script_world.h:348
-script::ScriptWorld::Profiling() const	function	script	script-scriptworld-profiling-const	script.md	engine/script/script_world.h:353
-script::ScriptWorld::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptworld-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_world.h:363
-script::ScriptWorld::JitTotals(JitStats*)	function	script	script-scriptworld-jittotals-jitstats-star	script.md	engine/script/script_world.h:372
+script::ScriptWorld::AddScript(StringView,SharedBytesPtr,bool)	function	script	script-scriptworld-addscript-stringview-sharedbytesptr-bool	script.md	engine/script/script_world.h:262
+script::ScriptWorld::AddModule(StringView,StringView,SharedBytesPtr,usize,usize,StringView,bool)	function	script	script-scriptworld-addmodule-stringview-stringview-sharedbytesptr-usize-usize-stringview-bool	script.md	engine/script/script_world.h:279
+script::ScriptWorld::ReloadModules(Span<const ModuleReplacement>,ReloadResult*)	function	script	script-scriptworld-reloadmodules-span-lt-const-modulereplacement-gt-reloadresult-star	script.md	engine/script/script_world.h:298
+script::ScriptWorld::TryCheckout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-trycheckout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:308
+script::ScriptWorld::Checkout(u32,PartitionLease*,Outcome*)	function	script	script-scriptworld-checkout-u32-partitionlease-star-outcome-star	script.md	engine/script/script_world.h:315
+script::ScriptWorld::Counters(u32) const	function	script	script-scriptworld-counters-u32-const	script.md	engine/script/script_world.h:321
+script::ScriptWorld::Total() const	function	script	script-scriptworld-total-const	script.md	engine/script/script_world.h:326
+script::ScriptWorld::SetDebugger(ScriptDebugger*)	function	script	script-scriptworld-setdebugger-scriptdebugger-star	script.md	engine/script/script_world.h:338
+script::ScriptWorld::Debugger() const	function	script	script-scriptworld-debugger-const	script.md	engine/script/script_world.h:344
+script::ScriptWorld::SetProfiling(bool)	function	script	script-scriptworld-setprofiling-bool	script.md	engine/script/script_world.h:351
+script::ScriptWorld::Profiling() const	function	script	script-scriptworld-profiling-const	script.md	engine/script/script_world.h:356
+script::ScriptWorld::ProfileReport(Vector<ProfileEntry>*,usize)	function	script	script-scriptworld-profilereport-vector-lt-profileentry-gt-star-usize	script.md	engine/script/script_world.h:366
+script::ScriptWorld::JitTotals(JitStats*)	function	script	script-scriptworld-jittotals-jitstats-star	script.md	engine/script/script_world.h:375
 script::kMaxServiceExtensions	variable	script	script-kmaxserviceextensions	script.md	engine/script/service_slots.h:13
 script::ServiceSlot	enum	script	script-serviceslot	script.md	engine/script/service_slots.h:18
 script::kServicePhysics	enumerator	script	script-kservicephysics	script.md	engine/script/service_slots.h:20
@@ -3083,16 +3090,16 @@ script_media::ReplayEntry::hash	variable	script_media	script-media-replayentry-h
 script_media::ReplayLog	class	script_media	script-media-replaylog	script_media.md	engine/script_media/replay_log.h:38
 script_media::ReplayLog::ReplayLog()	function	script_media	script-media-replaylog-replaylog	script_media.md	engine/script_media/replay_log.h:42
 script_media::ReplayLog::Begin(u32,u64,u64)	function	script_media	script-media-replaylog-begin-u32-u64-u64	script_media.md	engine/script_media/replay_log.h:50
-script_media::ReplayLog::Record(u64,const InputSnapshot&,u64)	function	script_media	script-media-replaylog-record-u64-const-inputsnapshot-amp-u64	script_media.md	engine/script_media/replay_log.h:58
-script_media::ReplayLog::RandomSeed() const	function	script_media	script-media-replaylog-randomseed-const	script_media.md	engine/script_media/replay_log.h:63
-script_media::ReplayLog::StartTick() const	function	script_media	script-media-replaylog-starttick-const	script_media.md	engine/script_media/replay_log.h:67
-script_media::ReplayLog::StartHash() const	function	script_media	script-media-replaylog-starthash-const	script_media.md	engine/script_media/replay_log.h:71
-script_media::ReplayLog::Size() const	function	script_media	script-media-replaylog-size-const	script_media.md	engine/script_media/replay_log.h:75
-script_media::ReplayLog::At(usize) const	function	script_media	script-media-replaylog-at-usize-const	script_media.md	engine/script_media/replay_log.h:80
-script_media::ReplayLog::Snapshot(usize,InputSnapshot*) const	function	script_media	script-media-replaylog-snapshot-usize-inputsnapshot-star-const	script_media.md	engine/script_media/replay_log.h:91
-script_media::ReplayLog::Serialize(bytes::ByteWriter*) const	function	script_media	script-media-replaylog-serialize-bytes-bytewriter-star-const	script_media.md	engine/script_media/replay_log.h:98
-script_media::ReplayLog::Deserialize(bytes::ByteReader*)	function	script_media	script-media-replaylog-deserialize-bytes-bytereader-star	script_media.md	engine/script_media/replay_log.h:108
-script_media::ReplayLog::Equals(const ReplayLog&) const	function	script_media	script-media-replaylog-equals-const-replaylog-amp-const	script_media.md	engine/script_media/replay_log.h:113
+script_media::ReplayLog::Record(u64,const InputSnapshot&,u64)	function	script_media	script-media-replaylog-record-u64-const-inputsnapshot-amp-u64	script_media.md	engine/script_media/replay_log.h:62
+script_media::ReplayLog::RandomSeed() const	function	script_media	script-media-replaylog-randomseed-const	script_media.md	engine/script_media/replay_log.h:67
+script_media::ReplayLog::StartTick() const	function	script_media	script-media-replaylog-starttick-const	script_media.md	engine/script_media/replay_log.h:71
+script_media::ReplayLog::StartHash() const	function	script_media	script-media-replaylog-starthash-const	script_media.md	engine/script_media/replay_log.h:75
+script_media::ReplayLog::Size() const	function	script_media	script-media-replaylog-size-const	script_media.md	engine/script_media/replay_log.h:79
+script_media::ReplayLog::At(usize) const	function	script_media	script-media-replaylog-at-usize-const	script_media.md	engine/script_media/replay_log.h:84
+script_media::ReplayLog::Snapshot(usize,InputSnapshot*) const	function	script_media	script-media-replaylog-snapshot-usize-inputsnapshot-star-const	script_media.md	engine/script_media/replay_log.h:95
+script_media::ReplayLog::Serialize(bytes::ByteWriter*) const	function	script_media	script-media-replaylog-serialize-bytes-bytewriter-star-const	script_media.md	engine/script_media/replay_log.h:102
+script_media::ReplayLog::Deserialize(bytes::ByteReader*)	function	script_media	script-media-replaylog-deserialize-bytes-bytereader-star	script_media.md	engine/script_media/replay_log.h:112
+script_media::ReplayLog::Equals(const ReplayLog&) const	function	script_media	script-media-replaylog-equals-const-replaylog-amp-const	script_media.md	engine/script_media/replay_log.h:117
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:24
 os::CommandLineOption	struct	platform/os	os-commandlineoption	platform-os.md	engine/foundation/os/command_line.h:38
 os::CommandLineOption::name	variable	platform/os	os-commandlineoption-name	platform-os.md	engine/foundation/os/command_line.h:41

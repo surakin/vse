@@ -421,9 +421,10 @@ void ScriptDebugger::SetBreakpoints(const Value& command)
         const Value& entry = list->At(i);
         const Value* script = entry.Kind() == ValueKind::Map ? entry.Find("script") : nullptr;
         const i64 line = entry.Kind() == ValueKind::Map ? IntField(entry, "line", 0) : 0;
-        if (script == nullptr || script->Kind() != ValueKind::Text || line <= 0)
+        // A line above 2^31 - 1 is refused rather than cut to 32 bits (a cut line would stop somewhere else).
+        if (script == nullptr || script->Kind() != ValueKind::Text || line <= 0 || line > i64{0x7FFFFFFF})
         {
-            PostError("set_breakpoints: each entry needs a 'script' name and a positive 'line'");
+            PostError("set_breakpoints: each entry needs a 'script' name and a 'line' from 1 to 2^31 - 1");
             return;
         }
         Breakpoint b;

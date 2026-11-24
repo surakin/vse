@@ -257,6 +257,7 @@ struct ScriptRuntime::Impl
     f64 sim_time = 0.0;
     u32 fixed_steps = 0;
     f64 fixed_dt = 0.0;
+    bool replay_recording = false;  // published to every partition's context: `time.real` is refused
     bool any_gone = false;
     TaskTable task_table;
     UniquePtr<TaskPool> task_pool;
@@ -1045,6 +1046,10 @@ void ScriptRuntime::Impl::DeliverEvents(PartitionLease* lease, PartitionData* da
         const bool has_group = g < data->groups.Size() && data->groups[g].name.View() == event.name.View();
         usize first = 0;
         usize last = 0;
+        // A handler of this event that parks in `wait_event` waits for the next event of the name, not this one
+        // (otherwise it would wake at once with the event it is handling): only the waiters made before the handlers
+        // ran are woken (creation order, robust to the list being rebuilt or reset meanwhile).
+        const u32 first_new_waiter = data->next_sequence;
         if (has_group)
         {
             const Vector<u64>& keys = data->groups[g].keys;
@@ -1109,7 +1114,8 @@ void ScriptRuntime::Impl::DeliverEvents(PartitionLease* lease, PartitionData* da
             for (usize i = 0; i < data->event_waiters.Size(); ++i)
             {
                 Waiter& w = data->event_waiters[i];
-                const bool match = w.kind == WaitRequest::Kind::Event && w.event.View() == event.name.View() &&
+                const bool older = static_cast<i32>(w.sequence - first_new_waiter) < 0;
+                const bool match = older && w.kind == WaitRequest::Kind::Event && w.event.View() == event.name.View() &&
                                    (event.target_key == 0 || event.target_key == w.key);
                 Instance* target = match ? FindInstance(data, w.key) : nullptr;
                 if (match && target != nullptr && target->notified_enabled && !target->failed)
@@ -1166,6 +1172,7 @@ void ScriptRuntime::Impl::RunPartition(ecs::World* world, u32 p, f64 dt, bool de
     context.frame = tick;
     context.dt = dt;
     context.sim_time = sim_time;
+    context.replay_recording = replay_recording;
     context.components = config.components;
     context.scene = config.scene;
     context.partitions = config.partitions;
@@ -1430,7 +1437,7 @@ ScriptRuntime::ScriptRuntime(const ScriptRuntimeConfig& config)
     const char* host = !config.host_source.Empty() ? nullptr : LuaBehaviorHostSource();
     const StringView text = host != nullptr ? StringView(host) : config.host_source;
     m.scripts->AddScript("behavior_host",
-                         CopyShared(ByteSpan(reinterpret_cast<const byte*>(text.Data()), text.Length())));
+                         CopyShared(ByteSpan(reinterpret_cast<const byte*>(text.Data()), text.Length())), true);
 }
 
 ScriptRuntime::~ScriptRuntime() = default;
@@ -1440,6 +1447,16 @@ ScriptRuntime& ScriptRuntime::operator=(ScriptRuntime&& other) noexcept = defaul
 void ScriptRuntime::AddScript(StringView name, SharedBytesPtr source)
 {
     impl_->scripts->AddScript(name, Move(source));
+}
+
+void ScriptRuntime::SetReplayRecording(bool on)
+{
+    impl_->replay_recording = on;
+}
+
+bool ScriptRuntime::ReplayRecording() const
+{
+    return impl_->replay_recording;
 }
 
 void ScriptRuntime::SetFixedSteps(u32 steps, f64 fixed_dt)

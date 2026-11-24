@@ -100,8 +100,9 @@ constexpr u64 HandleTick(u64 handle)
     return handle >> kHandleSlotBits;
 }
 
-// Checks that a handle may be used now: a voice started in this very tick has no entry yet (the merge makes it), any
-// other must be held and not stopped.
+// Checks that a handle may be used now by the running script: a voice started in this very tick has no entry yet (the
+// merge makes it) and must come from this partition; any other must be held, not stopped, and started by the running
+// entity's script (a handle is a number another script could guess).
 bool CheckHandle(PartitionContext* context, const AudioScriptServices* services, i64 raw)
 {
     const u64 handle = static_cast<u64>(raw);
@@ -112,6 +113,12 @@ bool CheckHandle(PartitionContext* context, const AudioScriptServices* services,
     }
     if (HandleTick(handle) == HandleTickBits(context->tick))
     {
+        const u64 partition = (handle & ((u64{1} << kHandleSlotBits) - 1)) >> kHandleCountBits;
+        if (context->commands == nullptr || partition != context->commands->Partition())
+        {
+            script::RaiseScriptError("the voice belongs to another entity's script");
+            return false;
+        }
         return true;
     }
     const VoiceTable::Entry* entry = services->voices->Find(handle);
@@ -123,6 +130,11 @@ bool CheckHandle(PartitionContext* context, const AudioScriptServices* services,
     if (entry->stopping)
     {
         script::RaiseScriptError("the voice was stopped (its handle is no longer valid)");
+        return false;
+    }
+    if (entry->owner_key != context->current_entity_key)
+    {
+        script::RaiseScriptError("the voice belongs to another entity's script");
         return false;
     }
     return true;
@@ -143,7 +155,7 @@ bool ReadNumber(const Value& map, StringView key, f32 lo, f32 hi, f32* out)
         return false;
     }
     const f64 x = v->ToDouble();
-    if (!IsFinite(static_cast<f32>(x)) || x < static_cast<f64>(lo) || x > static_cast<f64>(hi))
+    if (!(x >= static_cast<f64>(lo) && x <= static_cast<f64>(hi)))  // NaN fails too; checked before the f32 cast
     {
         Raise("the option `", key, "` is out of range");
         return false;
@@ -196,7 +208,7 @@ bool FadeFrames(const Value& seconds, const AudioScriptServices* services, u32* 
         return false;
     }
     const f64 s = seconds.ToDouble();
-    if (!IsFinite(static_cast<f32>(s)) || s < 0.0 || s > static_cast<f64>(kMaxFadeSeconds))
+    if (!(s >= 0.0 && s <= static_cast<f64>(kMaxFadeSeconds)))
     {
         script::RaiseScriptError("the fade must be from 0 to 600 seconds");
         return false;
@@ -482,7 +494,7 @@ void RecordValue(u16 kind, i64 voice, f64 value, f32 lo, f32 hi, const char* wha
     {
         return;
     }
-    if (!IsFinite(static_cast<f32>(value)) || value < static_cast<f64>(lo) || value > static_cast<f64>(hi))
+    if (!(value >= static_cast<f64>(lo) && value <= static_cast<f64>(hi)))
     {
         Raise("the ", StringView(what), " is out of range");
         return;
@@ -515,7 +527,7 @@ void AudioSetBusGain(StringView bus, f64 gain)
         Raise("no bus is called `", bus, "`");
         return;
     }
-    if (!IsFinite(static_cast<f32>(gain)) || gain < 0.0 || gain > static_cast<f64>(kMaxGain))
+    if (!(gain >= 0.0 && gain <= static_cast<f64>(kMaxGain)))
     {
         script::RaiseScriptError("the bus gain is out of range (0 to 16)");
         return;

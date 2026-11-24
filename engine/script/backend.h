@@ -423,6 +423,19 @@ public:
         DoAbandon(coroutine);
     }
 
+    /// Seals the globals the scripts defined so far: each becomes part of the engine environment, a table among them
+    /// becomes a read-only view, and a later assignment to one of those names (plain or through `rawset`) raises an
+    /// error. Scripts loaded afterwards keep defining globals of their own. The runtime seals its behavior host, so
+    /// `behavior`, `event`, `task`, `spawn`, the waits and the `__behavior_*` entry points cannot be replaced.
+    ///
+    /// - Returns: `Ok`, `OutOfMemory`, `Invalid` for a closed state, or `Unsupported` from a backend without sealing.
+    /// - Aborts: the caller's thread does not own the state (debug checks).
+    Outcome SealGlobals()
+    {
+        CheckOwner();
+        return DoSealGlobals();
+    }
+
     /// Makes `function` callable from scripts under the global name `name` (or a dotted path into tables the backend
     /// creates).
     ///
@@ -590,6 +603,8 @@ protected:
         (void)deps;
         return Outcome(Status::Unsupported, "this backend has no modules");
     }
+    /// See [[State::SealGlobals]]; the default is `Unsupported`.
+    virtual Outcome DoSealGlobals() { return Outcome(Status::Unsupported, "this backend cannot seal its globals"); }
     /// See [[State::SetDebugSession]]; the default is `Unsupported`.
     virtual Outcome DoSetDebugSession(DebugSession* session)
     {

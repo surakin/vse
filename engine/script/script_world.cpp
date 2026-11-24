@@ -133,10 +133,12 @@ ScriptWorld::ScriptWorld(const ScriptWorldConfig& config) : config_(config)
 
 ScriptWorld::~ScriptWorld() = default;
 
-void ScriptWorld::AddScript(StringView name, SharedBytesPtr source)
+void ScriptWorld::AddScript(StringView name, SharedBytesPtr source, bool seal)
 {
+    Script script(name, Move(source));
+    script.seal = seal;
     LockGuard<Mutex> lock(scripts_mutex_);
-    scripts_.Push(Script(name, Move(source)));
+    scripts_.Push(Move(script));
 }
 
 void ScriptWorld::AddModule(StringView key, StringView name, SharedBytesPtr bytes, usize offset, usize size,
@@ -235,6 +237,7 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
             copy.offset = scripts_[i].offset;
             copy.size = scripts_[i].size;
             copy.entry = scripts_[i].entry;
+            copy.seal = scripts_[i].seal;
             pending.Push(Move(copy));
         }
     }
@@ -281,6 +284,14 @@ Outcome ScriptWorld::PrepareState(PartitionSlot* slot)
         if (!loaded.IsOk())
         {
             return Outcome(loaded.status, loaded.message.View());
+        }
+        if (pending[i].seal)
+        {
+            const Outcome sealed = slot->state->SealGlobals();
+            if (!sealed.IsOk() && sealed.status != Status::Unsupported)
+            {
+                return Outcome(sealed.status, sealed.message.View());
+            }
         }
         ++slot->loaded;
     }

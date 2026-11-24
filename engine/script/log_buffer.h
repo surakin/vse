@@ -129,4 +129,13 @@ usize FlushLogBuffers(Span<LogBuffer* const> buffers);
 /// - Fails: never.
 void WriteScriptLog(ScriptLogLevel level, StringView script, u32 line, StringView text);
 
+/// Logs one message a script wrote (`log.*` and `print`): tagged with the caller's script and line when the backend
+/// knows them ([[script::CurrentCallerLocation]]), added to the running partition's buffer (so it counts toward
+/// `script.log_limit` and is written in partition order at the sync point), or written at once outside a partition
+/// job. A level the channel drops is neither buffered nor counted.
+///
+/// - Thread-safety: thread-safe; the buffer belongs to the job that runs the partition.
+/// - Fails: never; a message over the limit is counted, not kept.
+void EmitScriptLog(ScriptLogLevel level, StringView text);
+
 }  // namespace vse::script

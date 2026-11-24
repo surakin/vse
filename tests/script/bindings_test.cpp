@@ -3,9 +3,12 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/unique_ptr.h"
+#include "lang/scalar.h"
 #include "script/backend_registry.h"
 #include "script/bindings.h"
+#include "script/log_buffer.h"
 #include "script/luajit/luajit_backend.h"
+#include "script/partition_context.h"
 #include "sync/atomic.h"
 #include "sync/thread.h"
 
@@ -128,6 +131,54 @@ TEST_CASE("Bindings: a typed function is called with converted arguments and res
         rig.Run("function run() return test.pass({1, 'a', {k = true}}) end", "run", Span<const Value>(), &out).IsOk());
     REQUIRE(out.results.Size() == 1);
     CHECK(out.results[0].Kind() == ValueKind::Array);
+}
+
+TEST_CASE("Bindings: a number beyond the float range is refused, not cast", "[script][bindings]")
+{
+    Rig rig;
+    rig.Install(InstallProfile::Main(rig.Check()));
+    CallOutput out;
+    // An f32 parameter: 1e300 does not fit (its cast to f32 would be undefined); infinity is passed on as before.
+    CHECK_FALSE(rig.Run("function run() return test.add3(1e300, 0, 0) end", "run", Span<const Value>(), &out).IsOk());
+    REQUIRE(rig.Run("function run() return test.add3(1 / 0, 0, 0) end", "run", Span<const Value>(), &out).IsOk());
+    CHECK(IsInf(out.results[0].ToDouble()));
+    // A vec2 or vec4 field that does not fit is refused when the value crosses to the engine.
+    const Outcome vec2 = rig.Run("function run() local v = vec2.new(1, 0) v.x = 1e300 return test.pass(v) end", "run",
+                                 Span<const Value>(), &out);
+    CHECK_FALSE(vec2.IsOk());
+    CHECK(vec2.message.View().Contains(StringView("32-bit")));
+}
+
+TEST_CASE("Bindings: the metatables of engine arrays, maps and bytes are hidden and locked", "[script][bindings]")
+{
+    Rig rig;
+    rig.Install(InstallProfile::Main(rig.Check()));
+    CallOutput out;
+    REQUIRE(rig.Run("function run() local a = test.pass({1, 2}) local m = test.pass({k = 1}) "
+                    "return getmetatable(a), getmetatable(m), pcall(setmetatable, a, {}) end",
+                    "run", Span<const Value>(), &out)
+                .IsOk());
+    REQUIRE(out.results.Size() == 4);
+    CHECK(out.results[0].Equals(Value::FromBool(false)));
+    CHECK(out.results[1].Equals(Value::FromBool(false)));
+    CHECK(out.results[2].Equals(Value::FromBool(false)));  // setmetatable refused
+}
+
+TEST_CASE("Bindings: print goes through the partition's log buffer", "[script][bindings]")
+{
+    Rig rig;
+    rig.Install(InstallProfile::Main(rig.Check()));
+    LogBuffer buffer(2);
+    PartitionContext context;
+    context.log = &buffer;
+    CallOutput out;
+    {
+        ScopedPartitionContext scope(&context);
+        REQUIRE(rig.Run("function run() for i = 1, 5 do print('line', i) end end", "run", Span<const Value>(), &out)
+                    .IsOk());
+    }
+    CHECK(buffer.Pending() == 2);  // the limit of 2 per script and tick: the rest is counted
+    CHECK(buffer.DroppedSinceFlush() == 3);
 }
 
 TEST_CASE("Bindings: the stable id and the signature come from the declaration", "[script][bindings]")

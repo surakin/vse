@@ -255,8 +255,11 @@ public:
     ///
     /// - Param name: the chunk name for messages; copied.
     /// - Param source: the script text, shared and immutable.
+    /// - Param seal: after the script loads, the globals defined so far are sealed ([[script::State::SealGlobals]]):
+    /// later scripts read them and cannot replace them. The runtime seals its behavior host this way; a backend
+    /// without sealing loads the script as usual.
     /// - Fails: never; a script that fails to load makes the checkouts of the partitions fail with its outcome.
-    void AddScript(StringView name, SharedBytesPtr source);
+    void AddScript(StringView name, SharedBytesPtr source, bool seal = false);
 
     /// Adds a minted script (a module): its text is a range of `bytes`, compiled without running in every partition
     /// and, when `entry` is true, run once in each partition at that point of the load order (the modules it requires
@@ -399,6 +402,7 @@ private:
         usize offset = 0;
         usize size = 0;
         bool entry = false;
+        bool seal = false;  // seal the globals after this script loads
     };
 
     ScriptWorldConfig config_;

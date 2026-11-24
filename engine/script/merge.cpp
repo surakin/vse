@@ -26,7 +26,8 @@ MergeReport Merge(ecs::World* world, Span<CommandBuffer* const> buffers, const C
 {
     MergeReport report;
     MergeContext context(world, user);
-    HashMap<u64, Writer, HeapAllocator> writers(HeapAllocator::Default());
+    // Key: the entity index, then the kind (or its group, above the kind ids) and what the command writes inside it.
+    HashMap<u128, Writer, HeapAllocator> writers(HeapAllocator::Default());
     for (usize b = 0; b < buffers.Size(); ++b)
     {
         CommandBuffer& buffer = *buffers[b];
@@ -56,7 +57,9 @@ MergeReport Merge(ecs::World* world, Span<CommandBuffer* const> buffers, const C
             }
             if (kind->writes && !kind->global)
             {
-                const u64 key = (static_cast<u64>(target.index) << 16) | command.kind;
+                const u64 group = kind->conflict_group != 0 ? (u64{1} << 16) | kind->conflict_group : command.kind;
+                const u64 inner = kind->conflict_key != nullptr ? kind->conflict_key(buffer.PayloadOf(command)) : 0;
+                const u128 key = (u128(target.index) << 64) | u128((group << 32) | inner);
                 Writer* previous = writers.Find(key);
                 if (previous != nullptr && previous->generation == target.generation &&
                     previous->partition != buffer.Partition())

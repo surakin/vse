@@ -423,7 +423,6 @@ bool ApplySpawn(MergeContext& context, ecs::Entity placeholder, Span<const u8> p
     {
         return false;
     }
-    context.Bind(placeholder, created);
     if (payload.Size() != 0)
     {
         const MergeServices* services = static_cast<const MergeServices*>(context.User());
@@ -432,9 +431,15 @@ bool ApplySpawn(MergeContext& context, ecs::Entity placeholder, Span<const u8> p
             !prefabs->spawn(prefabs->user, StringView(reinterpret_cast<const char*>(payload.Data()), payload.Size()),
                             context.World(), created))
         {
+            // No default entity is left behind: the entity (and whatever the prefab made under it) goes, and the
+            // placeholder stays unbound, so the later commands that name it count as dangling.
+            ecs::CommandBuffer commands;
+            ecs::DestroyRecursive(*context.World(), commands, created);
+            context.World()->Apply(commands);
             return false;
         }
     }
+    context.Bind(placeholder, created);
     return true;
 }
 

@@ -49,13 +49,17 @@ public:
     /// - Fails: never.
     void Begin(u32 random_seed, u64 start_tick, u64 start_hash);
 
-    /// Adds a tick.
+    /// Adds a tick, unless the log could not be read back: the entry is refused when the log already holds
+    /// [[script_media::kMaxReplayTicks]] ticks, when `tick` does not follow the last one (`StartTick() + Size()`), or
+    /// when the snapshot does not survive its bytes (a value `Deserialize` refuses, such as a mouse position that is
+    /// not finite). A recorded log is therefore always one `Deserialize` accepts.
     ///
     /// - Param tick: the tick number.
     /// - Param snapshot: the input the scripts read this tick.
     /// - Param hash: the world's hash after the tick.
-    /// - Fails: never.
-    void Record(u64 tick, const InputSnapshot& snapshot, u64 hash);
+    /// - Returns: whether the tick was added.
+    /// - Fails: returns false (and the log is unchanged), as described.
+    bool Record(u64 tick, const InputSnapshot& snapshot, u64 hash);
 
     /// The runtime seed the session used.
     ///

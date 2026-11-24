@@ -227,6 +227,56 @@ TEST_CASE("Component bindings: get, set, add and remove by name; the script sees
     CHECK_FALSE(rig.world.Has<Gadget>(rig.self));
 }
 
+TEST_CASE("Component bindings: conflicts are counted per component, and add and set of one component conflict",
+          "[script][component][merge]")
+{
+    ComponentRig rig;
+    CallOutput out;
+    const Value me = Value::FromEntity(rig.self);
+    CommandBuffer second;
+    // Partition 0 and partition 1 write the same entity in one tick.
+    auto two = [&](const char* first_body, const char* second_body)
+    {
+        rig.buffer.Begin(0);
+        rig.context.commands = &rig.buffer;
+        REQUIRE(rig.Run(first_body, &out, &me).IsOk());
+        second.Begin(1);
+        rig.context.commands = &second;
+        const Outcome ran = rig.Run(second_body, &out, &me);
+        INFO(ran.message.CStr());
+        REQUIRE(ran.IsOk());
+        rig.context.commands = &rig.buffer;
+        CommandBuffer* buffers[] = {&rig.buffer, &second};
+        return script::Merge(&rig.world, Span<CommandBuffer* const>(buffers, 2), rig.kinds, ConflictPolicy::LastWins,
+                             &rig.services);
+    };
+    // Different components of one entity: no conflict.
+    MergeReport report = two("component.set(a, 'gadget', {count = 1})", "component.add(a, 'marker', nil)");
+    CHECK(report.conflicts == 0);
+    CHECK(report.applied == 2);
+    // `add` (after a `remove`) against `set` of one component: a conflict, and the later partition wins.
+    report = two("component.remove(a, 'gadget') component.add(a, 'gadget', {count = 4})",
+                 "component.set(a, 'gadget', {count = 5})");
+    CHECK(report.conflicts == 1);
+    CHECK(rig.world.Get<Gadget>(rig.self)->count == 5);
+    // `remove` against `set` of one component: a conflict too.
+    report = two("component.set(a, 'gadget', {count = 6})", "component.remove(a, 'gadget')");
+    CHECK(report.conflicts == 1);
+}
+
+TEST_CASE("Component bindings: an add whose record fails at the merge leaves no default component",
+          "[script][component][merge]")
+{
+    ComponentRig rig;
+    const ecs::Entity bare = ecs::CreateTransformEntity(rig.world, ecs::LocalTransform());
+    // A hand-made payload: the gadget's stored id and a record that does not decode.
+    const u8 payload[] = {static_cast<u8>(kGadgetId & 0xFF), static_cast<u8>((kGadgetId >> 8) & 0xFF), 0, 0, 0xFF};
+    REQUIRE(rig.buffer.Record(kCommandComponentAdd, bare.ToU64(), bare, payload, sizeof(payload)));
+    const MergeReport report = rig.Merge();
+    CHECK(report.skipped == 1);
+    CHECK_FALSE(rig.world.Has<Gadget>(bare));
+}
+
 TEST_CASE("Component bindings: a wrong value is an error that names the component and the field", "[script][component]")
 {
     ComponentRig rig;
@@ -283,6 +333,33 @@ TEST_CASE("Component bindings: the merge never applies a command that names an e
     CHECK(report.applied == 0);
     CHECK(report.skipped == 1);
     CHECK(rig.world.Get<ecs::LocalTransform>(rig.self)->scale.x == 1.0f);
+}
+
+TEST_CASE("Component bindings: catalogs made one after another reuse the ECS type of a component they all define",
+          "[script][component][define]")
+{
+    // The ECS holds 128 types for the whole process; 200 worlds (catalogs) that each define the same component take
+    // one, not 200.
+    const u32 before = ecs::ComponentRegistry::Global().Count();
+    ecs::ComponentId first = ecs::kInvalidComponent;
+    for (u32 i = 0; i < 200; ++i)
+    {
+        storage::ComponentRegistry registry;
+        ComponentCatalog catalog(&registry);
+        Value fields = Value::MakeMap();
+        REQUIRE(fields.Set("hp", Value::FromText("f32")));
+        String<HeapAllocator> error(HeapAllocator::Default());
+        INFO(error.CStr());
+        REQUIRE(catalog.Define("slot_probe", fields, &error));
+        const storage::RegisteredComponent* rc = catalog.FindByName("slot_probe");
+        REQUIRE(rc != nullptr);
+        if (i == 0)
+        {
+            first = rc->EcsId();
+        }
+        CHECK(rc->EcsId() == first);
+    }
+    CHECK(ecs::ComponentRegistry::Global().Count() <= before + 1);
 }
 
 TEST_CASE("Component bindings: a script defines a component, every state may repeat it, a different one is refused",

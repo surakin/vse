@@ -289,6 +289,19 @@ public:
     /// - Param fixed_dt: the step length in seconds.
     void SetFixedSteps(u32 steps, f64 fixed_dt);
 
+    /// Says whether a replay of the session is being recorded (the host's replay log, docs/guide/scripting.md,
+    /// "Saving scripted state"). While it is, `time.real` raises an error in every script: a wall-clock reading would
+    /// make the recorded run impossible to repeat. The default is off.
+    ///
+    /// - Param on: whether the next ticks are recorded.
+    /// - Fails: never.
+    void SetReplayRecording(bool on);
+
+    /// Whether a replay is being recorded (see `SetReplayRecording`).
+    ///
+    /// - Fails: never.
+    bool ReplayRecording() const;
+
     /// The script world, for reading its counters.
     ///
     /// - Ownership: borrowed; valid for the runtime's life.

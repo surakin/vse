@@ -177,7 +177,8 @@ bool SceneReadNumber(const Value& fields, StringView what, StringView key, u32 b
     {
         return true;
     }
-    if (!v->IsNumber() || !SceneFinite(static_cast<f32>(v->ToDouble())))
+    // Checked in double first: a cast to f32 of a value beyond its range is undefined.
+    if (!v->IsNumber() || !(v->ToDouble() >= -3.4028234663852886e38 && v->ToDouble() <= 3.4028234663852886e38))
     {
         SceneRaise(StringView("the "), what, StringView("'s `"), key, StringView("` must be a finite number"));
         return false;

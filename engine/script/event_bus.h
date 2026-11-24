@@ -132,7 +132,9 @@ public:
     /// - Ownership: `user` must outlive the subscription.
     u32 Subscribe(StringView name, NativeEventHandler handler, void* user);
 
-    /// Removes a native subscription.
+    /// Removes a native subscription. A handler may remove itself or another subscription while it is being called:
+    /// a removed subscription receives nothing more, not even the rest of the event being delivered, and every other
+    /// subscription still receives that event.
     ///
     /// - Returns: whether the id was subscribed.
     /// - Fails: returns false, as described.
@@ -156,7 +158,8 @@ public:
     /// - Ownership: borrows `outbox` for the call.
     usize Accept(EventOutbox* outbox);
 
-    /// Takes the waiting events for delivery and calls the native subscribers for them, in order.
+    /// Takes the waiting events for delivery and calls the native subscribers for them, in order. A subscription a
+    /// handler adds during the call receives the events after the one being delivered.
     ///
     /// - Param out: receives the events (its old contents are replaced).
     /// - Ownership: borrows `out` for the call.
@@ -171,11 +174,15 @@ private:
         void* user = nullptr;
     };
 
+    // Removes the subscriptions whose handler was cleared, and the one at `also` (pass Size() for none).
+    void RemoveCleared(usize also);
+
     u32 chain_limit_;
     u32 next_id_ = 1;
     u64 dropped_ = 0;
     Vector<EventRecord> pending_;
     Vector<NativeSub> natives_;
+    bool delivering_ = false;  // inside Take: Unsubscribe clears the handler and Take drops it at the end
 };
 
 }  // namespace vse::script

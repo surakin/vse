@@ -88,6 +88,10 @@ private:
 /// the command changed the world (false counts as skipped: a dead entity, a missing component).
 using ApplyFunction = bool (*)(MergeContext& context, ecs::Entity target, Span<const u8> payload);
 
+/// Reads from a writing command's payload what it writes inside its entity (a component id), so that writes of
+/// different things to one entity do not conflict.
+using ConflictKeyFunction = u32 (*)(Span<const u8> payload);
+
 /// How the merge treats one command kind.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -105,6 +109,12 @@ struct CommandKind
     /// Whether the command is not about an entity: its target is ignored (it may be the null entity), and two
     /// partitions issuing it is not a conflict (the later one applies, as in a sequence).
     bool global = false;
+    /// For a writing kind: what inside the entity it writes, read from the payload; null means the whole kind (two
+    /// partitions using the kind on one entity conflict whatever they write).
+    ConflictKeyFunction conflict_key = nullptr;
+    /// Kinds that write the same things share a non-zero group and conflict with each other (`component.set`, `add`
+    /// and `remove` of one component); 0 keys the conflicts on the kind alone.
+    u16 conflict_group = 0;
 };
 
 /// The kinds a world's commands may have, by id.

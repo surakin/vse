@@ -81,6 +81,33 @@ behavior('native_listener', {
     event.on('from_native', function(me, payload) say(me, 'n' .. tostring(payload)) end)
   end,
 })
+behavior('self_waiter', {  -- a handler that waits for the event it is handling
+  on_create = function(self)
+    event.on('ping', function(me)
+      say(me, 'h')
+      wait_event('ping')
+      say(me, 'w')
+    end)
+  end,
+})
+behavior('host_replacer', {  -- tries to replace the behavior host's globals and tables
+  on_create = function(self)
+    local function try(f) local ok = pcall(f) return ok and 'R' or 'L' end
+    say(self, try(function() __behavior_call = function() return true end end))
+    say(self, try(function() behavior = nil end))
+    say(self, try(function() rawset(_G, 'spawn', print) end))
+    say(self, try(function() event.on = function() end end))
+    say(self, try(function() rawset(event, 'emit', print) end))
+    say(self, try(function() task.run = nil end))
+    say(self, try(function() my_global = 1 end))
+  end,
+})
+behavior('clock_reader', {  -- reads the wall clock every tick
+  on_update = function(self)
+    local ok = pcall(time.real)
+    say(self, ok and 'r' or 'x')
+  end,
+})
 behavior('unsubscribed', {
   on_create = function(self)
     event.on('ping', function(me) say(me, 'u') end)
@@ -252,6 +279,83 @@ TEST_CASE("Events: native code emits to scripts and subscribes to what scripts e
     CHECK(seen.last_payload == 7);
     CHECK(rig.runtime->Events().Unsubscribe(id));
     CHECK_FALSE(rig.runtime->Events().Unsubscribe(id));
+}
+
+namespace
+{
+
+struct SelfRemover
+{
+    EventBus* bus = nullptr;
+    u32 id = 0;
+    i32 count = 0;
+};
+
+void OnSelfRemover(void* user, const EventRecord&)
+{
+    SelfRemover* self = static_cast<SelfRemover*>(user);
+    ++self->count;
+    self->bus->Unsubscribe(self->id);
+}
+
+}  // namespace
+
+TEST_CASE("Events: a native handler that unsubscribes during delivery does not cost the next one its event",
+          "[script][event]")
+{
+    EventBus bus(8);
+    SelfRemover remover;
+    remover.bus = &bus;
+    remover.id = bus.Subscribe("x", &OnSelfRemover, &remover);
+    NativeSeen seen;
+    bus.Subscribe("x", &OnNative, &seen);
+    REQUIRE(bus.Emit("x", Value::FromInt(1)));
+    REQUIRE(bus.Emit("x", Value::FromInt(2)));
+    Vector<EventRecord> taken;
+    bus.Take(&taken);
+    CHECK(remover.count == 1);  // removed by its own first call: not called for the second event
+    CHECK(seen.count == 2);     // the subscription after it got both events
+    CHECK(seen.last_payload == 2);
+    CHECK_FALSE(bus.Unsubscribe(remover.id));  // gone for good
+}
+
+TEST_CASE("Events: a handler that waits for its own event is not woken by that event", "[script][event]")
+{
+    EventRig rig;
+    const ecs::Entity waiter = rig.Make("self_waiter");
+    rig.runtime->Tick(&rig.world, 0.1);
+    rig.runtime->Events().Emit("ping", Value::FromInt(1));
+    rig.runtime->Tick(&rig.world, 0.1);
+    CHECK(rig.Text(waiter).View() == StringView("h"));  // parked in its handler, not woken by the same ping
+    rig.runtime->Events().Emit("ping", Value::FromInt(2));
+    rig.runtime->Tick(&rig.world, 0.1);
+    const String<HeapAllocator> text = rig.Text(waiter);
+    INFO(text.CStr());
+    CHECK(text.View() != StringView("h"));  // the next ping woke the waiter
+    CHECK(text.Length() >= 2);
+    CHECK(text.View()[text.Length() - 1] == 'w');
+}
+
+TEST_CASE("Events: the behavior host's globals and tables cannot be replaced by a script", "[script][event]")
+{
+    EventRig rig;
+    const ecs::Entity e = rig.Make("host_replacer");
+    rig.runtime->Tick(&rig.world, 0.1);
+    CHECK(rig.Text(e).View() == StringView("LLLLLLR"));  // its own globals stay writable
+    CHECK(rig.runtime->Stats().errors == 0);
+}
+
+TEST_CASE("Runtime: time.real is refused while the host records a replay", "[script][event][replay]")
+{
+    EventRig rig;
+    const ecs::Entity e = rig.Make("clock_reader");
+    rig.runtime->Tick(&rig.world, 0.1);
+    CHECK_FALSE(rig.runtime->ReplayRecording());
+    rig.runtime->SetReplayRecording(true);
+    rig.runtime->Tick(&rig.world, 0.1);
+    rig.runtime->SetReplayRecording(false);
+    rig.runtime->Tick(&rig.world, 0.1);
+    CHECK(rig.Text(e).View() == StringView("rxr"));
 }
 
 TEST_CASE("Events: a handler's error disables its instance and names the event handler", "[script][event]")

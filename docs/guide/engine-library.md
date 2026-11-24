@@ -968,7 +968,9 @@ The world's script runtime is made by the first `script_load`, the first script 
   With `script.budget` false (a trusted world with the JIT) an instruction limit is `UNSUPPORTED`.
 - **`script_register_function`** makes `namespace.function` callable from scripts, with a fixed arity. Register before the first script of the world (`NOT_READY` after). The callback runs on an
   engine worker thread in whichever partition made the call, several at once, while the frame holds the world: it must be thread-safe, short, and must call no function of the engine API (a
-  `script_call` from inside it, even on another thread, is refused as busy). `ENGINE_SCRIPT_FUNCTION_PURE` also installs it in the states of script tasks.
+  `script_call` from inside it, even on another thread, is refused as busy). Every script function of the API called from inside a host function or an event callback (`script_load`,
+  `script_register_function`, `script_set_budget`, `script_stats`, `script_event_subscribe`, `script_event_unsubscribe`, `script_call`, `script_event_emit`, `script_task_run`) is refused with
+  `NOT_READY` at once instead of waiting for the frame that holds the world. `ENGINE_SCRIPT_FUNCTION_PURE` also installs it in the states of script tasks.
 - **Values** cross as an `engine_value_pool`: an array of `engine_value` (nil, bool, int, number, string, bytes, array, map, entity) and a byte pool, with containers and strings named by index and
   offset, so no pointer into the engine and no allocation crosses the boundary. An input pool is checked before anything runs (limits: 65,536 values, depth 32, text 1 MiB, blob 16 MiB; an index outside
   the pool, an unknown tag or a map key that is not a string is `INVALID_ARGUMENT`). An output pool that is too small is `TOO_LARGE` with `item_count` and `byte_count` telling how much it needs.
@@ -985,7 +987,8 @@ The world's script runtime is made by the first `script_load`, the first script 
   per world. **`script_event_unsubscribe`** removes it. The payload is a pool with one root, valid for the call only.
 - **`script_task_run`** runs one pure task (`task.run`, `task.map` or `task.parallel_for`: mode `ENGINE_SCRIPT_TASK_RUN`, `_MAP`, `_FOR`) in the world's task states and fills `results`. Only functions registered
   `ENGINE_SCRIPT_FUNCTION_PURE` exist there. It runs now, on the calling thread (a host thread is not a job-system participant, so the chunks run one after another); the result is cut into chunks
-  by index and does not depend on the thread count. Register the functions first (`NOT_READY` after the first script or task).
+  by index and does not depend on the thread count. Register the functions first (`NOT_READY` after the first script or task). It is synchronous: there is no handle and no completion callback;
+  a host that wants it off its frame thread calls it from a thread of its own between frames.
 - **Threads.** One thread at a time runs `frame` for an engine; the other calls (`script_call`, `script_task_run`, `script_event_emit`) from other threads beside it get `NOT_READY` and are retried by
   the host. `tests/engine_library/script_sample.c` shows all of it: 1,000 entities moved by a behavior for 600 frames, a host event in, script events out, host functions, tasks, and three host
   threads with worlds of their own beside the frame thread; the state hash is the same for 1, 2, 4 and 8 script partitions.

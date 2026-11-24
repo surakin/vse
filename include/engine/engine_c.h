@@ -1648,12 +1648,14 @@ extern "C"
      * `results` (its arrays have room for 64 items and 4096 bytes; set root_count, item_count and byte_count) and
      * return ENGINE_OK, or return an error status: the calling script gets a script error. It runs on an engine worker
      * thread, in whichever partition called it, several calls at once: it must be thread-safe, must not block for long
-     * and must not call any function of the engine API (the frame holds the world). */
+     * and must not call any function of the engine API (the frame holds the world; the script functions detect such
+     * a call and refuse it with NOT_READY). */
     typedef engine_status (*engine_script_fn)(void* user, const engine_value_pool* args, engine_value_pool* results);
 
     /* A script event delivered to the host. `payload` holds one root (nil when the event has none); it is valid only
      * during the call. It runs on the thread that runs the frame (world_frame), at the start of the script tick, in
-     * the bus order, with the world held: it must not call any function of the engine API and must not block. */
+     * the bus order, with the world held: it must not call any function of the engine API (the script functions refuse
+     * it with NOT_READY) and must not block. */
     typedef void (*engine_script_event_fn)(void* user, engine_string name, uint64_t sender,
                                            const engine_value_pool* payload);
 
@@ -2624,13 +2626,17 @@ extern "C"
 
         /* ---- Scripts (Phase 27 Day 471; ENGINE_CAP_SCRIPT) ---- */
 
+        /* The script functions below may not be called from inside a host function (engine_script_fn) or an event
+         * callback (engine_script_event_fn) of any world: the frame that runs them holds the world. Such a call is
+         * refused with NOT_READY at once (it does not wait for the frame); call them between frames. */
+
         /* Adds a script to the world: every state of the world loads it, in the order of the calls, and it may define
          * behaviors and global functions. The world's script runtime is made by the first call (host functions are
          * registered before it). `*out_script` (may be NULL) receives the number of the script, from 1. A script that
          * fails to compile or run does not fail this call: its error is in the log and in script_stats.errors at the
          * next frame or call. Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, an empty source, flags), STRUCT_SIZE,
-         * TOO_LARGE (a source above 16 MiB), LIMIT_EXCEEDED (1024 scripts), UNSUPPORTED (no ENGINE_CAP_SCRIPT).
-         * Main thread; not from a host function. */
+         * TOO_LARGE (a source above 16 MiB), LIMIT_EXCEEDED (1024 scripts), NOT_READY (from a callback),
+         * UNSUPPORTED (no ENGINE_CAP_SCRIPT). Main thread. */
         engine_status (*script_load)(engine_handle world, const engine_script_load* info, uint64_t* out_script);
 
         /* Calls a global function of the world's scripts (`name` or `table.name`) with `args` (may be NULL: no
@@ -2649,16 +2655,16 @@ extern "C"
          * taking `arity` arguments. Register before the first script_load of the world: a state made earlier would not
          * have it (NOT_READY). `flags` is 0 or ENGINE_SCRIPT_FUNCTION_PURE. See engine_script_fn for the thread rule.
          * Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a bad name, flags, arity above 16), ALREADY_EXISTS (the
-         * name, or the namespace is one of Lua's), NOT_READY, UNSUPPORTED. */
+         * name, or the namespace is one of Lua's), NOT_READY (also from a callback), UNSUPPORTED. */
         engine_status (*script_register_function)(engine_handle world, engine_string name, uint32_t arity,
                                                   uint32_t flags, engine_script_fn function, void* user);
 
         /* Sets the limits of script_call, and of the frame's callbacks when the world's runtime does not exist yet.
-         * Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, UNSUPPORTED. */
+         * Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, NOT_READY (from a callback), UNSUPPORTED. */
         engine_status (*script_set_budget)(engine_handle world, const engine_script_budget* budget);
 
         /* Reads what the world's scripts have done. Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE,
-         * UNSUPPORTED. */
+         * NOT_READY (from a callback), UNSUPPORTED. */
         engine_status (*script_stats)(engine_handle world, engine_script_stats* out);
 
         /* Emits the event `name` (1 to 64 bytes) with the first root of `payload` (NULL: no payload) from the host.
@@ -2672,11 +2678,11 @@ extern "C"
         /* Calls `callback` for the events named `name` (empty: every event) that scripts or the host emit, at the
          * start of each script tick, on the frame's thread. `*out_id` receives an id for script_event_unsubscribe.
          * `user` must outlive the subscription. Fails with: STALE_HANDLE, INVALID_ARGUMENT, LIMIT_EXCEEDED (256
-         * subscriptions), UNSUPPORTED. */
+         * subscriptions), NOT_READY (from a callback), UNSUPPORTED. */
         engine_status (*script_event_subscribe)(engine_handle world, engine_string name,
                                                 engine_script_event_fn callback, void* user, uint32_t* out_id);
 
-        /* Removes a subscription. Fails with: STALE_HANDLE, NOT_FOUND, UNSUPPORTED. */
+        /* Removes a subscription. Fails with: STALE_HANDLE, NOT_FOUND, NOT_READY (from a callback), UNSUPPORTED. */
         engine_status (*script_event_unsubscribe)(engine_handle world, uint32_t id);
 
         /* Runs a pure task now, on the engine's task states (the same states and rules as `task.run`, `task.map` and

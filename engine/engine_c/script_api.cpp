@@ -427,6 +427,27 @@ engine_status StatusOfOutcome(const script::Outcome& outcome)
     return ENGINE_ERROR_INTERNAL;
 }
 
+// How deep the calling thread is inside a host callback of a world's scripts (a host function or an event callback).
+// The frame that calls them holds the world mutex, so a script call that would take it there is refused instead of
+// deadlocking on the thread's own lock.
+thread_local u32 g_callback_depth = 0;
+
+struct CallbackScope
+{
+    CallbackScope() { ++g_callback_depth; }
+    ~CallbackScope() { --g_callback_depth; }
+    CallbackScope(const CallbackScope&) = delete;
+    CallbackScope& operator=(const CallbackScope&) = delete;
+};
+
+// The refusal of a world call made from inside a host callback (see g_callback_depth).
+engine_status RefuseFromCallback()
+{
+    return Fail(ENGINE_ERROR_NOT_READY,
+                "called from inside an event callback or a host function: the frame holds the world (call it between "
+                "frames)");
+}
+
 // A host function as scripts call it.
 script::Outcome InvokeHost(void* user, Span<const Value> args, Vector<Value>* results)
 {
@@ -452,7 +473,11 @@ script::Outcome InvokeHost(void* user, Span<const Value> args, Vector<Value>* re
     out.items = out_items;
     out.byte_capacity = kHostResultBytes;
     out.bytes = out_bytes;
-    const engine_status status = f->fn(f->user, &in, &out);
+    engine_status status = ENGINE_OK;
+    {
+        CallbackScope scope;
+        status = f->fn(f->user, &in, &out);
+    }
     if (status != ENGINE_OK)
     {
         char text[64];
@@ -509,6 +534,7 @@ void DeliverEvent(void* user, const script::EventRecord& event)
     engine_string name;
     name.data = event.name.CStr();
     name.length = event.name.Length();
+    CallbackScope scope;
     sub->fn(sub->user, name, event.sender_key, &pool);
 }
 
@@ -842,6 +868,10 @@ engine_status ScriptLoadFn(engine_handle world, const engine_script_load* info, 
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
     }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
+    }
     LockGuard<Mutex> lock(runtime->world_mutex);
     engine_status status = ENGINE_OK;
     WorldObject* object = FindWorld(*runtime, world, &status);
@@ -892,6 +922,10 @@ engine_status ScriptCallFn(engine_handle world, engine_string function, const en
     if (runtime == nullptr)
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
     }
     TryLocked lock(runtime->world_mutex);
     if (!lock.Held())
@@ -969,6 +1003,10 @@ engine_status ScriptRegisterFunctionFn(engine_handle world, engine_string name, 
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
     }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
+    }
     LockGuard<Mutex> lock(runtime->world_mutex);
     engine_status status = ENGINE_OK;
     WorldObject* object = FindWorld(*runtime, world, &status);
@@ -1034,6 +1072,10 @@ engine_status ScriptSetBudgetFn(engine_handle world, const engine_script_budget*
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
     }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
+    }
     LockGuard<Mutex> lock(runtime->world_mutex);
     engine_status status = ENGINE_OK;
     WorldObject* object = FindWorld(*runtime, world, &status);
@@ -1071,6 +1113,10 @@ engine_status ScriptStatsFn(engine_handle world, engine_script_stats* out)
     if (runtime == nullptr)
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
     }
     LockGuard<Mutex> lock(runtime->world_mutex);
     engine_status status = ENGINE_OK;
@@ -1119,6 +1165,10 @@ engine_status ScriptEventEmitFn(engine_handle world, engine_string name, const e
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
     }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
+    }
     TryLocked lock(runtime->world_mutex);
     if (!lock.Held())
     {
@@ -1161,6 +1211,10 @@ engine_status ScriptEventSubscribeFn(engine_handle world, engine_string name, en
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
     }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
+    }
     LockGuard<Mutex> lock(runtime->world_mutex);
     engine_status status = ENGINE_OK;
     WorldObject* object = FindWorld(*runtime, world, &status);
@@ -1193,6 +1247,10 @@ engine_status ScriptEventUnsubscribeFn(engine_handle world, u32 id)
     if (runtime == nullptr)
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
     }
     LockGuard<Mutex> lock(runtime->world_mutex);
     engine_status status = ENGINE_OK;
@@ -1252,6 +1310,10 @@ engine_status ScriptTaskRunFn(engine_handle world, const engine_script_task* tas
     if (runtime == nullptr)
     {
         return Fail(world.value == 0 ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_STALE_HANDLE, "no engine exists");
+    }
+    if (g_callback_depth != 0)
+    {
+        return RefuseFromCallback();
     }
     TryLocked lock(runtime->world_mutex);
     if (!lock.Held())
