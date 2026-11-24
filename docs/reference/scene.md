@@ -727,7 +727,7 @@ Builds the system that sets the local rotation of every wind node (a turn about 
 | Field | Value |
 |---|---|
 | Parameter `name` | the system's name. |
-| Returns | the description to add to a schedule; it reads `InstanceHierarchy` and the `WindState` resource. It writes the trees through their shared pointers, so a schedule runs it before the sync system that draws them. |
+| Returns | the description to add to a schedule; it reads `InstanceHierarchy` and the `WindState` resource. It writes the trees through their shared pointers, and declares `SceneLink` as written so it never runs beside the sync system that recomposes and draws them; register it before that system. |
 | Fails | never. |
 
 ## `SpawnedLevel` {#scene-spawnedlevel}

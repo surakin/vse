@@ -1664,6 +1664,58 @@ extern "C"
         uint32_t reserved; /* zero */
     } engine_script_task;
 
+    /* ---- Instanced meshes (Phase 28) ---- */
+
+#define ENGINE_INSTANCE_MESHES_MAX 16u
+#define ENGINE_INSTANCE_HIDDEN 0x1u /* engine_instance_placement.flags: the set or tree is not drawn */
+
+    /* Where a set or a tree of instances is in the world and how far it is drawn. `position` is exact (metres, within
+     * 1e12), `rotation` a unit quaternion (x, y, z, w), `scale` uniform and above 0. Instances farther than
+     * `max_distance` metres from the camera are not drawn (0: no limit), nor those smaller than `min_size_ratio` of
+     * their distance (0: none). */
+    typedef struct engine_instance_placement
+    {
+        uint32_t struct_size;
+        uint32_t flags; /* ENGINE_INSTANCE_* */
+        double position[3];
+        float rotation[4];
+        float scale;
+        float max_distance;
+        float min_size_ratio;
+        uint32_t reserved; /* 0 */
+    } engine_instance_placement;
+
+    /* One instance of a set (or the local transform of a tree node): `position` exact in the world (an offset from the
+     * parent for a tree node that is not a root), `rotation` a unit quaternion (x, y, z, w), `scale` on each axis above
+     * 0, `tint` a colour multiplier and `custom` a value the material may read (a tree node's local transform ignores
+     * both). The bulk calls take an array of these and the size of one as the host compiled it. */
+    typedef struct engine_instance
+    {
+        double position[3];
+        float rotation[4];
+        float scale[3];
+        float tint[4];
+        uint32_t custom;
+        uint32_t reserved[2]; /* 0 */
+    } engine_instance;
+
+    /* One node of a tree, in an array where a node's `parent` is the index of an EARLIER node (or -1 for a root, whose
+     * `position` is its world position; any other node's is the offset from its parent). `mesh` is an index below the
+     * tree's mesh count, or 0xFFFFFFFF for a node that draws nothing (a group); `flags` are the host's own bits. The
+     * node at index `i` is addressed by `i` in instance_tree_set_local. */
+    typedef struct engine_tree_node
+    {
+        double position[3];
+        float rotation[4];
+        float scale[3];
+        float tint[4];
+        uint32_t custom;
+        int32_t parent;
+        uint32_t mesh;
+        uint32_t flags;
+        uint32_t reserved[3]; /* 0 */
+    } engine_tree_node;
+
     typedef struct engine_api
     {
         uint32_t struct_size; /* bytes of this table the library filled (at most what the host asked for) */
@@ -2637,6 +2689,67 @@ extern "C"
          * (two triangles a cell). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a coordinate that is not finite or
          * lies beyond 1e12 metres), NOT_FOUND (no terrain covers the point, or its height map is not mounted). */
         engine_status (*terrain_height)(engine_handle world, double x, double z, double* out_height);
+
+        /* ---- Instanced meshes (Phase 28) ---- */
+
+        /* Makes a set of instances of one mesh: `mesh` is a mesh resource (it may be mounted later: until then the set
+         * draws nothing and counts in engine_surface_state.entities_unresolved), `max_instances` the most it holds (0:
+         * 1,048,576, at most 16,777,216). The set is drawn by the surface bound to the world, with the surface's
+         * default instanced material coloured by each instance's tint. `*out_set` receives its id (not 0, shared with
+         * trees). Fails with: STALE_HANDLE, INVALID_ARGUMENT (NULL, a placement the engine refuses), STRUCT_SIZE,
+         * LIMIT_EXCEEDED (the world holds 4096 sets and trees). */
+        engine_status (*instance_set_create)(engine_handle world, const engine_instance_placement* placement,
+                                             uint64_t mesh, uint32_t max_instances, uint64_t* out_set);
+
+        /* Changes where a set is and which mesh it draws. Fails with: STALE_HANDLE, NOT_FOUND (no such set),
+         * INVALID_ARGUMENT, STRUCT_SIZE. */
+        engine_status (*instance_set_update)(engine_handle world, uint64_t set,
+                                             const engine_instance_placement* placement, uint64_t mesh);
+
+        /* Adds `count` instances (up to 65,536 a call) from an array of `item_size`-byte `engine_instance`s. When
+         * `out_ids` is not NULL it receives one id per instance (for set_transform and remove). All the instances are
+         * checked first: one that is not valid fails the call with INVALID_ARGUMENT and adds none. Fails with:
+         * STALE_HANDLE, NOT_FOUND, INVALID_ARGUMENT, STRUCT_SIZE (`item_size` is not sizeof(engine_instance)),
+         * LIMIT_EXCEEDED (the set is full: none were added). */
+        engine_status (*instance_set_add_many)(engine_handle world, uint64_t set, const engine_instance* items,
+                                               uint32_t count, uint32_t item_size, uint64_t* out_ids);
+
+        /* Moves one instance. Fails with: STALE_HANDLE, NOT_FOUND (the set, or the instance was removed),
+         * INVALID_ARGUMENT, STRUCT_SIZE. */
+        engine_status (*instance_set_set_transform)(engine_handle world, uint64_t set, uint64_t instance,
+                                                    const engine_instance* item, uint32_t item_size);
+
+        /* Removes one instance. Fails with: STALE_HANDLE, NOT_FOUND. */
+        engine_status (*instance_set_remove)(engine_handle world, uint64_t set, uint64_t instance);
+
+        /* Reads one instance back (position, rotation, scale, tint and custom value). Fails with: STALE_HANDLE,
+         * NOT_FOUND (the set, or the instance was removed), INVALID_ARGUMENT, STRUCT_SIZE. */
+        engine_status (*instance_set_get_transform)(engine_handle world, uint64_t set, uint64_t instance,
+                                                    engine_instance* out, uint32_t item_size);
+
+        /* Makes a tree of instances: `mesh_count` (1 to ENGINE_INSTANCE_MESHES_MAX) mesh resources in `meshes` and, for
+         * each, its bounding box in the mesh's own space in `mesh_bounds` (6 floats: min x y z, max x y z; the tree
+         * culls with them), and `node_count` nodes (1 to 4,194,304, up to 255 deep) as in engine_tree_node. Its world
+         * transforms are made now and again after every set_local. `*out_tree` receives its id (not 0). Fails with:
+         * STALE_HANDLE, INVALID_ARGUMENT (NULL, a parent that is not an earlier node, a mesh index or a value the
+         * engine refuses), STRUCT_SIZE, LIMIT_EXCEEDED. */
+        engine_status (*instance_tree_create)(engine_handle world, const engine_instance_placement* placement,
+                                              const uint64_t* meshes, const float* mesh_bounds, uint32_t mesh_count,
+                                              const engine_tree_node* nodes, uint32_t node_count, uint32_t node_size,
+                                              uint64_t* out_tree);
+
+        /* Changes where a tree is. Fails with: STALE_HANDLE, NOT_FOUND, INVALID_ARGUMENT, STRUCT_SIZE. */
+        engine_status (*instance_tree_update)(engine_handle world, uint64_t tree,
+                                              const engine_instance_placement* placement);
+
+        /* Sets the local transform of node `node` (its index in the creation array) from `item`'s position, rotation
+         * and scale (a swaying branch); only the node's subtree is recomposed at the next frame. Fails with:
+         * STALE_HANDLE, NOT_FOUND (no such tree or node), INVALID_ARGUMENT, STRUCT_SIZE. */
+        engine_status (*instance_tree_set_local)(engine_handle world, uint64_t tree, uint32_t node,
+                                                 const engine_instance* item, uint32_t item_size);
+
+        /* Destroys a set or a tree. Fails with: STALE_HANDLE, NOT_FOUND. */
+        engine_status (*instance_destroy)(engine_handle world, uint64_t id);
 
     } engine_api;
 

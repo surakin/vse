@@ -508,6 +508,57 @@ public:
     {
         return Api()->terrain_height(Get(), x, z, out_height);
     }
+    /// Makes a set of instances of a mesh (engine_api.instance_set_create).
+    Status InstanceSetCreate(const engine_instance_placement& placement, uint64_t mesh, uint32_t max_instances,
+                             uint64_t* out_set) const
+    {
+        return Api()->instance_set_create(Get(), &placement, mesh, max_instances, out_set);
+    }
+    /// Adds instances to a set (engine_api.instance_set_add_many).
+    Status InstanceSetAddMany(uint64_t set, const engine_instance* items, uint32_t count, uint64_t* out_ids) const
+    {
+        return Api()->instance_set_add_many(Get(), set, items, count, sizeof(engine_instance), out_ids);
+    }
+    /// Moves an instance (engine_api.instance_set_set_transform).
+    Status InstanceSetSetTransform(uint64_t set, uint64_t instance, const engine_instance& item) const
+    {
+        return Api()->instance_set_set_transform(Get(), set, instance, &item, sizeof(engine_instance));
+    }
+    /// Removes an instance (engine_api.instance_set_remove).
+    Status InstanceSetRemove(uint64_t set, uint64_t instance) const
+    {
+        return Api()->instance_set_remove(Get(), set, instance);
+    }
+    /// Sets the local transform of a tree node (engine_api.instance_tree_set_local).
+    Status InstanceTreeSetLocal(uint64_t tree, uint32_t node, const engine_instance& item) const
+    {
+        return Api()->instance_tree_set_local(Get(), tree, node, &item, sizeof(engine_instance));
+    }
+    /// Reads one instance back (engine_api.instance_set_get_transform).
+    Status InstanceSetGetTransform(uint64_t set, uint64_t instance, engine_instance* out) const
+    {
+        return Api()->instance_set_get_transform(Get(), set, instance, out, sizeof(engine_instance));
+    }
+    /// Changes where a set is (engine_api.instance_set_update).
+    Status InstanceSetUpdate(uint64_t set, const engine_instance_placement& placement, uint64_t mesh) const
+    {
+        return Api()->instance_set_update(Get(), set, &placement, mesh);
+    }
+    /// Makes a tree of instances (engine_api.instance_tree_create).
+    Status InstanceTreeCreate(const engine_instance_placement& placement, const uint64_t* meshes,
+                              const float* mesh_bounds, uint32_t mesh_count, const engine_tree_node* nodes,
+                              uint32_t node_count, uint64_t* out_tree) const
+    {
+        return Api()->instance_tree_create(Get(), &placement, meshes, mesh_bounds, mesh_count, nodes, node_count,
+                                           sizeof(engine_tree_node), out_tree);
+    }
+    /// Changes where a tree is (engine_api.instance_tree_update).
+    Status InstanceTreeUpdate(uint64_t tree, const engine_instance_placement& placement) const
+    {
+        return Api()->instance_tree_update(Get(), tree, &placement);
+    }
+    /// Destroys a set or a tree (engine_api.instance_destroy).
+    Status InstanceDestroy(uint64_t id) const { return Api()->instance_destroy(Get(), id); }
     Status HasComponent(uint64_t key, uint32_t kind, bool* out) const
     {
         int has = 0;

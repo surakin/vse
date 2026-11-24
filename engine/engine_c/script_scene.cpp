@@ -1,5 +1,6 @@
 #include "engine_c/script_scene.h"
 
+#include "engine_c/instances.h"
 #include "engine_c/runtime.h"
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
@@ -644,6 +645,297 @@ bool ApplyLightCreate(MergeContext& context, ecs::Entity target, Span<const u8> 
     return LightValid(light, &why) && context.World()->Add(target, light) == ecs::Status::Ok;
 }
 
+// ------------------------------------------------------------------ instanced sets and trees
+
+// Plain numbers only, zeroed before use, so the payload has no indeterminate padding.
+struct InstancePayload
+{
+    u64 target;  // the set or tree id
+    u64 id;      // the instance id, or the node index
+    f64 position[3];
+    f32 rotation[4];
+    f32 scale[3];
+    f32 tint[4];
+    u32 has_tint;
+    u32 pad;
+};
+
+WorldObject* InstanceWorld(PartitionContext* context)
+{
+    const SceneScriptServices* services = SceneServicesOf(context);
+    return services != nullptr ? services->object : nullptr;
+}
+
+// Reads the transform arguments into a payload and checks them as the C API does.
+bool InstanceRead(i64 target, i64 id, Vec3d position, Quaternion rotation, Vec3 scale, const Value* tint,
+                  InstancePayload* p)
+{
+    if (target <= 0 || id < 0)
+    {
+        script::RaiseScriptError("a set, tree, instance or node id is not valid");
+        return false;
+    }
+    p->target = static_cast<u64>(target);
+    p->id = static_cast<u64>(id);
+    p->position[0] = position.x;
+    p->position[1] = position.y;
+    p->position[2] = position.z;
+    p->rotation[0] = rotation.x;
+    p->rotation[1] = rotation.y;
+    p->rotation[2] = rotation.z;
+    p->rotation[3] = rotation.w;
+    p->scale[0] = scale.x;
+    p->scale[1] = scale.y;
+    p->scale[2] = scale.z;
+    p->tint[0] = p->tint[1] = p->tint[2] = p->tint[3] = 1.0f;
+    if (tint != nullptr && tint->Kind() != ValueKind::Nil)
+    {
+        if (tint->Kind() != ValueKind::Vec4)
+        {
+            script::RaiseScriptError("the tint must be a vec4 (red, green, blue, alpha) or nil");
+            return false;
+        }
+        const Vec4 t = tint->AsVec4();
+        p->tint[0] = t.x;
+        p->tint[1] = t.y;
+        p->tint[2] = t.z;
+        p->tint[3] = t.w;
+        p->has_tint = 1;
+    }
+    engine_instance item = {};
+    for (u32 k = 0; k < 3; ++k)
+    {
+        item.position[k] = p->position[k];
+        item.scale[k] = p->scale[k];
+    }
+    for (u32 k = 0; k < 4; ++k)
+    {
+        item.rotation[k] = p->rotation[k];
+        item.tint[k] = p->tint[k];
+    }
+    renderer::InstanceTransform t;
+    if (ReadInstanceItem(&item, sizeof(item), &t, nullptr) != ENGINE_OK)
+    {
+        script::RaiseScriptError(
+            "an instance value is not finite or out of range, the rotation is not a unit quaternion, or a scale is "
+            "not above 0");
+        return false;
+    }
+    return true;
+}
+
+void ToItem(const InstancePayload& p, engine_instance* item)
+{
+    for (u32 k = 0; k < 3; ++k)
+    {
+        item->position[k] = p.position[k];
+        item->scale[k] = p.scale[k];
+    }
+    for (u32 k = 0; k < 4; ++k)
+    {
+        item->rotation[k] = p.rotation[k];
+        item->tint[k] = p.tint[k];
+    }
+}
+
+void InstancesAdd(i64 set, Vec3d position, Quaternion rotation, Vec3 scale, Value tint)
+{
+    PartitionContext* context = SceneContext();
+    WorldObject* world = context != nullptr ? InstanceWorld(context) : nullptr;
+    if (world == nullptr)
+    {
+        return;
+    }
+    InstancePayload p = {};
+    if (!InstanceRead(set, 0, position, rotation, scale, &tint, &p))
+    {
+        return;
+    }
+    if (FindInstanceSet(world->instances, p.target) == nullptr)
+    {
+        script::RaiseScriptError("instances.add: no such set");
+        return;
+    }
+    SceneRecord(context, kCommandInstancesAdd, ecs::Entity(), &p, sizeof(p));
+}
+
+void InstancesSet(i64 set, i64 id, Vec3d position, Quaternion rotation, Vec3 scale)
+{
+    PartitionContext* context = SceneContext();
+    WorldObject* world = context != nullptr ? InstanceWorld(context) : nullptr;
+    if (world == nullptr)
+    {
+        return;
+    }
+    InstancePayload p = {};
+    if (!InstanceRead(set, id, position, rotation, scale, nullptr, &p))
+    {
+        return;
+    }
+    if (FindInstanceSet(world->instances, p.target) == nullptr)
+    {
+        script::RaiseScriptError("instances.set: no such set");
+        return;
+    }
+    SceneRecord(context, kCommandInstancesSet, ecs::Entity(), &p, sizeof(p));
+}
+
+void InstancesRemove(i64 set, i64 id)
+{
+    PartitionContext* context = SceneContext();
+    WorldObject* world = context != nullptr ? InstanceWorld(context) : nullptr;
+    if (world == nullptr)
+    {
+        return;
+    }
+    if (set <= 0 || id < 0 || FindInstanceSet(world->instances, static_cast<u64>(set)) == nullptr)
+    {
+        script::RaiseScriptError("instances.remove: no such set");
+        return;
+    }
+    InstancePayload p = {};
+    p.target = static_cast<u64>(set);
+    p.id = static_cast<u64>(id);
+    SceneRecord(context, kCommandInstancesRemove, ecs::Entity(), &p, sizeof(p));
+}
+
+void TreeSetLocal(i64 tree, i64 node, Vec3d position, Quaternion rotation, Vec3 scale)
+{
+    PartitionContext* context = SceneContext();
+    WorldObject* world = context != nullptr ? InstanceWorld(context) : nullptr;
+    if (world == nullptr)
+    {
+        return;
+    }
+    InstancePayload p = {};
+    if (!InstanceRead(tree, node, position, rotation, scale, nullptr, &p))
+    {
+        return;
+    }
+    WorldInstanceTree* entry = FindInstanceTree(world->instances, p.target);
+    if (entry == nullptr)
+    {
+        script::RaiseScriptError("tree.set_local: no such tree");
+        return;
+    }
+    renderer::TreeNodeId id;
+    id.value = static_cast<u32>(p.id);
+    if (p.id >= entry->tree->NodeCount() || entry->tree->Find(id) == renderer::kTreeNone)
+    {
+        script::RaiseScriptError("tree.set_local: the tree has no such node");
+        return;
+    }
+    SceneRecord(context, kCommandTreeSetLocal, ecs::Entity(), &p, sizeof(p));
+}
+
+WorldObject* MergeWorld(MergeContext& context)
+{
+    const script::MergeServices* merge = static_cast<const script::MergeServices*>(context.User());
+    const SceneScriptServices* services = merge != nullptr ? static_cast<const SceneScriptServices*>(
+                                                                 merge->extensions[script::kServiceScene])
+                                                           : nullptr;
+    return services != nullptr ? services->object : nullptr;
+}
+
+bool ApplyInstancesAdd(MergeContext& context, ecs::Entity, Span<const u8> payload)
+{
+    InstancePayload p;
+    WorldObject* world = MergeWorld(context);
+    if (world == nullptr || payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    WorldInstanceSet* entry = FindInstanceSet(world->instances, p.target);
+    if (entry == nullptr)
+    {
+        return false;
+    }
+    engine_instance item = {};
+    ToItem(p, &item);
+    renderer::InstanceTransform t;
+    renderer::InstanceExtra extra;
+    if (ReadInstanceItem(&item, sizeof(item), &t, &extra) != ENGINE_OK)
+    {
+        return false;
+    }
+    renderer::InstanceId id;
+    return entry->set->Add(t, &extra, &id) == renderer::InstanceStatus::Ok;
+}
+
+bool ApplyInstancesSet(MergeContext& context, ecs::Entity, Span<const u8> payload)
+{
+    InstancePayload p;
+    WorldObject* world = MergeWorld(context);
+    if (world == nullptr || payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    WorldInstanceSet* entry = FindInstanceSet(world->instances, p.target);
+    if (entry == nullptr)
+    {
+        return false;
+    }
+    engine_instance item = {};
+    ToItem(p, &item);
+    renderer::InstanceTransform t;
+    if (ReadInstanceItem(&item, sizeof(item), &t, nullptr) != ENGINE_OK)
+    {
+        return false;
+    }
+    renderer::InstanceId id;
+    id.index = static_cast<u32>(p.id & 0xFFFFFFFFu);
+    id.generation = static_cast<u32>(p.id >> 32);
+    return entry->set->SetTransform(id, t) == renderer::InstanceStatus::Ok;
+}
+
+bool ApplyInstancesRemove(MergeContext& context, ecs::Entity, Span<const u8> payload)
+{
+    InstancePayload p;
+    WorldObject* world = MergeWorld(context);
+    if (world == nullptr || payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    WorldInstanceSet* entry = FindInstanceSet(world->instances, p.target);
+    if (entry == nullptr)
+    {
+        return false;
+    }
+    renderer::InstanceId id;
+    id.index = static_cast<u32>(p.id & 0xFFFFFFFFu);
+    id.generation = static_cast<u32>(p.id >> 32);
+    return entry->set->Remove(id) == renderer::InstanceStatus::Ok;
+}
+
+bool ApplyTreeSetLocal(MergeContext& context, ecs::Entity, Span<const u8> payload)
+{
+    InstancePayload p;
+    WorldObject* world = MergeWorld(context);
+    if (world == nullptr || payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    WorldInstanceTree* entry = FindInstanceTree(world->instances, p.target);
+    if (entry == nullptr)
+    {
+        return false;
+    }
+    engine_instance item = {};
+    ToItem(p, &item);
+    renderer::InstanceTransform t;
+    if (ReadInstanceItem(&item, sizeof(item), &t, nullptr) != ENGINE_OK)
+    {
+        return false;
+    }
+    renderer::TreeNodeId id;
+    id.value = static_cast<u32>(p.id);
+    return entry->tree->SetLocal(id, t.position, t.rotation, t.scale) == renderer::TreeStatus::Ok;
+}
+
 usize SceneNameOf(void*, const ecs::World& world, ecs::Entity entity, char* out, usize capacity)
 {
     const EntityName* name = world.Peek<EntityName>(entity);
@@ -690,6 +982,11 @@ bool RegisterSceneCommandKinds(CommandKindTable* kinds)
                           CommandKind{"environment.set", &ApplyEnvironmentSet, false, false, true});
     ok &= kinds->Register(kCommandLightSet, CommandKind{"light.set", &ApplyLightSet, false, true});
     ok &= kinds->Register(kCommandLightCreate, CommandKind{"light.create", &ApplyLightCreate, false, true});
+    ok &= kinds->Register(kCommandInstancesAdd, CommandKind{"instances.add", &ApplyInstancesAdd, false, false, true});
+    ok &= kinds->Register(kCommandInstancesSet, CommandKind{"instances.set", &ApplyInstancesSet, false, false, true});
+    ok &= kinds->Register(kCommandInstancesRemove,
+                          CommandKind{"instances.remove", &ApplyInstancesRemove, false, false, true});
+    ok &= kinds->Register(kCommandTreeSetLocal, CommandKind{"tree.set_local", &ApplyTreeSetLocal, false, false, true});
     return ok;
 }
 
@@ -728,6 +1025,28 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "Puts a light on entity `e` at the sync point: `kind` is `\"directional\"`, `\"point\"` or `\"spot\"`, and "
         "`fields` (a table or nil) takes the same fields as `light.set`, the rest being the defaults (white, intensity "
         "1, radius 10, cones 0 and pi/4). The entity needs a transform and no light yet.");
+    ok &= registry->Add<&InstancesAdd>(
+        "instances", "add", ThreadRule::WorldWrite, "set, position, rotation, scale, tint",
+        "Adds an instance to the instance set `set` (the id the host got from `instance_set_create`) at the sync "
+        "point: `position` a vec3 (exact, metres), `rotation` a unit quaternion, `scale` a vec3 above 0 and `tint` a "
+        "vec4 colour multiplier or nil for white. Adds from several scripts apply in the fixed merge order, so the "
+        "set is the same for any number of threads. An unknown set, a value out of range or a rotation that is not a "
+        "unit quaternion is an error; a full set drops the instance and counts a failed command.");
+    ok &= registry->Add<&InstancesSet>(
+        "instances", "set", ThreadRule::WorldWrite, "set, id, position, rotation, scale",
+        "Moves instance `id` (the id `instance_set_add_many` returned) of the set `set` at the sync point; the tint "
+        "is kept. The values are checked as for `instances.add`; an instance that was removed counts a failed "
+        "command at the sync point.");
+    ok &= registry->Add<&InstancesRemove>(
+        "instances", "remove", ThreadRule::WorldWrite, "set, id",
+        "Removes instance `id` of the set `set` at the sync point; an unknown set is an error, an instance already "
+        "removed counts a failed command.");
+    ok &= registry->Add<&TreeSetLocal>(
+        "tree", "set_local", ThreadRule::WorldWrite, "tree, node, position, rotation, scale",
+        "Sets the local transform of node `node` (its index in the array the host made the tree from) of the "
+        "instance tree `tree` at the sync point (a root's `position` is its world position, any other node's the "
+        "offset from its parent); only that node's subtree is recomposed at the next frame. The values are checked "
+        "as for `instances.add`; an unknown tree or node is an error.");
     return ok;
 }
 

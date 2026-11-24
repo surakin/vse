@@ -1018,3 +1018,7 @@ lands, the rise is the fixed step's `v^2 / (2 g)`, the C API's state agrees with
 `script_task_run` for work it wants the engine to do off its own thread. Nothing here depends on it.
 
 What is not here yet is listed in `KNOWN-ISSUES.md`: unloading a script, calling a behavior of one entity, loading a minted script by resource id, and running the partitions on the engine's jobs from the host's frame call.
+
+## Instanced meshes
+
+A host makes sets and trees of instances with `instance_set_*` and `instance_tree_*` (sized structs, ids, no engine pointers) and a surface bound to the world draws them; scripts reach them with `instances.*` and `tree.set_local`. See [Instancing](instancing.md).

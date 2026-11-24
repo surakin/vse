@@ -99,3 +99,13 @@ An `InstancedObject` of the render scene holds either a set or a tree. A tree ob
 ## Wind
 
 `scene::MakeWindSystem` sways the nodes flagged `kTreeNodeWind`: each gets a rotation about x of `WindAngle(wind, id)`, a function of the `WindState` resource (time, amplitude, frequency) and the node's id alone, so the result is the same for any thread count. Only the flagged nodes are marked, so only their subtrees are recomposed. Register it before the hierarchy sync, and advance `WindState::time` yourself.
+
+## From a host: the C API
+
+A host makes sets and trees by id, with no engine pointers (`include/engine/engine_c.h`, "Instanced meshes"). `instance_set_create` takes a placement (`engine_instance_placement`: an exact position, a unit rotation, a uniform scale, the distance limits and the hidden flag), the mesh resource and the most instances; `instance_set_add_many` adds up to 65,536 `engine_instance`s a call from an array (the host passes the size of one, so a mismatch is `STRUCT_SIZE`), checks all of them before adding any and returns an id for each; `instance_set_set_transform`, `instance_set_get_transform` and `instance_set_remove` edit and read one by id. `instance_tree_create` takes the mesh resources and each mesh's box, and an array of `engine_tree_node`s in which a node's parent is an earlier node; the node at index `i` is addressed by `i` in `instance_tree_set_local`, which recomposes only that node's subtree at the next frame. `instance_set_update` and `instance_tree_update` move a set or a tree, `instance_destroy` removes either.
+
+A surface bound to the world draws them with its default instanced material, each instance coloured by its tint; a set or tree whose mesh is not mounted draws nothing and counts in `engine_surface_state.entities_unresolved` until the mesh arrives. A world holds at most 4,096 sets and trees. The C++ layer (`engine.h`) wraps each call.
+
+## From scripts
+
+A script in a world with sets and trees changes them with four commands, all applied at the sync point in the fixed merge order (so the result is the same for any number of partitions and threads): `instances.add(set, position, rotation, scale, tint)`, `instances.set(set, id, position, rotation, scale)`, `instances.remove(set, id)` and `tree.set_local(tree, node, position, rotation, scale)`. The set, instance, tree and node ids are the numbers the host got from the C API (a script cannot learn the id of an instance it adds: the add is a command); a script that names an unknown set or tree, a value out of range or a rotation that is not a unit quaternion gets an error naming it, and an instance that was removed counts a failed command at the sync point. The reference is in `script-api.md`.

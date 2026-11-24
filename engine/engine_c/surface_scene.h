@@ -159,6 +159,8 @@ private:
     void SyncLights(WorldObject& world, SceneFrameReport* report);
     // Mirrors the world's terrain components into the render scene (adds, updates and removes).
     void SyncTerrains(WorldObject& world, SceneFrameReport* report);
+    // The world's instanced sets and trees (the C API's instance_* functions) as the render scene's instanced objects.
+    void SyncInstances(WorldObject& world, SceneFrameReport* report);
     // The renderer's source of the height map `id`, or an empty pointer.
     renderer::TerrainSourcePtr ResolveTerrainSource(u64 id);
     // The texture resource `id` as a device texture, or an empty pointer.
@@ -187,6 +189,14 @@ private:
     DenseMap<u64, Mesh> meshes_;         // by resource id; released in the order they were made
     DenseMap<u64, Material> materials_;  // by resource id
     ResourceHost* resources_ = nullptr;
+    // An instanced set or tree of the world as the render scene has it.
+    struct InstancedEntry
+    {
+        u64 id = 0;  // the world's id of the set or tree
+        renderer::InstancedId scene_id;
+        bool seen = false;
+    };
+    Vector<InstancedEntry> instanced_entries_;
     DenseMap<u64, TerrainEntry> terrain_entries_;  // by entity
     Vector<TerrainSource> terrain_sources_;        // by height-map id
     DenseMap<u64, Texture> textures_;              // by resource id (a terrain's layers and splat map)
@@ -194,11 +204,12 @@ private:
     u64 label_font_version_ = 0;  // of the font this surface's frame opened
     LiveTextures live_;           // the device side of the host textures the world's slots name
     renderer::MaterialId default_material_;
-    renderer::MaterialId default_skinned_material_;  // for meshes with a skin stream (Day 363)
-    renderer::Camera last_camera_;                   // the camera of the last frame, for PixelRay and Project
-    Vec3d last_origin_ = Vec3d(0, 0, 0);             // the render origin `last_camera_` is relative to
-    Vec3d last_camera_world_ = Vec3d(0, 0, 0);       // the camera's exact world position (PixelRay's origin)
-    scene::SceneLink link_;                          // the render origin (the scene pointer stays null)
+    renderer::MaterialId default_instanced_material_;  // for the world's instanced sets and trees
+    renderer::MaterialId default_skinned_material_;    // for meshes with a skin stream (Day 363)
+    renderer::Camera last_camera_;                     // the camera of the last frame, for PixelRay and Project
+    Vec3d last_origin_ = Vec3d(0, 0, 0);               // the render origin `last_camera_` is relative to
+    Vec3d last_camera_world_ = Vec3d(0, 0, 0);         // the camera's exact world position (PixelRay's origin)
+    scene::SceneLink link_;                            // the render origin (the scene pointer stays null)
     u32 last_width_ = 0;
     u32 last_height_ = 0;
 };

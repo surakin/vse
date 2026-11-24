@@ -10,6 +10,7 @@
 #include "ecs/world.h"
 #include "engine/engine_c.h"
 #include "engine_c/host_texture.h"
+#include "engine_c/instances.h"
 #include "engine_c/script_api.h"
 #include "jobs/job.h"
 #include "audio/spatial_audio.h"
@@ -292,6 +293,7 @@ struct WorldObject
     Vector<ColliderMeshEntry> collider_meshes;
     Vector<ColliderFieldEntry> collider_fields;  ///< The height fields made from `HGHT`s.
     bool collider_sources = false;  ///< Whether a collider source was added: the frame resolves them only then.
+    WorldInstances instances;       ///< The instanced sets and trees of the world (the C API's instance_* functions).
 };
 
 /// A count of jobs not yet finished.

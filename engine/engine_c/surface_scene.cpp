@@ -43,6 +43,7 @@ SurfaceScene::SurfaceScene(rhi::Device* device, rhi::Swapchain* swapchain, Resou
     renderer::RenderSceneDesc desc;
     desc.max_objects = kMaxObjects;
     desc.max_lights = kMaxLights;
+    desc.max_instanced = 1024;
     scene_ = MakeUnique<renderer::RenderScene>(desc);
     // The lights are mirrored from the world's light entities and its environment at each frame (SyncLights).
     // A manager of this device's own over the memory backend the host adds content to: allow_fallbacks is off, so a
@@ -67,8 +68,14 @@ SurfaceScene::SurfaceScene(rhi::Device* device, rhi::Swapchain* swapchain, Resou
     skinned_options.skinned = true;
     default_skinned_material_ = renderer::CreateGBufferMaterial(frame_.Materials(), frame_.Templates(), skinned_options,
                                                                 "default skinned material");
+    renderer::GBufferOptions instanced_options;
+    instanced_options.instanced = true;
+    default_instanced_material_ = renderer::CreateGBufferMaterial(frame_.Materials(), frame_.Templates(),
+                                                                  instanced_options, "default instanced material");
     if (frame_.Materials()->SetVec4(default_material_, "base_color", Vec4(0.7f, 0.7f, 0.7f, 1.0f)) &&
-        frame_.Materials()->SetVec4(default_skinned_material_, "base_color", Vec4(0.7f, 0.7f, 0.7f, 1.0f)))
+        frame_.Materials()->SetVec4(default_skinned_material_, "base_color", Vec4(0.7f, 0.7f, 0.7f, 1.0f)) &&
+        default_instanced_material_.IsValid() &&
+        frame_.Materials()->SetVec4(default_instanced_material_, "base_color", Vec4(0.7f, 0.7f, 0.7f, 1.0f)))
     {
         valid_ = true;
     }
@@ -83,6 +90,7 @@ SurfaceScene::~SurfaceScene()
     // Reverse order of creation: what the scene points at (meshes), then the frame, then the manager's backend mount.
     entries_.Clear();
     light_entries_.Clear();
+    instanced_entries_.Clear();
     terrain_entries_.Clear();
     terrain_sources_.Clear();
     while (instances_.Size() != 0)
@@ -279,6 +287,137 @@ void SurfaceScene::SyncTerrains(WorldObject& world, SceneFrameReport* report)
         {
             scene_->RemoveTerrain(e.id);
             terrain_entries_.RemoveAt(i);
+        }
+        else
+        {
+            ++i;
+        }
+    }
+}
+
+namespace
+{
+
+// A mesh the instanced draw takes: rigid, not morphed, with no vertex colour stream (the pass refuses the frame for one
+// that is not).
+bool InstanceableMesh(const renderer::GpuMesh* mesh)
+{
+    if (mesh == nullptr || mesh->Skinned() || mesh->MorphTargetCount() != 0)
+    {
+        return false;
+    }
+    const renderer::VertexLayoutData& layout = mesh->Layout();
+    for (u32 i = 0; i < layout.attribute_count; ++i)
+    {
+        if (layout.attributes[i].location == 4 && layout.attributes[i].format == rhi::VertexFormat::UNorm8x4)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+}  // namespace
+
+void SurfaceScene::SyncInstances(WorldObject& world, SceneFrameReport* report)
+{
+    for (usize i = 0; i < instanced_entries_.Size(); ++i)
+    {
+        instanced_entries_[i].seen = false;
+    }
+    auto place = [&](const InstancePlacement& p, renderer::InstancedObject* object)
+    {
+        object->position = (p.position - link_.origin).Narrow();
+        object->rotation = p.rotation;
+        object->scale = p.scale;
+        object->max_distance = p.max_distance;
+        object->min_size_ratio = p.min_size_ratio;
+        object->flags = p.hidden ? renderer::ObjectFlags::kHidden : 0u;
+        object->material = default_instanced_material_.index;
+    };
+    auto put = [&](u64 id, const renderer::InstancedObject& object)
+    {
+        InstancedEntry* entry = nullptr;
+        for (usize i = 0; i < instanced_entries_.Size(); ++i)
+        {
+            if (instanced_entries_[i].id == id)
+            {
+                entry = &instanced_entries_[i];
+            }
+        }
+        if (entry == nullptr)
+        {
+            const renderer::InstancedId made = scene_->AddInstanced(object);
+            if (!made.IsValid())
+            {
+                ++report->entities_unresolved;  // the scene has no room for another instanced object
+                return;
+            }
+            InstancedEntry fresh;
+            fresh.id = id;
+            fresh.scene_id = made;
+            fresh.seen = true;
+            instanced_entries_.Push(fresh);
+            return;
+        }
+        scene_->SetInstanced(entry->scene_id, object);
+        entry->seen = true;
+    };
+    for (usize s = 0; s < world.instances.sets.Size(); ++s)
+    {
+        const WorldInstanceSet& set = world.instances.sets[s];
+        const renderer::GpuMesh* mesh = set.mesh != 0 ? ResolveMesh(set.mesh) : nullptr;
+        if (!InstanceableMesh(mesh) || set.set->Count() == 0)
+        {
+            if (!InstanceableMesh(mesh))
+            {
+                ++report->entities_unresolved;
+            }
+            continue;  // an entry it had stays unseen and is removed below
+        }
+        renderer::InstancedObject object;
+        object.set = set.set;
+        object.mesh = mesh;
+        place(set.placement, &object);
+        put(set.id, object);
+    }
+    for (usize t = 0; t < world.instances.trees.Size(); ++t)
+    {
+        WorldInstanceTree& entry = world.instances.trees[t];
+        renderer::InstancedObject object;
+        object.tree = entry.tree;
+        bool usable = true;
+        for (u32 i = 0; i < entry.mesh_count; ++i)
+        {
+            const renderer::GpuMesh* mesh = entry.meshes[i] != 0 ? ResolveMesh(entry.meshes[i]) : nullptr;
+            if (!InstanceableMesh(mesh))
+            {
+                usable = false;
+                break;
+            }
+            object.tree_meshes[i] = mesh;
+            object.tree_materials[i] = default_instanced_material_.index;
+        }
+        if (!usable)
+        {
+            ++report->entities_unresolved;
+            continue;
+        }
+        entry.tree->UpdateWorldTransforms(nullptr);  // only what SetLocal marked
+        place(entry.placement, &object);
+        for (u32 i = 0; i < renderer::kMaxSceneTreeMeshes; ++i)
+        {
+            object.tree_materials[i] = default_instanced_material_.index;
+        }
+        put(entry.id, object);
+    }
+    for (usize i = 0; i < instanced_entries_.Size();)
+    {
+        if (!instanced_entries_[i].seen)
+        {
+            scene_->RemoveInstanced(instanced_entries_[i].scene_id);
+            instanced_entries_[i] = instanced_entries_[instanced_entries_.Size() - 1];
+            instanced_entries_.Pop();
         }
         else
         {
@@ -1004,6 +1143,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
     live_.EndFrame();  // textures no slot names any more are dropped
     SyncLights(world, &report);
     SyncTerrains(world, &report);
+    SyncInstances(world, &report);
     renderer::Camera camera;  // the default camera unless the host named one that works
     const Vec3 default_eye = (Vec3d(0.0, 1.5, 5.0) - link_.origin).Narrow();
     const Vec3 default_target = (Vec3d(0.0, 0.0, 0.0) - link_.origin).Narrow();

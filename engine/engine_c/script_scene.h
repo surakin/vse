@@ -1,8 +1,9 @@
 #pragma once
 //! The scene bindings of a world's scripts: `environment.set`, `light.set` and `light.create`. Internal to the module
-//! `engine_c` (the environment and the light component are the C API's own data), built only where the script module
-//! is. A script changes the sky, the ambient light and exposure of its world, and the colour, intensity and reach of
-//! its lights; the changes are commands applied at the sync point, so every surface shows them from its next frame.
+//! `engine_c` (the environment, the light component and the world's instanced sets and trees are the C API's own data),
+//! built only where the script module is. A script changes the sky, the ambient light and exposure of its world, and
+//! the colour, intensity and reach of its lights; the changes are commands applied at the sync point, so every surface
+//! shows them from its next frame.
 #include "ecs/entity.h"
 #include "script/bindings.h"
 #include "script/entity_bindings.h"
@@ -20,9 +21,13 @@ struct WorldObject;
 /// - Thread-safety: thread-compatible plain data.
 enum SceneCommandKind : u16
 {
-    kCommandEnvironmentSet = 130,  ///< `environment.set`: a global command (it names no entity).
-    kCommandLightSet = 131,        ///< `light.set`: changes fields of an entity's light.
-    kCommandLightCreate = 132,     ///< `light.create`: puts a light on an entity.
+    kCommandEnvironmentSet = 130,   ///< `environment.set`: a global command (it names no entity).
+    kCommandLightSet = 131,         ///< `light.set`: changes fields of an entity's light.
+    kCommandLightCreate = 132,      ///< `light.create`: puts a light on an entity.
+    kCommandInstancesAdd = 133,     ///< `instances.add`: a global command, applied in the merge order.
+    kCommandInstancesSet = 134,     ///< `instances.set`: moves one instance of a set.
+    kCommandInstancesRemove = 135,  ///< `instances.remove`: removes one instance of a set.
+    kCommandTreeSetLocal = 136,     ///< `tree.set_local`: sets a node's local transform.
 };
 
 /// What the scene bindings need: its address goes in `MergeServices::extensions[script::kServiceScene]`.
@@ -51,7 +56,8 @@ struct SceneNames
     script::SceneServices services;  ///< Give its address to `ScriptRuntimeConfig::scene`.
 };
 
-/// Registers `environment.set`, `light.set` and `light.create`.
+/// Registers `environment.set`, `light.set`, `light.create`, `instances.add`, `instances.set`, `instances.remove` and
+/// `tree.set_local`.
 /// - Returns: false when a name is already taken.
 bool RegisterSceneBindings(script::BindingRegistry* registry);
 

@@ -332,7 +332,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=1248
+struct engine_api size=1328
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -666,3 +666,31 @@ field engine_terrain.fade_end offset=52 size=4
 field engine_terrain.layers offset=56 size=96
 field engine_terrain.friction offset=152 size=4
 field engine_terrain.restitution offset=156 size=4
+value ENGINE_INSTANCE_MESHES_MAX 16
+value ENGINE_INSTANCE_HIDDEN 1
+struct engine_instance_placement size=64
+field engine_instance_placement.struct_size offset=0 size=4
+field engine_instance_placement.flags offset=4 size=4
+field engine_instance_placement.position offset=8 size=24
+field engine_instance_placement.rotation offset=32 size=16
+field engine_instance_placement.scale offset=48 size=4
+field engine_instance_placement.max_distance offset=52 size=4
+field engine_instance_placement.min_size_ratio offset=56 size=4
+field engine_instance_placement.reserved offset=60 size=4
+struct engine_instance size=80
+field engine_instance.position offset=0 size=24
+field engine_instance.rotation offset=24 size=16
+field engine_instance.scale offset=40 size=12
+field engine_instance.tint offset=52 size=16
+field engine_instance.custom offset=68 size=4
+field engine_instance.reserved offset=72 size=8
+struct engine_tree_node size=96
+field engine_tree_node.position offset=0 size=24
+field engine_tree_node.rotation offset=24 size=16
+field engine_tree_node.scale offset=40 size=12
+field engine_tree_node.tint offset=52 size=16
+field engine_tree_node.custom offset=68 size=4
+field engine_tree_node.parent offset=72 size=4
+field engine_tree_node.mesh offset=76 size=4
+field engine_tree_node.flags offset=80 size=4
+field engine_tree_node.reserved offset=84 size=12

@@ -20,6 +20,7 @@
 #include "engine_c/engine_objects.h"
 #include "engine_c/host_texture.h"
 #include "engine_c/import.h"
+#include "engine_c/instances.h"
 #include "engine_c/resources.h"
 #include "engine_c/audio_api.h"
 #include "engine_c/runtime.h"
@@ -882,6 +883,16 @@ extern "C"
             &engine_c::ScriptTaskRunFn,
             &engine_c::HeightMapCreateFn,
             &engine_c::TerrainHeightFn,
+            &engine_c::InstanceSetCreateFn,
+            &engine_c::InstanceSetUpdateFn,
+            &engine_c::InstanceSetAddManyFn,
+            &engine_c::InstanceSetSetTransformFn,
+            &engine_c::InstanceSetRemoveFn,
+            &engine_c::InstanceSetGetTransformFn,
+            &engine_c::InstanceTreeCreateFn,
+            &engine_c::InstanceTreeUpdateFn,
+            &engine_c::InstanceTreeSetLocalFn,
+            &engine_c::InstanceDestroyFn,
         };
         *out = &table;
         return ENGINE_OK;

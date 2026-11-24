@@ -10007,7 +10007,7 @@ scene::WindState::time	variable	scene	scene-windstate-time	scene.md	engine/scene
 scene::WindState::amplitude	variable	scene	scene-windstate-amplitude	scene.md	engine/scene/instance_wind.h:22
 scene::WindState::frequency	variable	scene	scene-windstate-frequency	scene.md	engine/scene/instance_wind.h:23
 scene::WindAngle(const WindState&,u32)	function	scene	scene-windangle-const-windstate-amp-u32	scene.md	engine/scene/instance_wind.h:30
-scene::MakeWindSystem(const char*)	function	scene	scene-makewindsystem-const-char-star	scene.md	engine/scene/instance_wind.h:39
+scene::MakeWindSystem(const char*)	function	scene	scene-makewindsystem-const-char-star	scene.md	engine/scene/instance_wind.h:40
 scene::SpawnedLevel	struct	scene	scene-spawnedlevel	scene.md	engine/scene/level_spawner.h:28
 scene::SpawnedLevel::levels	variable	scene	scene-spawnedlevel-levels	scene.md	engine/scene/level_spawner.h:30
 scene::SpawnedLevel::materials	variable	scene	scene-spawnedlevel-materials	scene.md	engine/scene/level_spawner.h:31
