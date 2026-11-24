@@ -35,7 +35,7 @@ namespace vse::engine_c
 
 #if ENGINE_C_WITH_IMPORTER
 
-namespace
+namespace detail  // named, not anonymous: GCC refuses a class member whose type has internal linkage
 {
 
 constexpr usize kMaxImportTickets = 256;  // each is a job of the engine's scheduler, whose queues are bounded
@@ -113,7 +113,9 @@ private:
     void* user_ = nullptr;
 };
 
-}  // namespace
+}  // namespace detail
+
+using namespace detail;
 
 // One import: what its options point to, and the ticket of an asynchronous one.
 struct ImportObject

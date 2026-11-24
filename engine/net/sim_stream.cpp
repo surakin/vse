@@ -5,7 +5,7 @@
 
 namespace vse::net
 {
-namespace
+namespace detail  // named, not anonymous: GCC refuses a class member whose type has internal linkage
 {
 
 // Bytes in flight in one direction, each chunk with the time it arrives.
@@ -152,7 +152,9 @@ struct StreamPending
     u64 ready = 0;
 };
 
-}  // namespace
+}  // namespace detail
+
+using namespace detail;
 
 // The provider of one endpoint: its listener's accept queue lives here.
 class SimStreamProvider final : public StreamProvider

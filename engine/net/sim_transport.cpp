@@ -10,7 +10,7 @@
 namespace vse::net
 {
 
-namespace
+namespace detail  // named, not anonymous: GCC refuses a member of `Impl` whose type has internal linkage
 {
 
 enum PacketKind : u8
@@ -160,7 +160,9 @@ struct Lingering
     u64 next_send = 0;
 };
 
-}  // namespace
+}  // namespace detail
+
+using namespace detail;
 
 struct SimulatedTransport::Impl
 {

@@ -162,8 +162,12 @@ foreach(suffix "" "_asan" "_tsan")
                         DEFINES "UNLOAD_DUMP_DIR=\"${CMAKE_CURRENT_BINARY_DIR}/unload_dump${suffix}\""
                         PASS_REGEX "the engine library (left the address space|was closed \\(dyld keeps)")
 endforeach()
-# Day 351: the same glTF import test against the shared library (the importer is inside the aggregate library).
+# Day 351: the same glTF import test against the shared library (the importer is inside the aggregate library). A library built
+# without the importer (ENGINE_LIBRARY_WITH_IMPORTER=OFF) answers UNSUPPORTED to every import call, so this test has nothing to check there.
 foreach(suffix "" "_asan" "_tsan")
+  if(NOT ENGINE_LIBRARY_WITH_IMPORTER)
+    break()
+  endif()
   set(import_tsan 0)
   if(suffix STREQUAL "_tsan")
     set(import_tsan 1)  # ThreadSanitizer cannot follow libpng's longjmp (KNOWN-ISSUES.md): the test leaves the PNG of the fixture uncorrupted

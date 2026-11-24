@@ -24,18 +24,22 @@ struct ComponentSet
     void Add(ComponentId id)
     {
         ENGINE_ASSERT(id < kMaxComponentTypes, "ComponentSet::Add: the id is out of range");
-        words[id >> 6] |= u64{1} << (id & 63u);
+        words[(id >> 6) & 1u] |= u64{1} << (id &
+                                            63u);  // `& 1`: the id is below 128, which a release build cannot show GCC
     }
     /// Removes `id` (no effect when absent).
     /// - Aborts: `id` is not below [[ecs::kMaxComponentTypes]].
     void Remove(ComponentId id)
     {
         ENGINE_ASSERT(id < kMaxComponentTypes, "ComponentSet::Remove: the id is out of range");
-        words[id >> 6] &= ~(u64{1} << (id & 63u));
+        words[(id >> 6) & 1u] &= ~(u64{1} << (id & 63u));
     }
     /// Returns whether `id` is in the set (false for an id out of range).
     /// - Fails: never.
-    bool Has(ComponentId id) const { return id < kMaxComponentTypes && ((words[id >> 6] >> (id & 63u)) & 1u) != 0; }
+    bool Has(ComponentId id) const
+    {
+        return id < kMaxComponentTypes && ((words[(id >> 6) & 1u] >> (id & 63u)) & 1u) != 0;
+    }
     /// Returns whether the set is empty.
     /// - Fails: never.
     bool IsEmpty() const { return (words[0] | words[1]) == 0; }

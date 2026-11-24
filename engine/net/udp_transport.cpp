@@ -10,7 +10,7 @@
 namespace vse::net
 {
 
-namespace
+namespace detail  // named, not anonymous: GCC refuses a class member whose type has internal linkage
 {
 
 constexpr usize kUdpMaxMessageBytes = 65535u * 1024u;  // fragment counts are 16 bits
@@ -264,7 +264,9 @@ void PadTo(Vector<byte>* out, usize size)
     }
 }
 
-}  // namespace
+}  // namespace detail
+
+using namespace detail;
 
 struct UdpTransport::Impl
 {

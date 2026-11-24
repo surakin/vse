@@ -34,7 +34,7 @@ namespace vse::engine_c
 
 #if ENGINE_C_WITH_SCRIPT
 
-namespace
+namespace detail  // named, not anonymous: GCC refuses a class member whose type has internal linkage
 {
 
 constexpr usize kMaxScripts = 1024;
@@ -551,7 +551,9 @@ private:
     bool held_;
 };
 
-}  // namespace
+}  // namespace detail
+
+using namespace detail;
 
 struct ScriptHost::Impl
 {

@@ -6,7 +6,7 @@
 
 namespace vse::net
 {
-namespace
+namespace detail  // named, not anonymous: GCC refuses a class member whose type has internal linkage
 {
 
 constexpr u8 kProtocolVersion = 1;
@@ -107,7 +107,9 @@ u64 TcpGetU64(ByteSpan b, usize at)
     return x;
 }
 
-}  // namespace
+}  // namespace detail
+
+using namespace detail;
 
 struct TcpTransport::Impl
 {

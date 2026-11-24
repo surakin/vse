@@ -118,7 +118,9 @@ inline const FormatProperties& FormatInfo(Format format)
 {
     ENGINE_ASSERT(static_cast<usize>(format) < static_cast<usize>(Format::Count),
                   "rhi::FormatInfo: format out of range");
-    return detail::kFormatTable[static_cast<usize>(format)];
+    const usize index = static_cast<usize>(format);
+    return detail::kFormatTable[index < static_cast<usize>(Format::Count) ? index
+                                                                          : 0];  // a release build has no assert
 }
 
 /// Returns the extent of mip level `mip` of a dimension `base` texels long: halved per level, never below 1.
