@@ -135,20 +135,97 @@ BodyStatus PhysicsWorld::DestroyBody(BodyId id)
         RefreshQueryIndex(next);  // gone: the index drops it
         next = following;
     }
-    // The joints of the body go with it.
-    const u32 joint_slots = joints_.Slots();
-    for (u32 slot = 0; slot < joint_slots; ++slot)
+    // The joints of the body go with it (found through the body's list, in slot order).
+    if (const Vector<u32>* listed = body_joints_.Find(id.index))
     {
-        const u32 generation = joints_.LiveGeneration(slot);
-        const JointRecord* joint = joints_.Find(slot, generation);
-        if (joint != nullptr && (joint->desc.body_a == id || joint->desc.body_b == id))
+        Vector<u32> slots;
+        for (usize i = 0; i < listed->Size(); ++i)
         {
-            joints_.Release(slot, generation);
+            if (JointNames((*listed)[i], id))
+            {
+                slots.Push((*listed)[i]);
+            }
         }
+        for (usize i = 1; i < slots.Size(); ++i)  // ascending, as the scan over every slot released them
+        {
+            const u32 held = slots[i];
+            usize j = i;
+            while (j > 0 && slots[j - 1] > held)
+            {
+                slots[j] = slots[j - 1];
+                --j;
+            }
+            slots[j] = held;
+        }
+        for (usize i = 0; i < slots.Size(); ++i)
+        {
+            if (i > 0 && slots[i] == slots[i - 1])
+            {
+                continue;  // listed twice (both ends on the body, or a slot reused)
+            }
+            joints_.Release(slots[i], joints_.LiveGeneration(slots[i]));
+        }
+        body_joints_.Remove(id.index);
     }
     DropEventsOf(id);
     bodies_.Release(id.index, id.generation);
     return BodyStatus::Ok;
+}
+
+bool PhysicsWorld::JointNames(u32 slot, BodyId body) const
+{
+    if (slot >= joints_.Slots())
+    {
+        return false;
+    }
+    const u32 generation = joints_.LiveGeneration(slot);
+    if (generation == 0)
+    {
+        return false;
+    }
+    const JointRecord* joint = joints_.Find(slot, generation);
+    return joint != nullptr && (joint->desc.body_a == body || joint->desc.body_b == body);
+}
+
+void PhysicsWorld::IndexJoint(u32 slot, const JointDesc& desc)
+{
+    const BodyId ends[2] = {desc.body_a, desc.body_b};
+    for (u32 e = 0; e < 2; ++e)
+    {
+        if (!ends[e].IsValid() || (e == 1 && ends[1] == ends[0]))
+        {
+            continue;
+        }
+        Vector<u32>& list = *body_joints_.Emplace(ends[e].index).value;
+        // Slots whose joints are gone pile up in the list of a body that keeps living: drop them each time the list
+        // doubles past eight entries, so it stays within twice the joints the body has.
+        if (list.Size() >= 8 && (list.Size() & (list.Size() - 1)) == 0)
+        {
+            usize kept = 0;
+            for (usize i = 0; i < list.Size(); ++i)
+            {
+                if (JointNames(list[i], ends[e]))
+                {
+                    list[kept++] = list[i];
+                }
+            }
+            list.Resize(kept);
+        }
+        list.Push(slot);
+    }
+}
+
+void PhysicsWorld::RebuildJointIndex()
+{
+    body_joints_ = HashMap<u32, Vector<u32>, HeapAllocator>(HeapAllocator::Default());
+    for (u32 slot = 0; slot < joints_.Slots(); ++slot)
+    {
+        const u32 generation = joints_.LiveGeneration(slot);
+        if (generation != 0)
+        {
+            IndexJoint(slot, joints_.Find(slot, generation)->desc);
+        }
+    }
 }
 
 JointId PhysicsWorld::CreateJoint(const JointDesc& desc, BodyStatus* status)
@@ -188,6 +265,7 @@ JointId PhysicsWorld::CreateJoint(const JointDesc& desc, BodyStatus* status)
         return fail(BodyStatus::OutOfMemory);
     }
     record->desc = desc;
+    IndexJoint(index, desc);
     if (a != nullptr)
     {
         WakeIsland(Find(desc.body_a));

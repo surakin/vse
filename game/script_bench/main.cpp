@@ -3,8 +3,8 @@
 // the regression check (generous bounds: a 3x slowdown fails it), `--scene stress` the large run (a million scripted
 // entities, state checked); both are registered with ctest in an optimized build only.
 //
-//   script_bench [--scene S]      calls, tick, partitions, events, waits, tasks, memory, check, stress or all (default
-//   all, which
+//   script_bench [--scene S]      calls, tick, partitions, merge, events, waits, tasks, memory, check, stress or all
+//   (default all, which
 //                                 leaves out check and stress)
 //                [--entities N]   the entity count of `tick` (default: 10000, 100000 and 1000000)
 //                [--ticks N]      timed ticks per measurement (default 5)
@@ -59,6 +59,11 @@ behavior('mixer', {
     component.set(self.entity, 'bench_counter', { count = c.count + 1, noise = c.noise + random.int(0, 9) })
     local p = transform.position(self.entity)
     transform.set_position(self.entity, vec3.new(p.x + 1, p.y, p.z + random.int(0, 3)))
+  end,
+})
+behavior('mover', {
+  on_update = function(self, dt)
+    transform.set_position(self.entity, vec3.new(random.int(0, 9), 1, 2))
   end,
 })
 behavior('lean', {
@@ -252,6 +257,35 @@ void ScenePartitions(u32 entities)
 }
 
 // ---- events: one native event delivered to every listener
+
+// How much of a tick the merge is: entities that each record one transform write per tick. `merge_nanoseconds` is the
+// wall time of the merges alone. (Spawns need a scene's prefabs, which the bench has none of.)
+void SceneMerge(u32 entities)
+{
+    const char* const behaviors[] = {"mover"};
+    const char* const names[] = {"one transform write each"};
+    for (u32 b = 0; b < 1; ++b)
+    {
+        jobs::Scheduler scheduler(ConfigFor(8));
+        Rig rig(64);
+        rig.Fill(entities, behaviors[b], false);
+        rig.runtime->Tick(&rig.world, 0.016, &scheduler);  // warm-up: the instances are made
+        const u64 merge0 = rig.runtime->Stats().merge_nanoseconds;
+        const u64 commands0 = rig.runtime->Stats().commands_applied;
+        const u64 t0 = os::MonotonicTimeNanos();
+        for (u32 i = 0; i < g_ticks; ++i)
+        {
+            rig.runtime->Tick(&rig.world, 0.016, &scheduler);
+        }
+        const u64 total = os::MonotonicTimeNanos() - t0;
+        const u64 merge = rig.runtime->Stats().merge_nanoseconds - merge0;
+        const u64 commands = rig.runtime->Stats().commands_applied - commands0;
+        out::Print("merge (%s): %u entities, 8 threads: tick %.2f ms, merge %.2f ms (%.0f%%), %.0f ns per command\n",
+                   names[b], entities, Ms(total / g_ticks), Ms(merge / g_ticks),
+                   100.0 * static_cast<double>(merge) / static_cast<double>(total),
+                   commands == 0 ? 0.0 : static_cast<double>(merge) / static_cast<double>(commands));
+    }
+}
 
 void SceneEvents(u32 entities)
 {
@@ -480,7 +514,7 @@ int main(int argc, char** argv)
     if (!line.Ok() || line.ArgCount() != 0)
     {
         out::PrintError(
-            "usage: %s [--scene calls|tick|partitions|events|waits|tasks|memory|check|stress|all] [--entities N] [--ticks N]\n",
+            "usage: %s [--scene calls|tick|partitions|merge|events|waits|tasks|memory|check|stress|all] [--entities N] [--ticks N]\n",
             line.ProgramName().Data());
         return 2;
     }
@@ -522,6 +556,10 @@ int main(int argc, char** argv)
     if (all || CStrCompare(scene, "partitions") == 0)
     {
         ScenePartitions(entities != 0 ? entities : 100000);
+    }
+    if (all || CStrCompare(scene, "merge") == 0)
+    {
+        SceneMerge(entities != 0 ? entities : 100000);
     }
     if (all || CStrCompare(scene, "events") == 0)
     {

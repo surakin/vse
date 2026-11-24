@@ -188,8 +188,9 @@ Scripts reach settings only through `settings.*` (`engine/script/settings_bindin
 - **Names and prefabs** are the scene's, not the script module's: a host fills `SceneServices` (`name_of`, `find`, `has_prefab`; the level's `asset::EntityName` is adapted by the host) and, for `entity.spawn("name")`, the merge's
   `MergeServices::prefabs` (`PrefabSource`). Without them `entity.name` and `entity.find` return nil and a prefab spawn is an error. `entity.find` costs a search of the scene: keep the result.
 - **`self`:** `entity.self()` is the entity whose script runs (the `current_entity_key` of the job's context); the callbacks also pass it as their first argument.
-- **The merge** applies the commands one at a time in `(partition, entity id, sequence)` order. A batched structural pass (one pass per component type) is not done: the ordinary structural path is used per command
-  (recorded in `KNOWN-ISSUES.md`).
+- **The merge** applies the commands one at a time in `(partition, entity id, sequence)` order. A batched structural pass (one pass per component type) is not built: the merge was measured (`script_bench --scene merge`,
+  Release, 100,000 entities each recording one transform write per tick, 8 threads): 10 to 11 ms of an 81 to 86 ms tick, 12 to 13 percent,
+  about 100 ns per command, so the ordinary path is used per command.
 - The test `entity_bindings_test.cpp` runs 300 entities for 120 ticks (move, rotate, spawn children, parent, destroy): one world hash on 1 and 8 threads.
 
 ## Components and queries

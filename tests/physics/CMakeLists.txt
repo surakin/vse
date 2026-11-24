@@ -57,11 +57,16 @@ target_compile_options(physics_fp_probe_control PRIVATE ${_physics_control_optio
 function(engine_add_physics_tests target physics_lib suffix label)
   add_executable(${target} ${PHYSICS_TEST_SOURCES} ../ecs/alloc_counter.cpp $<TARGET_OBJECTS:physics_fp_probe_project> $<TARGET_OBJECTS:physics_fp_probe_control>)
   target_link_libraries(${target} PRIVATE ${physics_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecs)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecs ${CMAKE_SOURCE_DIR}/tests/support)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
+  # The planned scale of the stress scenes (tests/support/soak.h): the plain flavor only.
+  if(label STREQUAL "physics")
+    engine_soak_catch_test(${target} "Stress: random bodies dropped in a box do not explode" SOURCE tests/physics/stress_test.cpp)
+    engine_soak_catch_test(${target} "Stress: a spinning body keeps a unit quaternion over a long run" SOURCE tests/physics/stress_test.cpp)
+  endif()
 endfunction()
 
 engine_add_physics_tests(physics_tests physics "" "physics")

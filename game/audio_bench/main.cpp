@@ -6,8 +6,8 @@
 //
 //   audio_bench [--voices N]  the voice count of the voice scenes (default: 100, 1000 and 4000)
 //               [--blocks N]  timed blocks per measurement (default 400)
-//               [--scene S]   voices, filters, reverb, surround, streams, large or all (default all; `all` leaves out
-//               `large`)
+//               [--scene S]   voices, filters, reverb, surround, streams, memory, limit, large or all (default all;
+//               `all` leaves out `large`)
 //               [--long-blocks N] the blocks of `large` (default 10000000)
 #include "audio/block_hash.h"
 #include "log/output.h"
@@ -243,6 +243,93 @@ void SceneStreams(u32 count)
     Report("streams (refill included)", count, TimeBlocks(mixer, 2, g_blocks, &pump));
 }
 
+// What the pool, an effect and a stream cost in memory: the resident set before and after making many of each (the
+// numbers are the process's resident pages, so they are rounded to pages and include the allocator's own overhead).
+void SceneMemory()
+{
+    const AudioClipPtr clip = MakeTone(1);
+    const i64 base = os::ResidentMemoryKiB();
+    {
+        Mixer small;
+        small.Init(Config(ChannelLayout::Stereo, ResamplerQuality::Hermite, 16));
+        const i64 with_small = os::ResidentMemoryKiB();
+        Mixer big;
+        big.Init(Config(ChannelLayout::Stereo, ResamplerQuality::Hermite, kMaxVoices));
+        const i64 with_big = os::ResidentMemoryKiB();
+        out::PrintError(
+            "memory: a mixer of 16 voices %lld KiB, one of %u voices %lld KiB more = %.1f bytes per pool slot\n",
+            static_cast<long long>(with_small - base), static_cast<u32>(kMaxVoices),
+            static_cast<long long>(with_big - with_small),
+            static_cast<double>(with_big - with_small) * 1024.0 / static_cast<double>(kMaxVoices));
+        // Playing voices cost what the pool already holds: the clip is shared.
+        Start(big, clip, 1000, BusId{0}, BusId{0xFFFFFFFFu}, 0.0f, false);
+        Vector<f32> out;
+        out.Resize(static_cast<usize>(kBlockFrames) * 2);
+        big.RenderBlock(Span<f32>(out.Data(), out.Size()));
+        out::PrintError("memory: 1,000 playing voices on that pool: %lld KiB more\n",
+                        static_cast<long long>(os::ResidentMemoryKiB() - with_big));
+    }
+    const i64 before_effects = os::ResidentMemoryKiB();
+    Vector<UniquePtr<Effect>> reverbs;
+    for (u32 i = 0; i < 64; ++i)
+    {
+        reverbs.Push(MakeReverbEffect(2, ReverbPresetDesc(ReverbPreset::Hall, 48000)));
+    }
+    const i64 after_reverbs = os::ResidentMemoryKiB();
+    Vector<UniquePtr<Effect>> delays;
+    for (u32 i = 0; i < 64; ++i)
+    {
+        delays.Push(MakeDelayEffect(2, 48000, 1.0f, 64));
+    }
+    const i64 after_delays = os::ResidentMemoryKiB();
+    Vector<UniquePtr<Effect>> filters;
+    for (u32 i = 0; i < 256; ++i)
+    {
+        filters.Push(MakeFilterEffect(2, 64));
+    }
+    const i64 after_filters = os::ResidentMemoryKiB();
+    out::PrintError("memory: a hall reverb %.1f KiB, a 1 s stereo delay %.1f KiB, a filter %.2f KiB\n",
+                    static_cast<double>(after_reverbs - before_effects) / 64.0,
+                    static_cast<double>(after_delays - after_reverbs) / 64.0,
+                    static_cast<double>(after_filters - after_delays) / 256.0);
+    const i64 before_streams = os::ResidentMemoryKiB();
+    Vector<StreamBufferPtr> streams;
+    for (u32 i = 0; i < 200; ++i)
+    {
+        UniquePtr<StreamSource> source;
+        MakeMemoryStream(clip, &source);
+        StreamConfig config;
+        config.id = i + 1;
+        StreamBufferPtr buffer;
+        StreamBuffer::Create(Move(source), config, &buffer);
+        buffer->Refill();
+        streams.Push(buffer);
+    }
+    out::PrintError("memory: a stream buffer (default config, refilled) %.1f KiB\n",
+                    static_cast<double>(os::ResidentMemoryKiB() - before_streams) / 200.0);
+}
+
+// 5,000 voices against a pool that tops out at 4,096: `Init` refuses a larger pool, and a full pool steals the quietest
+// voice or refuses the new one; the run prints what happened.
+void SceneLimit()
+{
+    const AudioClipPtr clip = MakeTone(1);
+    Mixer too_big;
+    const MixerStatus status = too_big.Init(Config(ChannelLayout::Stereo, ResamplerQuality::Hermite, 5000));
+    out::PrintError("limit: a pool of 5000 voices: Init returns status %u (%s)\n", static_cast<u32>(status),
+                    status == MixerStatus::Ok ? "accepted" : "refused");
+    Mixer mixer;
+    mixer.Init(Config(ChannelLayout::Stereo, ResamplerQuality::Hermite, kMaxVoices));
+    Start(mixer, clip, 5000, BusId{0}, BusId{0xFFFFFFFFu}, 0.0f, false);
+    const Timing t = TimeBlocks(mixer, 2, g_blocks);
+    const MixerStats stats = mixer.Stats();
+    Report("5000 asked, pool of 4096", stats.voices_mixed, t);
+    out::PrintError("limit: voices mixed %u, stolen %llu, refused %llu, commands dropped %llu\n", stats.voices_mixed,
+                    static_cast<unsigned long long>(stats.voices_stolen),
+                    static_cast<unsigned long long>(stats.voices_refused),
+                    static_cast<unsigned long long>(stats.commands_dropped));
+}
+
 // The stress run: a looping scene whose parameters change at random; checks that every sample is finite and bounded.
 bool SceneLarge(u64 blocks)
 {
@@ -325,7 +412,7 @@ int main(int argc, char** argv)
     if (!line.Ok() || line.ArgCount() != 0)
     {
         out::PrintError(
-            "usage: %s [--voices N] [--blocks N] [--scene voices|filters|reverb|surround|streams|large|all] "
+            "usage: %s [--voices N] [--blocks N] [--scene voices|filters|reverb|surround|streams|memory|limit|large|all] "
             "[--long-blocks N]\n",
             line.ProgramName().Data());
         return 2;
@@ -371,6 +458,14 @@ int main(int argc, char** argv)
     if (all || CStrCompare(scene, "streams") == 0)
     {
         SceneStreams(voices != 0 ? voices : 100);
+    }
+    if (all || CStrCompare(scene, "memory") == 0)
+    {
+        SceneMemory();
+    }
+    if (all || CStrCompare(scene, "limit") == 0)
+    {
+        SceneLimit();
     }
     if (CStrCompare(scene, "large") == 0 && !SceneLarge(long_blocks))
     {

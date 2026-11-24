@@ -6,6 +6,7 @@
 #include "containers/vector.h"
 #include "lang/scalar.h"
 #include "physics/world.h"
+#include "soak.h"
 
 using namespace vse;
 using namespace vse::physics;
@@ -79,17 +80,22 @@ using namespace stress;
 
 TEST_CASE("Stress: random bodies dropped in a box do not explode", "[physics][stress]")
 {
+    // The ordinary form drops 400 bodies in a 24 m box; the soak form (the planned scale) drops 100,000 in a box whose
+    // floor is as much larger, so the density is the same.
+    const u32 count = test_support::SoakCount(400, 100000);
+    const f32 half = 12.0f * Sqrt(static_cast<f32>(count) / 400.0f);
     PhysicsWorld world;
-    StressFloor(world);
-    StressWalls(world, 12.0f);
+    StressFloor(world, half + 40.0f);
+    StressWalls(world, half);
     StressRng rng;
     Vector<BodyId> bodies;
-    for (u32 i = 0; i < 400; ++i)
+    for (u32 i = 0; i < count; ++i)
     {
         const f32 rx = rng.Next();
         const f32 ry = rng.Next();
         const f32 rz = rng.Next();
-        const Vec3 at(-11.0f + 22.0f * rx, 1.0f + 25.0f * ry, -11.0f + 22.0f * rz);
+        const Vec3 at(-(half - 1.0f) + 2.0f * (half - 1.0f) * rx, 1.0f + 25.0f * ry,
+                      -(half - 1.0f) + 2.0f * (half - 1.0f) * rz);
         switch (i % 3)
         {
         case 0:
@@ -99,28 +105,31 @@ TEST_CASE("Stress: random bodies dropped in a box do not explode", "[physics][st
         default: bodies.Push(StressAdd(world, BodyType::Dynamic, Shape::MakeCapsule(0.3f, 0.2f), at)); break;
         }
     }
+    const f32 bound = half + 48.0f;
     f32 start_energy = 0.0f;
     for (usize i = 0; i < bodies.Size(); ++i)
     {
         const Body* b = world.Find(bodies[i]);
         start_energy += static_cast<f32>(b->mass.mass * 9.81f * b->position.y);
     }
-    for (u32 step = 0; step < 250; ++step)
+    const u32 steps = test_support::SoakCount(250, 100);
+    for (u32 step = 0; step < steps; ++step)
     {
         world.Step();
-        if (step % 50 == 0)
+        if (step % (steps / 5) == 0)
         {
-            REQUIRE(StressSane(world, bodies, 60.0f));
+            REQUIRE(StressSane(world, bodies, bound));
         }
     }
-    REQUIRE(StressSane(world, bodies, 60.0f));
+    REQUIRE(StressSane(world, bodies, bound));
     // The energy never grows beyond what the bodies started with (the solver may only lose it).
     f32 end_energy = 0.0f;
     for (usize i = 0; i < bodies.Size(); ++i)
     {
         const Body* b = world.Find(bodies[i]);
         const Vec3& v = b->linear_velocity;
-        end_energy += static_cast<f32>(b->mass.mass * (0.5f * (v.x * v.x + v.y * v.y + v.z * v.z) + 9.81f * b->position.y));
+        end_energy += static_cast<f32>(b->mass.mass *
+                                       (0.5f * (v.x * v.x + v.y * v.y + v.z * v.z) + 9.81f * b->position.y));
     }
     REQUIRE(end_energy < start_energy * 1.02f);
 }
@@ -272,7 +281,7 @@ TEST_CASE("Stress: a spinning body keeps a unit quaternion over a long run", "[p
     REQUIRE(world.SetVelocity(id, v) == BodyStatus::Ok);
     Vector<BodyId> bodies;
     bodies.Push(id);
-    for (u32 step = 0; step < 100000; ++step)
+    for (u32 step = 0; step < test_support::SoakCount(100000, 10000000); ++step)  // 10^7 steps in the soak form
     {
         world.Step();
     }

@@ -3,7 +3,7 @@
 add_executable(physics_bench main.cpp)
 engine_split_debug_info(physics_bench)
 target_compile_options(physics_bench PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-target_link_libraries(physics_bench PRIVATE physics jobs foundation)
+target_link_libraries(physics_bench PRIVATE physics audio_physics jobs foundation)
 
 # Phase 25 Day 413: the Release-only stress run (the planned scale does not fit a debug or sanitizer build: Day 412 measured
 # those at 8 to 15 times slower). 50000 bodies fall and pile up, then 100 bodies are stepped 1,000,000 times; the state is

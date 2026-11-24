@@ -107,6 +107,8 @@ struct ScriptRuntimeStats
     u64 skipped_partitions = 0;
     /// Commands the merges applied.
     u64 commands_applied = 0;
+    /// The wall time the merges took, in nanoseconds (the apply of the command buffers at the sync points).
+    u64 merge_nanoseconds = 0;
     /// Events scripts emitted that the bus accepted.
     u64 events_emitted = 0;
     /// Handler calls made for delivered events.

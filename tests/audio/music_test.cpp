@@ -324,3 +324,45 @@ TEST_CASE("music: a replay reproduces every sample of a transition", "[audio][mu
     }
     CHECK(hashes[0] == hashes[1]);
 }
+
+TEST_CASE("music: a track that has ended does not hand its slot to the cross-fade that replaces it", "[audio][music]")
+{
+    Mixer mixer;
+    REQUIRE(mixer.Init(MuConfig()) == MixerStatus::Ok);
+    MusicPlayer player(&mixer, BusId{0});
+    const StreamBufferPtr a = MuBuffer(MuClip(512, MuDc, 8));  // two blocks, then it is over
+    const StreamBufferPtr b = MuBuffer(MuClip(60000, MuDc, 4));
+    Vector<StreamBufferPtr> all;
+    all.Push(a);
+    all.Push(b);
+    REQUIRE(player.Play(a, 0, 0) == MixerStatus::Ok);
+    MuRun(mixer, player, all, 6);
+    REQUIRE(player.CrossFadeTo(b, 1024, kMusicNow, Tempo{90.0, 3}) == MixerStatus::Ok);
+    const Vector<f32> out = MuRun(mixer, player, all, 30);
+    // The new track fades in and stays: the ended track's fade-out must not reach it.
+    CHECK(out[out.Size() - 1] == 0.5f);
+    CHECK(out[out.Size() / 2] == 0.5f);
+}
+
+TEST_CASE("music: a stop before a queued start cancels the start", "[audio][music]")
+{
+    Mixer mixer;
+    REQUIRE(mixer.Init(MuConfig()) == MixerStatus::Ok);
+    MusicPlayer player(&mixer, BusId{0});
+    const StreamBufferPtr a = MuBuffer(MuClip(60000, MuDc, 8));
+    Vector<StreamBufferPtr> all;
+    all.Push(a);
+    REQUIRE(player.Play(a, 0, 256 * 10) == MixerStatus::Ok);  // queued for block 10
+    player.Stop(0);                                           // now: before the start
+    const Vector<f32> out = MuRun(mixer, player, all, 30);
+    for (usize i = 0; i < out.Size(); ++i)
+    {
+        REQUIRE(out[i] == 0.0f);
+    }
+    // And a new track after the cancelled one plays.
+    const StreamBufferPtr b = MuBuffer(MuClip(60000, MuDc, 4));
+    all.Push(b);
+    REQUIRE(player.Play(b, 0) == MixerStatus::Ok);
+    const Vector<f32> after = MuRun(mixer, player, all, 4);
+    CHECK(after[after.Size() - 1] == 0.5f);
+}

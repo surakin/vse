@@ -7,6 +7,7 @@ pages are structured and when a day's work counts as documented. Per platform: [
 [macOS](guide/macos.md).
 Internal design history is for contributors, not engine users: the specs in
 `docs/superpowers/specs/` —
+[scripts placing sound in the world (proposal)](superpowers/specs/2026-11-24-script-audio-placement.md),
 [the sky box, cube textures and sky lighting](superpowers/specs/2026-11-23-sky-box-design.md),
 [terrain](superpowers/specs/2026-11-23-terrain-design.md),
 [instancing](superpowers/specs/2026-11-23-instancing-design.md),

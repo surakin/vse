@@ -187,6 +187,54 @@ TEST_CASE("Filter: a request out of range is clamped and an unstable one becomes
     CHECK(nan.params.v[3] == 0.0f);
 }
 
+TEST_CASE("Effects: a parameter block with NaN, infinity or huge values is clamped and the output stays finite",
+          "[audio][effect]")
+{
+    ReverbDesc reverb_desc;
+    reverb_desc.sample_rate = kRate;
+    UniquePtr<Effect> effects[4];
+    effects[0] = MakeFilterEffect(2, 0);
+    effects[1] = MakeOnePoleEffect(2, 0);
+    effects[2] = MakeDelayEffect(2, kRate, 0.5f, 0);
+    effects[3] = MakeReverbEffect(2, reverb_desc);
+    const f32 nan = Limits<f32>::QuietNaN();
+    const f32 inf = Limits<f32>::Infinity();
+    const f32 bad[] = {nan, inf, -inf, 1.0e30f, -1.0e30f};
+    for (u32 e = 0; e < 4; ++e)
+    {
+        REQUIRE(effects[e] != nullptr);
+        for (u32 b = 0; b < 5; ++b)
+        {
+            for (u32 pattern = 0; pattern < 2; ++pattern)
+            {
+                EffectParams params;  // pattern 0: every float bad; pattern 1: one bad float at a time in turn
+                for (u32 i = 0; i < kEffectParams; ++i)
+                {
+                    params.v[i] = (pattern == 0 || i % 5 == b) ? bad[(b + i) % 5] : 0.5f;
+                }
+                effects[e]->Reset();
+                effects[e]->SetParams(params);
+                Vector<f32> block;
+                for (u32 pass = 0; pass < 8; ++pass)
+                {
+                    block.Clear();
+                    for (u32 n = 0; n < 4096 * 2; ++n)
+                    {
+                        block.Push(n % 64 < 32 ? 0.5f : -0.5f);  // fresh input every pass
+                    }
+                    effects[e]->Process(block.Data(), 4096);
+                    for (u32 n = 0; n < block.Size(); ++n)
+                    {
+                        REQUIRE(IsFinite(block[n]));
+                        INFO("effect " << e << " bad " << b << " pattern " << pattern << " pass " << pass);
+                        REQUIRE(Abs(block[n]) < 1.0e20f);  // a gain of 64 on a pole near 1 is loud, not infinite
+                    }
+                }
+            }
+        }
+    }
+}
+
 TEST_CASE("Filter: a sweep ramps instead of jumping", "[audio][filter]")
 {
     Vector<f32> step;

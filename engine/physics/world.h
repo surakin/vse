@@ -2,8 +2,11 @@
 // them come on Day 390.
 #pragma once
 
+#include "containers/hash_map.h"
 #include "containers/unique_ptr.h"
+#include "containers/vector.h"
 #include "ecs/entity.h"
+#include "mem/heap_allocator.h"
 #include "math/matrix.h"
 #include "math/quaternion.h"
 #include "math/vector.h"
@@ -911,6 +914,13 @@ private:
     SlotPool<Body> bodies_;
     SlotPool<ColliderRecord> colliders_;
     SlotPool<JointRecord> joints_;
+    // The joints of each body, by body slot: `DestroyBody` releases the body's joints without scanning every joint. A
+    // list may hold a stale slot (its joint was destroyed or broke): each use checks that the joint still names the
+    // body. Derived data: not in a snapshot, made again by `RebuildJointIndex` after one is read.
+    HashMap<u32, Vector<u32>, HeapAllocator> body_joints_{HeapAllocator::Default()};
+    void IndexJoint(u32 slot, const JointDesc& desc);
+    void RebuildJointIndex();
+    bool JointNames(u32 slot, BodyId body) const;
     HullLibrary hulls_;
     MeshLibrary meshes_;
     HeightFieldLibrary height_fields_;

@@ -7,8 +7,8 @@
 //   physics_bench [--bodies N]   the body count of the drop scenes (default: 1000, 5000, 20000 and 50000)
 //                 [--steps N]    timed steps per measurement (default 60)
 //                 [--threads N]  the worker count (default: the machine's participant count; 1 runs on the caller)
-//                 [--scene S]    drop, mesh, joints, rays, characters, large or all (default all; `all` leaves out
-//                 `large`)
+//                 [--scene S]    drop, mesh, joints, joint-destroy, rays, occlusion, characters, large or all (default
+//                 all; `all` leaves out `large`)
 //                 [--long-steps N] the steps of the long run of `large` (default 1000000)
 #include "containers/vector.h"
 #include "log/output.h"
@@ -26,6 +26,7 @@
 #include "physics/height_field.h"
 #include "physics/query.h"
 #include "physics/world.h"
+#include "audio_physics/physics_occlusion.h"
 
 using namespace vse;
 using namespace vse::physics;
@@ -241,6 +242,34 @@ void SceneJoints()
     }
 }
 
+// Destroying the bodies of a world with one joint per body: `DestroyBody` finds a body's joints through the body's list
+// (it once scanned every joint, so this took time quadratic in the count).
+void SceneJointDestroy()
+{
+    const u32 counts[] = {5000, 20000};
+    for (u32 count : counts)
+    {
+        PhysicsWorld world;
+        Configure(world);
+        Vector<BodyId> bodies;
+        bodies.Push(Add(world, BodyType::Static, Shape::MakeSphere(0.1f), Vec3(0, 50, 0)));
+        for (u32 i = 0; i < count; ++i)
+        {
+            const f32 x = static_cast<f32>(i % 200) * 1.5f;
+            const f32 z = static_cast<f32>(i / 200) * 1.5f;
+            bodies.Push(Add(world, BodyType::Dynamic, Shape::MakeSphere(0.4f), Vec3(x, 20, z)));
+            world.CreateJoint(world.MakeBallJoint(bodies[i], bodies[i + 1], Vec3(x, 20, z)));
+        }
+        const u64 start = os::MonotonicTimeNanos();
+        for (u32 i = 0; i < bodies.Size(); ++i)
+        {
+            world.DestroyBody(bodies[i]);
+        }
+        out::PrintError("joint destroy: %u bodies with %u joints destroyed in %.2f ms\n", count + 1, count,
+                        static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e6);
+    }
+}
+
 void SceneRays()
 {
     PhysicsWorld world;
@@ -268,6 +297,50 @@ void SceneRays()
     const double seconds = static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9;
     out::PrintError("rays: %u rays against 5000 bodies in %.3f s = %.0f rays/s (%u hits)\n", rays, seconds,
                     static_cast<double>(rays) / seconds, hits);
+}
+
+// 1,000 audio emitters tested for occlusion against the listener through the physics world (two ray casts per blocked
+// path, `audio_physics::PhysicsOcclusion`), the cost of one round of tests: `SpatialAudio` runs at most
+// `max_tests_per_update` of them per update.
+void SceneOcclusion()
+{
+    PhysicsWorld world;
+    Configure(world);
+    BuildDrop(world, 5000);
+    for (u32 i = 0; i < 90; ++i)
+    {
+        world.Step();
+    }
+    audio_physics::PhysicsOcclusion query(&world);
+    Rng rng;
+    const u32 emitters = 1000;
+    const u32 rounds = 20;
+    Vector<Vec3d> positions;
+    for (u32 i = 0; i < emitters; ++i)
+    {
+        positions.Push(Vec3d(-24.0 + 48.0 * static_cast<f64>(rng.Next()), 1.0 + 4.0 * static_cast<f64>(rng.Next()),
+                             -24.0 + 48.0 * static_cast<f64>(rng.Next())));
+    }
+    const Vec3d listener(0.0, 14.0, 0.0);
+    f64 total = 0.0;
+    u32 blocked = 0;
+    const u64 start = os::MonotonicTimeNanos();
+    for (u32 r = 0; r < rounds; ++r)
+    {
+        for (u32 i = 0; i < emitters; ++i)
+        {
+            const f32 value = query.Occlusion(positions[i], listener, nullptr);
+            total += static_cast<f64>(value);
+            blocked += value > 0.0f ? 1u : 0u;
+        }
+    }
+    const double seconds = static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9;
+    out::PrintError(
+        "occlusion: %u emitters x %u rounds against 5000 bodies: %.3f ms per round of %u tests = %.2f us per test "
+        "(%u of %u blocked, mean occlusion %.3f)\n",
+        emitters, rounds, seconds * 1000.0 / static_cast<double>(rounds), emitters,
+        seconds * 1.0e6 / static_cast<double>(rounds * emitters), blocked / rounds, emitters,
+        total / static_cast<double>(rounds * emitters));
 }
 
 // 200,000 ground-height queries over 100 height-field colliders (a 10 by 10 grid of 33 by 33 maps).
@@ -492,7 +565,7 @@ int main(int argc, char** argv)
     if (!line.Ok() || line.ArgCount() != 0)
     {
         out::PrintError(
-            "usage: %s [--bodies N] [--steps N] [--threads N] [--scene drop|mesh|joints|rays|characters|large|all] [--long-steps N]\n",
+            "usage: %s [--bodies N] [--steps N] [--threads N] [--scene drop|mesh|joints|joint-destroy|rays|occlusion|characters|large|all] [--long-steps N]\n",
             line.ProgramName().Data());
         return 2;
     }
@@ -552,9 +625,17 @@ int main(int argc, char** argv)
     {
         SceneJoints();
     }
+    if (all || CStrCompare(scene, "joint-destroy") == 0)
+    {
+        SceneJointDestroy();
+    }
     if (all || CStrCompare(scene, "rays") == 0)
     {
         SceneRays();
+    }
+    if (all || CStrCompare(scene, "occlusion") == 0)
+    {
+        SceneOcclusion();
     }
     if (all || CStrCompare(scene, "terrain") == 0)
     {

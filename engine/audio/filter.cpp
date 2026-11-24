@@ -26,6 +26,16 @@ enum
     kCount
 };
 
+// A value kept in [low, high]; NaN becomes 0 when 0 is in range, else `low`.
+f32 Limit(f32 v, f32 low, f32 high)
+{
+    if (!(v == v))
+    {
+        return low > 0.0f ? low : (high < 0.0f ? high : 0.0f);
+    }
+    return v < low ? low : (v > high ? high : v);
+}
+
 u32 TailOf(f64 radius)
 {
     if (!(radius < 0.999999))
@@ -99,10 +109,16 @@ public:
 
     void SetParams(const EffectParams& params) override
     {
-        for (u32 i = 0; i < kCount; ++i)
-        {
-            target_[i] = params.v[i];
-        }
+        // A finite block with a stable denominator: |a2| < 1 and |a1| < 1 + a2 (the triangle of stable biquads); the
+        // numerator is limited to a gain a filter can reasonably have. NaN becomes 0 (silence for a numerator).
+        constexpr f32 kMaxB = 64.0f;
+        constexpr f32 kStable = 0.9999f;  // f32 coefficients: a closer pole is not stable once rounded
+        target_[kB0] = Limit(params.v[kB0], -kMaxB, kMaxB);
+        target_[kB1] = Limit(params.v[kB1], -kMaxB, kMaxB);
+        target_[kB2] = Limit(params.v[kB2], -kMaxB, kMaxB);
+        target_[kA2] = Limit(params.v[kA2], -kStable, kStable);
+        const f32 a1_limit = (1.0f + target_[kA2]) * kStable;
+        target_[kA1] = Limit(params.v[kA1], -a1_limit, a1_limit);
         if (ramp_ == 0)
         {
             for (u32 i = 0; i < kCount; ++i)
@@ -227,7 +243,7 @@ public:
 
     void SetParams(const EffectParams& params) override
     {
-        target_ = params.v[0] < 0.0f ? 0.0f : (params.v[0] > 1.0f ? 1.0f : params.v[0]);
+        target_ = Limit(params.v[0], 0.0f, 1.0f);
         if (ramp_ == 0)
         {
             current_ = target_;

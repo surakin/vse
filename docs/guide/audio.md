@@ -197,7 +197,7 @@ changes at once). Inserts keep running on a silent bus, so a reverb tail is not 
 
 - **Filters:** `DesignFilter(type, rate, cutoff, q, gain_db)` gives a biquad (low-pass, high-pass, band-pass, notch,
   peaking, low and high shelf, the RBJ cookbook forms) in direct form II transposed; inputs out of range are clamped, and a
-  design with poles outside the unit circle comes back as the identity, both reported in `FilterDesign::clamped`. The
+  design with poles outside the unit circle comes back as the identity, both reported in `FilterDesign::clamped`. A parameter block handed to `Effect::SetParams` is clamped the same way whatever made it: NaN and infinities become the nearest legal value, a biquad's denominator is kept inside the stable triangle, a delay time inside its buffer, feedback and reverb line gains below one, the mix gains finite (at most 16), so a hostile block cannot make an effect blow up. The
   identity is bit-transparent (the effect skips it). Both states of a channel are flushed to zero together once both are
   below 1e-20 (-400 dB): without it a float biquad near the unit circle stalls at a rounding floor and never reaches
   silence. `FilterMagnitude` gives the analytic gain at a frequency. The one-pole low-pass is `OnePoleParams` and
@@ -490,7 +490,22 @@ A voice costs about 2.7, 3.2 and 6.1 microseconds per block for the three resamp
 3.53 ms; 100 streams (refill included, one worker) 0.26 ms. The worst block of every scene is within 10 percent of its mean except
 when the machine is busy, so a callback has the headroom the table shows: **1,000 Hermite voices fit one core with 39 percent of the
 deadline to spare; a game that wants more than that should let `AudioSystem` virtualise** (the default is 256 mixed voices, about 16
-percent of the deadline). `audio_bench --voices N --blocks N --scene voices|filters|reverb|surround|streams` runs them.
+percent of the deadline). `audio_bench --voices N --blocks N --scene voices|filters|reverb|surround|streams|memory|limit` runs them.
+
+**Memory** (`audio_bench --scene memory`, the process's resident set before and after, so rounded to pages and with the allocator's
+own overhead): a voice slot of the pool costs about 1.5 KiB (a mixer of 4,096 voices holds 6.2 MiB more than one of 16; playing a voice
+adds nothing, the clip is shared); a hall reverb about 170 KiB, a stereo delay of one second 375 KiB, a filter 0.14 KiB; a stream buffer
+with the default configuration, refilled, about 33 KiB.
+
+**Beyond the pool** (`audio_bench --scene limit`): the pool tops out at `kMaxVoices` (4,096) and `Mixer::Init` refuses a larger one
+(`InvalidConfig`). Asking for 5,000 looping voices of a 4,096 pool mixes 4,096 of them: the quietest 904 are stolen by the newer ones
+(`voices_stolen`), none is refused when the newcomers are as loud, no command is dropped (the command ring holds the burst) and the block
+takes 13.2 ms, 247 percent of the deadline: far past one core, so a game keeps the mixed count to what `AudioSystem` allows.
+
+**Occlusion** (`physics_bench --scene occlusion`, Release, one thread, 5,000 bodies, 1,000 emitters, half of them behind something):
+1,000 tests cost 2.4 ms, 2.4 microseconds a test (two ray casts for a blocked path). `SpatialAudio` runs at most
+`max_tests_per_update` of them per update (8 by default), so the cost per update is tens of microseconds; testing every emitter every
+update at 60 updates a second would use about 14 percent of a frame's core.
 
 Checks that run in CI: the `[perf]` smoke (200 voices, 100 blocks, a bound of 50 ms a block in every flavor), the `[stress]` cases (ten
 thousand random commands from four threads, serialized one at a time as the contract asks, against a running audio thread, checking

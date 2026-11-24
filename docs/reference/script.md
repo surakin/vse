@@ -5509,6 +5509,16 @@ u64 commands_applied;
 
 Commands the merges applied.
 
+### `merge_nanoseconds` {#script-scriptruntimestats-merge-nanoseconds}
+
+`variable script::ScriptRuntimeStats::merge_nanoseconds` — defined in `engine/script/script_runtime.h`
+
+```cpp
+u64 merge_nanoseconds;
+```
+
+The wall time the merges took, in nanoseconds (the apply of the command buffers at the sync points).
+
 ### `events_emitted` {#script-scriptruntimestats-events-emitted}
 
 `variable script::ScriptRuntimeStats::events_emitted` — defined in `engine/script/script_runtime.h`

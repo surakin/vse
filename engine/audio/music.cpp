@@ -61,44 +61,66 @@ u64 MusicPlayer::Resolve(u64 at) const
     return at == kMusicNow || at < earliest ? earliest : at;
 }
 
-u32 MusicPlayer::NewSlot()
+bool MusicPlayer::SlotQueued(u32 index) const
 {
-    for (u32 i = 0; i < slots_.Size(); ++i)
+    for (usize a = 0; a < pending_.Size(); ++a)
     {
-        Slot& s = slots_[i];
-        if (!s.live && (!s.started || !mixer_->IsPlaying(s.id)))
+        if (pending_[a].slot == index)
         {
-            bool queued = false;
-            for (usize a = 0; a < pending_.Size(); ++a)
-            {
-                queued = queued || pending_[a].slot == i;
-            }
-            if (!queued)
-            {
-                s = Slot();
-                return i;
-            }
+            return true;
         }
     }
+    return false;
+}
+
+bool MusicPlayer::SlotHeld(u32 index) const
+{
+    if (current_ >= 0 && static_cast<u32>(current_) == index)
+    {
+        return true;
+    }
+    for (usize i = 0; i < layer_slots_.Size(); ++i)
+    {
+        if (layer_slots_[i] == index)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+u32 MusicPlayer::NewSlot()
+{
+    // A slot is free once nothing more will be posted for it and its voice is gone. The current track's slot and the
+    // layers' slots are named by `current_` and `layer_slots_`, so they are never handed out, even after the voice has
+    // ended: a new track reusing one would inherit the old track's tempo and start frame through those indices.
     for (u32 i = 0; i < slots_.Size(); ++i)
     {
         Slot& s = slots_[i];
-        if (s.started && !mixer_->IsPlaying(s.id))
+        if (!SlotHeld(i) && !SlotQueued(i) && (!s.live || s.started) && (!s.started || !mixer_->IsPlaying(s.id)))
         {
-            bool queued = false;
-            for (usize a = 0; a < pending_.Size(); ++a)
-            {
-                queued = queued || pending_[a].slot == i;
-            }
-            if (!queued)
-            {
-                s = Slot();
-                return i;
-            }
+            s = Slot();
+            return i;
         }
     }
     slots_.Push(Slot());
     return static_cast<u32>(slots_.Size() - 1);
+}
+
+// Removes what is queued for a slot whose track has not started: it never sounds.
+void MusicPlayer::CancelQueued(u32 index)
+{
+    usize kept = 0;
+    for (usize a = 0; a < pending_.Size(); ++a)
+    {
+        if (pending_[a].slot != index)
+        {
+            pending_[kept] = pending_[a];
+            kept += 1;
+        }
+    }
+    pending_.Resize(kept);
+    slots_[index].live = false;
 }
 
 void MusicPlayer::Queue(const Action& action)
@@ -198,7 +220,12 @@ MixerStatus MusicPlayer::CrossFadeTo(const StreamBufferPtr& track, u32 frames, u
     }
     if (old >= 0 && slots_[static_cast<u32>(old)].live)
     {
-        if (frames > 0)
+        if (!slots_[static_cast<u32>(old)].started && start <= slots_[static_cast<u32>(old)].start_frame)
+        {
+            CancelQueued(
+                static_cast<u32>(old));  // the old track's own start is still queued and is later than this one
+        }
+        else if (frames > 0)
         {
             ScheduleFade(static_cast<u32>(old), start, frames, false);
         }
@@ -231,7 +258,11 @@ void MusicPlayer::Stop(u32 fade_out_frames, u64 at)
     }
     const u64 start = Resolve(at);
     const u32 slot = static_cast<u32>(current_);
-    if (fade_out_frames > 0)
+    if (!slots_[slot].started && start <= slots_[slot].start_frame)
+    {
+        CancelQueued(slot);  // the track's start is still queued and not yet due: it never sounds
+    }
+    else if (fade_out_frames > 0)
     {
         ScheduleFade(slot, start, fade_out_frames, false);
     }
@@ -415,6 +446,17 @@ void MusicPlayer::Post(const Action& action)
     const u64 due = mixer_->NextBlock() + mixer_->Config().lead_blocks;
     const u64 block = action.block > due ? action.block : due;
     Slot& s = slots_[action.slot];
+    // A full command queue refuses a command and says it can be repeated after the next block: keep the action for
+    // then instead of losing it.
+    auto retry = [this, &action, due](MixerStatus status)
+    {
+        if (status == MixerStatus::QueueFull)
+        {
+            Action again = action;
+            again.block = due + 1;
+            Queue(again);
+        }
+    };
     switch (action.kind)
     {
     case Kind::Start:
@@ -427,9 +469,14 @@ void MusicPlayer::Post(const Action& action)
         desc.bus = bus_;
         // On time, the voice starts on its exact frame inside the block; late, at once.
         desc.delay_frames = action.block == block ? static_cast<u32>(action.frame % kBlockFrames) : 0;
-        if (mixer_->Play(desc, &s.id, block) == MixerStatus::Ok)
+        const MixerStatus played = mixer_->Play(desc, &s.id, block);
+        if (played == MixerStatus::Ok)
         {
             s.started = true;
+        }
+        else if (played == MixerStatus::QueueFull)
+        {
+            retry(played);
         }
         else
         {
@@ -440,20 +487,25 @@ void MusicPlayer::Post(const Action& action)
     case Kind::Fade:
         if (s.started)
         {
-            mixer_->Fade(s.id, action.gain, action.frames, block);
+            retry(mixer_->Fade(s.id, action.gain, action.frames, block));
         }
         break;
     case Kind::Stop:
         if (s.started)
         {
-            mixer_->Stop(s.id, 0, block);
+            const MixerStatus stopped = mixer_->Stop(s.id, 0, block);
+            retry(stopped);
+            if (stopped == MixerStatus::QueueFull)
+            {
+                break;  // the slot stays live until the stop is posted
+            }
         }
         s.live = false;
         break;
     case Kind::Seek:
         if (s.started)
         {
-            mixer_->Seek(s.id, action.frame, block);
+            retry(mixer_->Seek(s.id, action.frame, block));
         }
         break;
     }

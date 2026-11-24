@@ -5616,7 +5616,7 @@ As `CrossFadeTo`, at the next bar boundary of the current track.
 void Stop(u32 fade_out_frames, u64 at = kMusicNow);
 ```
 
-Fades the current track out and stops it.
+Fades the current track out and stops it. A track whose start is still queued, later than `at`, never sounds (its queued actions are dropped).
 
 | Field | Value |
 |---|---|
@@ -5765,7 +5765,7 @@ Plays tracks one after another in the playlist order, each starting on the frame
 void Update();
 ```
 
-Posts every action that is due; call at least once per block's worth of time.
+Posts every action that is due; call at least once per block's worth of time. An action the mixer refuses because its command queue is full is kept and posted again one block later.
 
 ### `CurrentStartFrame()` {#audio-musicplayer-currentstartframe-const}
 

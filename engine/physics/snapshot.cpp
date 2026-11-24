@@ -726,6 +726,7 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
     next.pre_step_ = pre_step_;  // the program's hook (the characters' moves) is not world state: it stays installed
     next.pre_step_user_ = pre_step_user_;
     *this = Move(next);
+    RebuildJointIndex();  // derived data: the restored joints, by body
     // The restored colliders, in the queries' index (the restored world was built without it).
     if (colliders_.Live() != 0)
     {

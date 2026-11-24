@@ -1296,8 +1296,10 @@ void ScriptRuntime::Impl::RunPhase(ecs::World* world, f64 dt, bool destroys_only
     {
         order.Push(&partitions[p]->commands);
     }
+    const u64 merge_start = os::MonotonicTimeNanos();
     const MergeReport report = Merge(world, Span<CommandBuffer* const>(order.Data(), order.Size()), kinds,
                                      config.conflicts, &services);
+    stats.merge_nanoseconds += os::MonotonicTimeNanos() - merge_start;
     stats.commands_applied += report.applied;
 }
 

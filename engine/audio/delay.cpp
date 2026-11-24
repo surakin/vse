@@ -13,6 +13,8 @@ namespace
 
 constexpr f32 kDelayFlush = 1e-30f;
 constexpr f32 kDelayMaxFeedback = 0.995f;
+constexpr f32 kDelayMaxGain = 16.0f;        // the largest wet or dry gain a block may ask for
+constexpr f32 kDelayMaxLineGain = 0.9999f;  // a reverb line must lose energy on every round trip
 
 f32 DelayFlush(f32 v)
 {
@@ -22,6 +24,13 @@ f32 DelayFlush(f32 v)
 f32 DelayClamp01(f32 v)
 {
     return !(v > 0.0f) ? 0.0f : (v > 1.0f ? 1.0f : v);
+}
+
+// A value kept in [low, high]; NaN becomes `low`, an infinity the nearer bound (`SetParams` of every effect: a block
+// that is out of range is clamped, never trusted).
+f32 DelayLimit(f32 v, f32 low, f32 high)
+{
+    return !(v > low) ? low : (v > high ? high : v);
 }
 
 // The coefficient of the one-pole low-pass of the damping: 1 passes everything, a smaller value filters more.
@@ -104,10 +113,13 @@ public:
 
     void SetParams(const EffectParams& params) override
     {
-        for (u32 i = 0; i < 5; ++i)
-        {
-            target_[i] = params.v[i];
-        }
+        // The ranges: the delay inside the buffer, the feedback below one, the gains finite, the damping coefficient in
+        // the range `DampCoefficient` makes.
+        target_[0] = DelayLimit(params.v[0], 0.0f, static_cast<f32>(max_frames_));
+        target_[1] = DelayLimit(params.v[1], 0.0f, kDelayMaxFeedback);
+        target_[2] = DelayLimit(params.v[2], 0.0f, kDelayMaxGain);
+        target_[3] = DelayLimit(params.v[3], 0.0f, kDelayMaxGain);
+        target_[4] = DelayLimit(params.v[4], 0.05f, 1.0f);
         if (ramp_ == 0)
         {
             for (u32 i = 0; i < 5; ++i)
@@ -328,10 +340,16 @@ public:
 
     void SetParams(const EffectParams& params) override
     {
-        for (u32 i = 0; i < 12; ++i)
+        // The line gains below one (a line at one or more never decays), the mix gains finite, the damping coefficient
+        // and the pre-delay inside their ranges.
+        for (u32 i = 0; i < kLines; ++i)
         {
-            target_[i] = params.v[i];
+            target_[i] = DelayLimit(params.v[i], 0.0f, kDelayMaxLineGain);
         }
+        target_[8] = DelayLimit(params.v[8], 0.0f, kDelayMaxGain);
+        target_[9] = DelayLimit(params.v[9], 0.0f, kDelayMaxGain);
+        target_[10] = DelayLimit(params.v[10], 0.05f, 1.0f);
+        target_[11] = DelayLimit(params.v[11], 0.0f, static_cast<f32>(predelay_capacity_ - 1));
         if (ramp_ == 0)
         {
             for (u32 i = 0; i < 12; ++i)

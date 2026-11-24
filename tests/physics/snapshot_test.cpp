@@ -588,3 +588,47 @@ TEST_CASE("Snapshot: a restore keeps the program's pre-step hook installed", "[p
     CHECK(calls == 2);
     world.SetPreStepHook(nullptr, nullptr);
 }
+
+TEST_CASE("Snapshot: a body's joints are found again after a restore, and stale entries do no harm",
+          "[physics][snapshot]")
+{
+    PhysicsWorld world;
+    BuildScene(world);
+    const u32 joints = world.JointCount();
+    REQUIRE(joints == 4);
+    const Vector<byte> bytes = Bytes(world);
+    PhysicsWorld restored;
+    REQUIRE(restored.Restore(View(bytes)) == SnapshotStatus::Ok);
+    REQUIRE(restored.JointCount() == joints);
+    // A body of the chain is destroyed: the two joints that name it go (the index was made again by the restore).
+    BodyId middle;
+    // The chain's second link is the body of the third joint's `body_a`: find it through a joint.
+    for (u32 slot = 0; slot < 8; ++slot)
+    {
+        const JointRecord* joint = restored.FindJoint(JointId{slot, 1});
+        if (joint != nullptr && joint->desc.body_a.IsValid() && slot == 1)
+        {
+            middle = joint->desc.body_b;
+        }
+    }
+    REQUIRE(middle.IsValid());
+    REQUIRE(restored.DestroyBody(middle) == BodyStatus::Ok);
+    CHECK(restored.JointCount() == joints - 2);
+    // Stale entries: a joint made and destroyed many times between two bodies leaves slots in their lists that name
+    // no joint now; destroying a body takes only the live one.
+    PhysicsWorld churn;
+    const BodyId a = SnBody(churn, BodyType::Dynamic, Vec3(0, 0, 0), Shape::MakeSphere(0.5f));
+    const BodyId b = SnBody(churn, BodyType::Dynamic, Vec3(2, 0, 0), Shape::MakeSphere(0.5f));
+    for (u32 i = 0; i < 100; ++i)
+    {
+        const JointId id = churn.CreateJoint(churn.MakeBallJoint(a, b, Vec3(1, 0, 0)));
+        REQUIRE(id.IsValid());
+        if (i < 99)
+        {
+            REQUIRE(churn.DestroyJoint(id) == BodyStatus::Ok);
+        }
+    }
+    CHECK(churn.JointCount() == 1);
+    REQUIRE(churn.DestroyBody(a) == BodyStatus::Ok);
+    CHECK(churn.JointCount() == 0);
+}

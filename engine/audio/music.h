@@ -94,7 +94,8 @@ public:
     /// - Fails: reported by return value.
     MixerStatus CrossFadeAtBar(const StreamBufferPtr& track, u32 frames, const Tempo& tempo = Tempo());
 
-    /// Fades the current track out and stops it.
+    /// Fades the current track out and stops it. A track whose start is still queued, later than `at`, never sounds
+    /// (its queued actions are dropped).
     ///
     /// - Param fade_out_frames: the fade length (0 stops at once).
     /// - Param at: the frame the fade starts, or `kMusicNow`.
@@ -163,7 +164,8 @@ public:
     /// - Returns: `Ok`, or what the mixer refused.
     MixerStatus PlayPlaylist(Span<const StreamBufferPtr> tracks, u64 seed, bool shuffle, u64 at = kMusicNow);
 
-    /// Posts every action that is due; call at least once per block's worth of time.
+    /// Posts every action that is due; call at least once per block's worth of time. An action the mixer refuses
+    /// because its command queue is full is kept and posted again one block later.
     void Update();
 
     /// The frame the current track started at.
@@ -209,6 +211,9 @@ private:
 
     u64 Resolve(u64 at) const;
     u32 NewSlot();
+    bool SlotQueued(u32 index) const;
+    bool SlotHeld(u32 index) const;
+    void CancelQueued(u32 index);
     void Queue(const Action& action);
     void ScheduleFade(u32 slot, u64 start_frame, u32 frames, bool rising);
     MixerStatus StartTrack(const StreamBufferPtr& track, u64 start, u32 fade_in, const Tempo& tempo, u32* slot);
