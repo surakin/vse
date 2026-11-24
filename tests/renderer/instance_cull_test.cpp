@@ -38,10 +38,10 @@ struct Gen
     f32 Range(f32 lo, f32 hi) { return lo + (hi - lo) * Unit(); }
 };
 
-UniquePtr<InstanceSet> Scatter(u32 count, u64 seed, f64 base, f32 half, f32 height)
+InstanceSetPtr Scatter(u32 count, u64 seed, f64 base, f32 half, f32 height)
 {
     InstanceSetDesc d;
-    UniquePtr<InstanceSet> set = InstanceSet::Create(d);
+    InstanceSetPtr set = InstanceSet::Create(d);
     REQUIRE(set.Get() != nullptr);
     Gen g(seed);
     for (u32 i = 0; i < count; ++i)
@@ -143,7 +143,7 @@ using namespace instance_cull_test;
 
 TEST_CASE("The chunked cull equals a per-instance test for 200 random cameras", "[instance_cull]")
 {
-    UniquePtr<InstanceSet> set = Scatter(100000, 1, 0.0, 300.0f, 40.0f);
+    InstanceSetPtr set = Scatter(100000, 1, 0.0, 300.0f, 40.0f);
     Gen g(5);
     InstanceCullResult out;
     u32 accepted = 0;
@@ -177,7 +177,7 @@ TEST_CASE("The chunked cull equals a per-instance test for 200 random cameras", 
 
 TEST_CASE("The visible list is the same at 1 and 8 threads", "[instance_cull][concurrency]")
 {
-    UniquePtr<InstanceSet> set = Scatter(60000, 2, 0.0, 400.0f, 30.0f);
+    InstanceSetPtr set = Scatter(60000, 2, 0.0, 400.0f, 30.0f);
     jobs::Scheduler::Config config;
     config.participants = 8;
     config.pin = false;
@@ -204,7 +204,7 @@ TEST_CASE("The visible list is the same at 1 and 8 threads", "[instance_cull][co
 
 TEST_CASE("A bad parameter finds nothing and an empty set is empty", "[instance_cull]")
 {
-    UniquePtr<InstanceSet> set = Scatter(500, 3, 0.0, 20.0f, 5.0f);
+    InstanceSetPtr set = Scatter(500, 3, 0.0, 20.0f, 5.0f);
     Camera cam = MakeLookAtCamera(Vec3(0.0f, 5.0f, 30.0f), Vec3(0.0f, 2.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f));
     InstanceCullParams p = Params(cam, Vec3d());
     InstanceCullResult out;
@@ -228,7 +228,7 @@ TEST_CASE("A set 10,000 km away, culled from its own camera, writes the records 
           "[instance_cull]")
 {
     const f64 base = 1.0e7;
-    UniquePtr<InstanceSet> set = Scatter(20000, 4, base, 200.0f, 30.0f);
+    InstanceSetPtr set = Scatter(20000, 4, base, 200.0f, 30.0f);
     const Vec3d origin(base, 10.0, base + 250.0);
     // The camera is at the render origin; the view looks at the middle of the set.
     Camera cam = MakeLookAtCamera(Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 5.0f, -250.0f), Vec3(0.0f, 1.0f, 0.0f));
@@ -261,7 +261,7 @@ TEST_CASE("A set 10,000 km away, culled from its own camera, writes the records 
 
 TEST_CASE("A ray finds the instance a brute-force pass finds", "[instance_cull]")
 {
-    UniquePtr<InstanceSet> set = Scatter(5000, 6, 0.0, 100.0f, 20.0f);
+    InstanceSetPtr set = Scatter(5000, 6, 0.0, 100.0f, 20.0f);
     InstanceQuery query;
     REQUIRE(query.Refresh(*set, 1.5f));
     REQUIRE(!query.Refresh(*set, 1.5f));
@@ -313,7 +313,7 @@ TEST_CASE("A ray finds the instance a brute-force pass finds", "[instance_cull]"
 
 TEST_CASE("Culling a million instances: the cost, recorded", "[instance_cull]")
 {
-    UniquePtr<InstanceSet> set = Scatter(1000000, 7, 0.0, 2000.0f, 40.0f);
+    InstanceSetPtr set = Scatter(1000000, 7, 0.0, 2000.0f, 40.0f);
     jobs::Scheduler::Config config;
     config.participants = 4;
     config.pin = false;

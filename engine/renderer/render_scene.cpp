@@ -503,7 +503,7 @@ namespace
 {
 void CheckInstanced(const InstancedObject& o)
 {
-    ENGINE_ASSERT(o.set != nullptr && o.mesh != nullptr, "instanced: the set or the mesh is null");
+    ENGINE_ASSERT(o.set.Get() != nullptr && o.mesh != nullptr, "instanced: the set or the mesh is null");
     ENGINE_ASSERT(IsFinite(o.scale) && o.scale > 0.0f && IsFinite(o.position.x) && IsFinite(o.position.y) &&
                       IsFinite(o.position.z),
                   "instanced: the position or the scale is not valid");

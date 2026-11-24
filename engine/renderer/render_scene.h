@@ -234,17 +234,17 @@ struct InstancedId
 /// buffer, and drawn in one draw.
 ///
 /// - Thread-safety: thread-compatible plain data.
-/// - Ownership: `set`, `mesh` are borrowed and must outlive the object (and not be edited while a frame is being
-///   prepared).
+/// - Ownership: shares `set` (do not edit it while a frame is being prepared); `mesh` is borrowed and must outlive the
+///   object.
 struct InstancedObject
 {
-    const InstanceSet* set = nullptr;  ///< The instances; must not be null.
-    const GpuMesh* mesh = nullptr;     ///< The geometry (a rigid mesh without vertex colors); must not be null.
-    u32 material = 0;                  ///< A material made with `GBufferOptions::instanced`.
-    Vec3 position = Vec3(0, 0, 0);     ///< Where the set's origin is, in scene space.
-    Quaternion rotation;               ///< The set's rotation; a unit quaternion.
-    f32 scale = 1.0f;                  ///< The set's uniform scale; above 0.
-    f32 max_distance = 0.0f;           ///< Instances farther than this (in scene space) are not drawn; 0 for no limit.
+    InstanceSetPtr set;             ///< The instances; must not be null; the scene keeps a share.
+    const GpuMesh* mesh = nullptr;  ///< The geometry (a rigid mesh without vertex colors); must not be null.
+    u32 material = 0;               ///< A material made with `GBufferOptions::instanced`.
+    Vec3 position = Vec3(0, 0, 0);  ///< Where the set's origin is, in scene space.
+    Quaternion rotation;            ///< The set's rotation; a unit quaternion.
+    f32 scale = 1.0f;               ///< The set's uniform scale; above 0.
+    f32 max_distance = 0.0f;        ///< Instances farther than this (in scene space) are not drawn; 0 for no limit.
     f32 min_size_ratio = 0.0f;  ///< Instances smaller than this fraction of their distance are not drawn; 0 for none.
     u32 flags = 0;              ///< `ObjectFlags` bits; `kHidden` skips the set.
 };
@@ -462,7 +462,7 @@ public:
     /// - Returns: its id, or the invalid id if the scene holds `max_instanced` already.
     /// - Fails: reported through the return value.
     /// - Aborts: the set or mesh is null, or the scale or rotation is not finite and valid.
-    /// - Ownership: borrows the set and the mesh.
+    /// - Ownership: shares the set; borrows the mesh.
     InstancedId AddInstanced(const InstancedObject& object);
 
     /// Removes an instanced mesh; its id becomes stale.

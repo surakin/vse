@@ -31,6 +31,8 @@ set(ASSET_SOURCES
   texture_mint.cpp  # Day 338
   cube_map.cpp  # Phase 28 Day 480
   height_map.cpp  # Phase 28 Day 486
+  instance_blob.cpp  # Phase 28 Day 498
+  instance_tree_blob.cpp  # Phase 28 Day 499
   terrain_splat.cpp  # Phase 28 Day 489
   material.cpp  # Day 326
   level.cpp  # Day 327

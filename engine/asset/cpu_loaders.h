@@ -6,6 +6,8 @@
 #include "asset/audio_clip.h"
 #include "asset/clip.h"
 #include "asset/height_map.h"
+#include "asset/instance_blob.h"
+#include "asset/instance_tree_blob.h"
 #include "asset/level.h"
 #include "asset/material.h"
 #include "asset/mesh.h"
@@ -89,6 +91,25 @@ template <> struct ResourceTraits<HeightMapView>
 {
     static constexpr ResourceType kType = types::kHeightMap;                         ///< `HGHT`.
     static constexpr u32 kKind = ResourceType::FromChars('v', 'H', 'M', 'P').Tag();  ///< The code of the C++ type.
+};
+/// An instance set is loaded as an [[asset::InstanceBlobView]] over the manager's buffer; [[asset::MakeInstanceSet]]
+/// makes the renderer's set from it.
+///
+/// - Thread-safety: thread-safe, a compile-time constant.
+template <> struct ResourceTraits<InstanceBlobView>
+{
+    static constexpr ResourceType kType = types::kInstances;                         ///< `INST`.
+    static constexpr u32 kKind = ResourceType::FromChars('v', 'I', 'N', 'S').Tag();  ///< The code of the C++ type.
+};
+
+/// An instance tree is loaded as an [[asset::InstanceTreeBlobView]] over the manager's buffer;
+/// [[asset::MakeInstanceTree]] makes the renderer's tree from it.
+///
+/// - Thread-safety: thread-safe, a compile-time constant.
+template <> struct ResourceTraits<InstanceTreeBlobView>
+{
+    static constexpr ResourceType kType = types::kInstanceTrees;                     ///< `ITRE`.
+    static constexpr u32 kKind = ResourceType::FromChars('v', 'I', 'T', 'R').Tag();  ///< The code of the C++ type.
 };
 /// A level is loaded as its summary (counts and the resources it depends on); spawning it reads the records.
 ///

@@ -29,6 +29,10 @@ set(ASSET_TEST_SOURCES
   cube_map_test.cpp  # Phase 28 Day 480
   height_map_test.cpp  # Phase 28 Day 486
   terrain_splat_test.cpp  # Phase 28 Day 489
+  instance_blob_test.cpp  # Phase 28 Day 498
+  instance_tree_blob_test.cpp  # Phase 28 Day 499
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/instance_tree_source.cpp  # Phase 28 Day 499: the instance tree minter under test
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/instance_source.cpp  # Phase 28 Day 498: the instance minter under test
   terrain_collider_test.cpp  # Phase 28 Day 491
   bc_test.cpp  # Day 324
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/height_source.cpp  # Phase 28 Day 486: the height map minter under test

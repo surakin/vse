@@ -137,6 +137,40 @@ struct TerrainHandle
     renderer::TerrainId id;
 };
 
+/// Many copies of one mesh drawn from an [[renderer::InstanceSet]]: a forest, a field of rocks. The instances are not
+/// entities; whoever owns the entity fills the set (`AddMany`, `Scatter`, `set->Add`). The entity's own transform is
+/// the set's parent: instances are in the entity's local space, so moving, turning or scaling the entity moves the
+/// whole set without touching it. The entity's `WorldTransform` must be a translation, a rotation and a uniform
+/// positive scale (anything else is counted as invalid by the sync and not drawn). [[scene::Hidden]] skips it.
+///
+/// The material must be one made with `GBufferOptions::instanced`. Edits to the set show on the next frame; do not edit
+/// it while a frame is being prepared.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: shares `mesh` and `set`; the render sync holds one more share of each per set it added, so the
+///   geometry outlives its scene entry even when the entity is destroyed first.
+struct InstancedMesh
+{
+    renderer::GpuMeshPtr mesh;     ///< The geometry; null or an empty mesh means "draw nothing" (counted invalid).
+    renderer::InstanceSetPtr set;  ///< The instances; null means "draw nothing" (counted invalid).
+    u32 material = 0;              ///< The material id (made with `GBufferOptions::instanced`).
+    u32 flags = 0;                 ///< Extra `renderer::ObjectFlags` bits; [[scene::Hidden]] adds `kHidden`.
+    f32 max_distance = 0.0f;       ///< Instances farther than this from the camera are not drawn; 0 for no limit.
+    f32 min_size_ratio = 0.0f;  ///< Instances smaller than this fraction of their distance are not drawn; 0 for none.
+};
+
+/// What the sync keeps on a mirrored instanced entity: its id in the render scene. The world logs the removal of this
+/// component, which is how the sync learns that the entity was destroyed.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct InstancedHandle
+{
+    /// The world logs removals of this component (see [[ecs::World::RemovedCount]]).
+    static constexpr bool kTrackRemoval = true;
+    /// The instanced mesh in the render scene, or invalid.
+    renderer::InstancedId id;
+};
+
 /// The resource naming the camera entity (the entity needs [[scene::Camera]] and a `WorldTransform`).
 ///
 /// - Thread-safety: thread-compatible plain data.

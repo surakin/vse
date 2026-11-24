@@ -595,7 +595,7 @@ TEST_CASE("Instanced objects draw as one draw per set and name what they cannot 
     CHECK_FALSE(CreateGBufferMaterial(rig.sys, rig.templates, bad, "bad").IsValid());
 
     InstancedObject o;
-    o.set = set.Get();
+    o.set = set;
     o.mesh = &mesh;
     o.material = instanced.index;
     {

@@ -20,7 +20,6 @@ struct InstanceCullGroupOut
 
 struct InstanceCullContext
 {
-    const InstanceSet* set;
     const InstanceCullParams* params;
     InstanceCullGroupOut* groups;
     u32 chunk_count;
@@ -53,9 +52,8 @@ f32 BoxDistance(const Vec3& p, const Aabb& box, bool farthest)
     return Sqrt(sum);
 }
 
-void CullGroup(const InstanceCullContext& ctx, u32 group)
+void CullGroup(const InstanceSet& set, const InstanceCullContext& ctx, u32 group)
 {
-    const InstanceSet& set = *ctx.set;
     const InstanceCullParams& p = *ctx.params;
     InstanceCullGroupOut& out = ctx.groups[group];
     const u32 begin = group * kInstanceCullGroup;
@@ -187,14 +185,14 @@ void CullInstances(const InstanceSet& set, const InstanceCullParams& params, job
     const u32 groups = (chunk_count + kInstanceCullGroup - 1) / kInstanceCullGroup;
     Vector<InstanceCullGroupOut> parts;
     parts.Resize(groups);
-    InstanceCullContext ctx{&set, &params, parts.Data(), chunk_count};
+    InstanceCullContext ctx{&params, parts.Data(), chunk_count};
     if (scheduler != nullptr && groups > 1)
     {
-        auto body = [&ctx](usize begin, usize end)
+        auto body = [&set, &ctx](usize begin, usize end)
         {
             for (usize g = begin; g < end; ++g)
             {
-                CullGroup(ctx, static_cast<u32>(g));
+                CullGroup(set, ctx, static_cast<u32>(g));
             }
         };
         jobs::ParallelForBlocking(*scheduler, groups, 1, body);
@@ -203,7 +201,7 @@ void CullInstances(const InstanceSet& set, const InstanceCullParams& params, job
     {
         for (u32 g = 0; g < groups; ++g)
         {
-            CullGroup(ctx, g);
+            CullGroup(set, ctx, g);
         }
     }
     for (u32 g = 0; g < groups; ++g)

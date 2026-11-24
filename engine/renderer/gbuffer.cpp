@@ -925,7 +925,7 @@ void GBufferPass::PrepareInstanced(const RenderScene& scene, const Frustum& frus
         params.mesh_radius = mesh->GetBounds().sphere.radius;
         params.max_distance = obj.max_distance * inverse_scale;
         params.min_size_ratio = obj.min_size_ratio;
-        CullInstances(*obj.set, params, scheduler_, &cull_result_);
+        CullInstances(*obj.set.Get(), params, scheduler_, &cull_result_);
         const InstanceCullStats& cs = cull_result_.stats;
         stats_.instance_chunks_tested += cs.chunks_tested;
         stats_.instance_chunks_skipped += cs.chunks_skipped;

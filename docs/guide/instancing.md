@@ -4,7 +4,7 @@ An instanced mesh is many copies of one mesh and one material, each with its own
 
 ## The instance set
 
-`renderer::InstanceSet` (`renderer/instance_set.h`) holds the instances. It is made by `InstanceSet::Create` and owned by a `UniquePtr` (`InstanceSetPtr`); a description (`InstanceSetDesc`) says whether every instance carries data, the most instances (at most `kMaxInstances`, 2^24, so an index is exact in an `f32`), the size of a Morton cell and how far an instance may move before it changes chunk.
+`renderer::InstanceSet` (`renderer/instance_set.h`) holds the instances. It is made by `InstanceSet::Create` (or `InstanceSet::FromChunks`, which adopts whole chunks) and shared by a `SharedPtr` (`InstanceSetPtr`), so a component, a render scene entry and a loader can each hold it; a description (`InstanceSetDesc`) says whether every instance carries data, the most instances (at most `kMaxInstances`, 2^24, so an index is exact in an `f32`), the size of a Morton cell and how far an instance may move before it changes chunk.
 
 An instance is a position (`f64`, in the world), a unit rotation and a scale on each axis (`InstanceTransform`). It is stored as a 40-byte `InstanceRecord`: the position as an `f32` offset from its chunk's `f64` origin, the rotation and the scale. A set made with data also keeps, parallel to the records, an `InstanceExtra` per instance: a colour tint and a `u32` custom value (20 bytes).
 
@@ -47,7 +47,7 @@ A record is 40 bytes; with the id table entry and the back reference a set costs
 
 ## Drawing a set
 
-An `InstancedObject` (`renderer/render_scene.h`) puts a set in a `RenderScene`: the set, one mesh, one material and the set's own transform (a position, a rotation and a uniform scale; the instances are in the set's space, so moving it moves them all). `AddInstanced`, `SetInstanced`, `RemoveInstanced` and `FindInstanced` work like the object ones, with generation-checked `InstancedId`s, and `RenderSceneDesc::max_instanced` is the capacity. The set and the mesh are borrowed: they must outlive the object and must not be edited while a frame is being prepared.
+An `InstancedObject` (`renderer/render_scene.h`) puts a set in a `RenderScene`: the set, one mesh, one material and the set's own transform (a position, a rotation and a uniform scale; the instances are in the set's space, so moving it moves them all). `AddInstanced`, `SetInstanced`, `RemoveInstanced` and `FindInstanced` work like the object ones, with generation-checked `InstancedId`s, and `RenderSceneDesc::max_instanced` is the capacity. The scene shares the set and borrows the mesh; the set must not be edited while a frame is being prepared.
 
 The material comes from `CreateGBufferMaterial` with `GBufferOptions::instanced`: it uses the `gbuffer_instanced` template, whose vertex shader (the `INSTANCED` permutation of `gbuffer.vert`) reads its instance from a storage buffer by the instance index and builds the position, the normal and the tangent from the instance's position, rotation and scale. The instance's tint multiplies the albedo exactly as a vertex colour does (sRGB-encoded); the custom value is passed to the shader but the standard material ignores it. The mesh must be rigid, in the standard layout, without vertex colours or morph targets; an instanced material cannot be skinned or use vertex colours either. Scales are always above 0, so a mirrored instance (and with it a winding flip) cannot occur.
 
@@ -55,3 +55,27 @@ The material comes from `CreateGBufferMaterial` with `GBufferOptions::instanced`
 
 Instanced meshes are drawn on Vulkan; a Direct3D 12 device refuses them with a message until the Direct3D 12 shaders are minted, and a macOS device until the Metal ones are.
 
+
+## Filling a set
+
+`AddMany(set, transforms, data)` (`renderer/instance_scatter.h`) adds a list in order and reports how many went in and the first refusal; the list is all-or-nothing for the values it checks first, so a bad entry leaves the set as it was. `Scatter(set, rule, data, height_fn, user)` places a seeded, deterministic scatter on a rectangle: a count, the area, a scale range and a seed; with a height function (a plain function pointer and a user pointer, for example the terrain's height query) each instance stands on the ground. The same rule and seed give the same set on every machine.
+
+## As a component
+
+`scene::InstancedMesh` (`scene/components.h`) is a component naming the mesh, the set, the material and the draw limits. The instances are not entities. The entity's world transform (a translation, a rotation and a uniform positive scale) is the set's own transform, so moving the entity moves the whole forest without touching the set. `scene::MakeInstancedSyncSystem` mirrors the component into the render scene: it adds the set, updates the transform and flags when they change, hides it with `Hidden`, and removes it when the component or the entity goes; `SyncReport` counts what it did and what it refused as invalid.
+
+## As an asset
+
+An `INST` resource (`asset/instance_blob.h`) holds a set's chunks as minted bytes: a header, a chunk table, the records and, when the set has them, the tints and custom values. `asset_mint mint-instances SOURCE.inst.src OUTPUT.blob` writes one from a text list (an `id` line, optional `cell_size` and `move_threshold`, and one `instance` line per instance with a position, a rotation, a scale and optionally a tint and a custom value). The blob is a function of the list, so minting twice gives the same bytes. `asset::MakeInstanceSet` makes a set from an opened view by copying the records chunk by chunk with no per-instance `Add` (`AddCalls()` stays 0); a blob that holds a value the set refuses, or chunks out of order, is refused as corrupt.
+
+## Hierarchies
+
+`renderer::InstanceTree` (`renderer/instance_tree.h`) is a forest of instanced nodes (a tree with branches and leaves, a building with its parts) in one packed array, in depth-first order: the subtree of a node is the contiguous range `[index, index + subtree_size)` and a parent comes before its children. A node has a local transform, a mesh (an index into the up to 256 meshes the tree names, or none for a group), a material slot, a tint and custom value, its own box and the box of its subtree. A root has an `f64` world position; every other node has an `f32` offset from its parent, and every world transform and box is in the space of the node's root, so a tree 10,000 km away is as exact as one at the origin. World transforms compose by the rule of `Compose` in `math/transform.h` (scale, then rotation, then translation, no shear), the form an instance record holds.
+
+`InstanceTreeBuilder` adds a root (`AddRoot`) or a child of a node added before (`AddChild`) and `Finish` packs them, children in the order they were added. Nodes get stable ids in that order; a parent that was not added yet, a value that is not finite, a scale not above 0, a mesh or slot out of range, a tree deeper than `kMaxTreeDepth` (255) and more than `kMaxTreeNodes` (2^22) nodes are refused by `TreeStatus`, never by abort. A cycle cannot be asked for, because a parent must exist first; `Attach` refuses to put a node under itself or its own subtree (`Cycle`).
+
+`SetLocal` changes a node's transform and marks it. `UpdateWorldTransforms` recomposes the marked nodes and their subtrees in one forward pass over each affected range, recomputes the boxes they change (the node's own, its subtree's and its ancestors'), and clears the marks; roots with marks run in parallel on the scheduler and the result is the same for any number of threads. The work is the marked ranges, not the tree: a range runs from the first marked node of a root to the end of the last marked subtree.
+
+`Find` maps an id to its index, `Parent`, `SubtreeEnd` and `RootOf` walk the structure, and `WorldPosition` adds the root's `f64` position to a node's offset. `Attach` moves a subtree under a new parent as its last child, keeping its local transform; `Detach` makes a node a root that stays where it is in the world. Both rewrite the array in one pass over it (cost proportional to the node count) and keep ids stable. `Validate` checks every invariant and is what the tests run after each edit.
+
+An `ITRE` resource (`asset/instance_tree_blob.h`) holds a tree as minted bytes: the mesh boxes and the nodes with their parent indices, in the order given. `asset_mint mint-instance-tree SOURCE.itree.src OUTPUT.blob` writes one from text (an `id` line, `mesh` lines with a box each, and `node PARENT X Y Z QX QY QZ QW SX SY SZ MESH SLOT [R G B A CUSTOM]` lines, a parent being `-` or the index of an earlier node). `asset::MakeInstanceTree` rebuilds the tree through the builder, so a blob with a parent that is not earlier, a mesh out of range or a scale not above 0 is refused as corrupt.

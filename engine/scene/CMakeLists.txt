@@ -3,6 +3,7 @@
 set(SCENE_SOURCES
   render_sync.cpp
   terrain_sync.cpp  # Phase 28 Day 490
+  instanced_sync.cpp  # Phase 28 Day 498
   level_spawner.cpp  # Phase 22 Day 329
   scene_components.cpp  # Phase 27 Day 456
 )

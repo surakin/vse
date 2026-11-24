@@ -17,6 +17,7 @@
 //! or the set is cleared.
 
 #include "containers/span.h"
+#include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "math/geometry.h"
@@ -119,10 +120,29 @@ struct InstanceChunkInfo
     u64 version = 0;  ///< Changes whenever the chunk's records, data or box change; unique across the set.
 };
 
+/// One chunk to adopt: its origin and its records (and data) as stored.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: the spans are borrowed for the call.
+struct InstanceChunkSource
+{
+    Vec3d origin;                        ///< The world position the offsets are from.
+    Span<const InstanceRecord> records;  ///< 1 to `kInstanceChunkSize` records.
+    Span<const InstanceExtra> extras;    ///< The data of each record, or empty for a set without data.
+};
+
+class InstanceSet;
+
+/// The shared pointer of an instance set: the scene, the entity that fills it and the renderer share one.
+using InstanceSetPtr = SharedPtr<InstanceSet>;
+/// The shared pointer of an instance set that is only read.
+using InstanceSetConstPtr = SharedPtr<const InstanceSet>;
+
 /// A set of instances, chunked in Morton order.
 ///
 /// - Thread-safety: thread-compatible; concurrent readers are safe while nobody edits.
-/// - Ownership: made by [[InstanceSet::Create]] and owned by a `UniquePtr`; every id belongs to the set that made it.
+/// - Ownership: made by [[InstanceSet::Create]] and held by an `InstanceSetPtr` (a `SharedPtr`); every id belongs to
+/// the set that made it.
 class InstanceSet
 {
 public:
@@ -131,7 +151,22 @@ public:
     /// - Returns: the set, or an empty pointer when `desc` is invalid or the heap is exhausted.
     /// - Fails: returns an empty pointer for a `max_instances` of 0 or above `kMaxInstances`, a `key_cell_size` that is
     ///   not finite and above 0, or a `move_threshold` that is not finite and not below 0.
-    static UniquePtr<InstanceSet> Create(const InstanceSetDesc& desc);
+    static InstanceSetPtr Create(const InstanceSetDesc& desc);
+
+    /// Makes a set from chunks that were minted: the records are copied chunk by chunk, with no `Add` per instance
+    /// (`AddCalls()` stays 0). The chunks keep their order and their contents; the ids are the positions in that order
+    /// (chunk by chunk, slot by slot), each with generation 1.
+    ///
+    /// - Param desc: the description, as for [[InstanceSet::Create]].
+    /// - Param chunks: the chunks, in the order they are to be listed (a Morton order, as `Rebuild` leaves it).
+    /// - Returns: the set, or an empty pointer when `desc` is invalid, the keys of the chunk origins are not in
+    ///   non-decreasing order, a chunk is empty or holds more than `kInstanceChunkSize` records, the total is above
+    ///   `max_instances`, a record has a value `Add` would refuse (not finite, a scale not above 0), a tint is not
+    ///   finite, a chunk origin is beyond `kMaxInstanceCoordinate`, or `extras` is not the size of `records` (for a set
+    ///   with data; it must be empty for one without).
+    /// - Fails: returns an empty pointer; nothing is logged.
+    /// - Ownership: copies the spans.
+    static InstanceSetPtr FromChunks(const InstanceSetDesc& desc, Span<const InstanceChunkSource> chunks);
 
     /// Adds an instance.
     ///
@@ -220,6 +255,8 @@ public:
     usize MemoryBytes() const;
     /// Returns the counter the last edit stamped on a chunk; it grows with every edit.
     u64 Version() const { return counter_; }
+    /// Returns how many times `Add` was called on this set (a set made by `FromChunks` starts at 0).
+    u64 AddCalls() const { return add_calls_; }
 
 private:
     struct Slot
@@ -259,6 +296,7 @@ private:
     InstanceSetDesc desc_;
     u32 count_ = 0;
     u64 counter_ = 0;
+    u64 add_calls_ = 0;
     Vector<Chunk_> chunks_;
     Vector<InstanceRecord> records_;
     Vector<u32> handles_;
@@ -268,8 +306,5 @@ private:
     Vector<Slot> slots_;
     u32 free_slot_ = 0xFFFFFFFFu;
 };
-
-/// The owning pointer of an instance set.
-using InstanceSetPtr = UniquePtr<InstanceSet>;
 
 }  // namespace vse::renderer

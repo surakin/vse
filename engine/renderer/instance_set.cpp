@@ -1,6 +1,7 @@
 #include "renderer/instance_set.h"
 
 #include "algorithm.h"
+#include "cstr/mem_ops.h"
 #include "log/assert.h"
 #include "lang/scalar.h"
 
@@ -66,14 +67,108 @@ struct InstanceRebuildEntry
 
 }  // namespace
 
-UniquePtr<InstanceSet> InstanceSet::Create(const InstanceSetDesc& desc)
+InstanceSetPtr InstanceSet::Create(const InstanceSetDesc& desc)
 {
     if (desc.max_instances == 0 || desc.max_instances > kMaxInstances || !IsFinite(desc.key_cell_size) ||
         !(desc.key_cell_size > 0.0) || !IsFinite(desc.move_threshold) || desc.move_threshold < 0.0f)
     {
-        return UniquePtr<InstanceSet>();
+        return InstanceSetPtr();
     }
-    return MakeUnique<InstanceSet>(desc);
+    return MakeShared<InstanceSet>(desc);
+}
+
+InstanceSetPtr InstanceSet::FromChunks(const InstanceSetDesc& desc, Span<const InstanceChunkSource> chunks)
+{
+    InstanceSetPtr set = Create(desc);
+    if (set.Get() == nullptr)
+    {
+        return InstanceSetPtr();
+    }
+    u64 total = 0;
+    for (usize c = 0; c < chunks.Size(); ++c)
+    {
+        const InstanceChunkSource& src = chunks[c];
+        if (src.records.Size() == 0 || src.records.Size() > kInstanceChunkSize ||
+            src.extras.Size() != (desc.has_data ? src.records.Size() : usize{0}) || !IsFinite(src.origin.x) ||
+            !IsFinite(src.origin.y) || !IsFinite(src.origin.z) || Abs(src.origin.x) > kMaxInstanceCoordinate ||
+            Abs(src.origin.y) > kMaxInstanceCoordinate || Abs(src.origin.z) > kMaxInstanceCoordinate)
+        {
+            return InstanceSetPtr();
+        }
+        total += src.records.Size();
+        if (total > desc.max_instances)
+        {
+            return InstanceSetPtr();
+        }
+        for (usize i = 0; i < src.records.Size(); ++i)
+        {
+            const InstanceRecord& r = src.records[i];
+            if (!IsFinite(r.position.x) || !IsFinite(r.position.y) || !IsFinite(r.position.z) ||
+                !IsFinite(r.rotation.x) || !IsFinite(r.rotation.y) || !IsFinite(r.rotation.z) ||
+                !IsFinite(r.rotation.w) || !(r.scale.x > 0.0f) || !(r.scale.y > 0.0f) || !(r.scale.z > 0.0f) ||
+                !IsFinite(r.scale.x) || !IsFinite(r.scale.y) || !IsFinite(r.scale.z))
+            {
+                return InstanceSetPtr();
+            }
+            if (desc.has_data)
+            {
+                const InstanceExtra& e = src.extras[i];
+                if (!IsFinite(e.tint.x) || !IsFinite(e.tint.y) || !IsFinite(e.tint.z) || !IsFinite(e.tint.w))
+                {
+                    return InstanceSetPtr();
+                }
+            }
+        }
+    }
+    InstanceSet& s = *set.Get();
+    const usize chunk_total = chunks.Size();
+    s.chunks_.Reserve(chunk_total);
+    s.order_.Reserve(chunk_total);
+    s.records_.Resize(chunk_total * kInstanceChunkSize);
+    s.handles_.Resize(chunk_total * kInstanceChunkSize);
+    if (desc.has_data)
+    {
+        s.extras_.Resize(chunk_total * kInstanceChunkSize);
+    }
+    s.slots_.Reserve(static_cast<usize>(total));
+    for (usize ci = 0; ci < chunk_total; ++ci)
+    {
+        const InstanceChunkSource& src = chunks[ci];
+        Chunk_ c;
+        c.origin = src.origin;
+        c.key = s.KeyOf(src.origin);
+        if (ci > 0 && c.key < s.chunks_[ci - 1].key)
+        {
+            return InstanceSetPtr();  // the chunks are not in key order
+        }
+        c.listed = true;
+        c.version = ++s.counter_;
+        c.count = static_cast<u32>(src.records.Size());
+        const usize base = ci * kInstanceChunkSize;
+        MemCopy(s.records_.Data() + base, src.records.Data(), src.records.Size() * sizeof(InstanceRecord));
+        if (desc.has_data)
+        {
+            MemCopy(s.extras_.Data() + base, src.extras.Data(), src.extras.Size() * sizeof(InstanceExtra));
+        }
+        for (u32 i = 0; i < c.count; ++i)
+        {
+            const InstanceRecord& r = s.records_[base + i];
+            const u32 handle = static_cast<u32>(s.slots_.Size());
+            Slot slot;
+            slot.chunk = static_cast<u32>(ci);
+            slot.pos = i;
+            s.slots_.Push(slot);
+            s.handles_[base + i] = handle;
+            const Vec3& p = r.position;
+            c.box.min = Vec3(Min(c.box.min.x, p.x), Min(c.box.min.y, p.y), Min(c.box.min.z, p.z));
+            c.box.max = Vec3(Max(c.box.max.x, p.x), Max(c.box.max.y, p.y), Max(c.box.max.z, p.z));
+            c.max_scale = Max(c.max_scale, MaxInstanceScale(r.scale));
+        }
+        s.chunks_.Push(c);
+        s.order_.Push(static_cast<u32>(ci));
+    }
+    s.count_ = static_cast<u32>(total);
+    return set;
 }
 
 u64 InstanceSet::KeyOf(const Vec3d& p) const
@@ -277,6 +372,7 @@ void InstanceSet::Detach(u32 chunk, u32 pos)
 
 InstanceStatus InstanceSet::Add(const InstanceTransform& transform, const InstanceExtra* data, InstanceId* out)
 {
+    ++add_calls_;
     if (!ValidTransform(transform))
     {
         return InstanceStatus::InvalidValue;

@@ -89,6 +89,12 @@ struct SceneSyncReport
     u64 terrains_removed = 0;
     /// `SetTerrain` calls (a new source, material, placement or hidden state).
     u64 terrains_set = 0;
+    /// Instanced meshes added to the render scene (a re-add counts again).
+    u64 instanced_added = 0;
+    /// Instanced meshes removed from the render scene.
+    u64 instanced_removed = 0;
+    /// `SetInstanced` calls (a new set, mesh, material, placement or hidden state).
+    u64 instanced_set = 0;
     /// Entities skipped because their mesh is missing or empty, or their light has values the scene would abort on.
     u64 invalid = 0;
 };
@@ -141,5 +147,31 @@ ecs::SystemDesc MakeCameraSystem(const char* name);
 /// - Fails: never.
 /// - Ownership: the system keeps one share of each terrain's source and textures through the render scene.
 ecs::SystemDesc MakeTerrainSyncSystem(const char* name);
+
+/// Builds the system that mirrors [[scene::InstancedMesh]] entities into the [[scene::SceneLink]] scene: it adds an
+/// instanced mesh when an entity gets the component, replaces it when the set, the mesh, the material, the limits, the
+/// placement or the [[scene::Hidden]] tag changes, and removes it when the component or the entity goes. The entity's
+/// `WorldTransform` (relative to the render origin) becomes the set's position, rotation and uniform scale; an entity
+/// with a mesh or set missing, or a transform that is not a translation, a rotation and a positive uniform scale, is
+/// counted as `invalid` and not drawn. It reports in [[scene::SceneSyncReport]].
+///
+/// - Param name: the system's name.
+/// - Returns: the description to add to a schedule; it reads `InstancedMesh`, `Hidden` and `WorldTransform`, writes
+///   `InstancedHandle`, and writes the link and report resources.
+/// - Fails: never.
+/// - Ownership: the render scene shares each set; the sync's handle component keeps each mesh alive.
+ecs::SystemDesc MakeInstancedSyncSystem(const char* name);
+
+/// Splits a transform into a translation, a rotation and a uniform scale.
+///
+/// - Param matrix: a local-to-scene matrix.
+/// - Param position: receives the translation.
+/// - Param rotation: receives the unit rotation.
+/// - Param scale: receives the scale.
+/// - Returns: false when the matrix is not a rotation times a uniform positive scale (columns of unequal length beyond
+///   1e-3 relative, not orthogonal, mirrored, or not finite); the outputs are then not written.
+/// - Fails: reported through the return value.
+/// - Ownership: borrows `matrix` for the call; the outputs are written through the pointers.
+bool DecomposeUniform(const Mat4& matrix, Vec3* position, Quaternion* rotation, f32* scale);
 
 }  // namespace vse::scene

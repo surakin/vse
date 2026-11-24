@@ -27,6 +27,8 @@ TypeRegistry::TypeRegistry()
     types_.Push(TypeInfo{types::kAudioClip, 1, "audio_clip"});
     types_.Push(TypeInfo{types::kScript, 1, "script"});
     types_.Push(TypeInfo{types::kHeightMap, 1, "height_map"});
+    types_.Push(TypeInfo{types::kInstances, 1, "instances"});
+    types_.Push(TypeInfo{types::kInstanceTrees, 1, "instance trees"});
 }
 
 Status TypeRegistry::Register(ResourceType type, u32 version, const char* name)

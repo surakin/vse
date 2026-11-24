@@ -16,6 +16,8 @@ set(RENDERER_SOURCES
   terrain_material.cpp  # Phase 28 Day 489
   terrain_source.cpp  # Phase 28 Day 490
   instance_set.cpp  # Phase 28 Day 495
+  instance_scatter.cpp  # Phase 28 Day 498
+  instance_tree.cpp  # Phase 28 Day 499
   instance_cull.cpp  # Phase 28 Day 496
   instance_query.cpp  # Phase 28 Day 496
   shared_settings.cpp

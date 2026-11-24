@@ -384,6 +384,117 @@ renderer::TerrainId id;
 
 The terrain in the render scene, or invalid.
 
+## `InstancedMesh` {#scene-instancedmesh}
+
+`struct scene::InstancedMesh` — defined in `engine/scene/components.h`
+
+```cpp
+struct InstancedMesh { ... }
+```
+
+Many copies of one mesh drawn from an [`renderer::InstanceSet`](renderer.md#renderer-instanceset): a forest, a field of rocks. The instances are not entities; whoever owns the entity fills the set (`AddMany`, `Scatter`, `set->Add`). The entity's own transform is the set's parent: instances are in the entity's local space, so moving, turning or scaling the entity moves the whole set without touching it. The entity's `WorldTransform` must be a translation, a rotation and a uniform positive scale (anything else is counted as invalid by the sync and not drawn). [`scene::Hidden`](#scene-hidden) skips it.
+
+The material must be one made with `GBufferOptions::instanced`. Edits to the set show on the next frame; do not edit it while a frame is being prepared.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | shares `mesh` and `set`; the render sync holds one more share of each per set it added, so the geometry outlives its scene entry even when the entity is destroyed first. |
+
+### `mesh` {#scene-instancedmesh-mesh}
+
+`variable scene::InstancedMesh::mesh` — defined in `engine/scene/components.h`
+
+```cpp
+renderer::GpuMeshPtr mesh;
+```
+
+The geometry; null or an empty mesh means "draw nothing" (counted invalid).
+
+### `set` {#scene-instancedmesh-set}
+
+`variable scene::InstancedMesh::set` — defined in `engine/scene/components.h`
+
+```cpp
+renderer::InstanceSetPtr set;
+```
+
+The instances; null means "draw nothing" (counted invalid).
+
+### `material` {#scene-instancedmesh-material}
+
+`variable scene::InstancedMesh::material` — defined in `engine/scene/components.h`
+
+```cpp
+u32 material;
+```
+
+The material id (made with `GBufferOptions::instanced`).
+
+### `flags` {#scene-instancedmesh-flags}
+
+`variable scene::InstancedMesh::flags` — defined in `engine/scene/components.h`
+
+```cpp
+u32 flags;
+```
+
+Extra `renderer::ObjectFlags` bits; [`scene::Hidden`](#scene-hidden) adds `kHidden`.
+
+### `max_distance` {#scene-instancedmesh-max-distance}
+
+`variable scene::InstancedMesh::max_distance` — defined in `engine/scene/components.h`
+
+```cpp
+f32 max_distance;
+```
+
+Instances farther than this from the camera are not drawn; 0 for no limit.
+
+### `min_size_ratio` {#scene-instancedmesh-min-size-ratio}
+
+`variable scene::InstancedMesh::min_size_ratio` — defined in `engine/scene/components.h`
+
+```cpp
+f32 min_size_ratio;
+```
+
+Instances smaller than this fraction of their distance are not drawn; 0 for none.
+
+## `InstancedHandle` {#scene-instancedhandle}
+
+`struct scene::InstancedHandle` — defined in `engine/scene/components.h`
+
+```cpp
+struct InstancedHandle { ... }
+```
+
+What the sync keeps on a mirrored instanced entity: its id in the render scene. The world logs the removal of this component, which is how the sync learns that the entity was destroyed.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `kTrackRemoval` {#scene-instancedhandle-ktrackremoval}
+
+`variable scene::InstancedHandle::kTrackRemoval` — defined in `engine/scene/components.h`
+
+```cpp
+static constexpr bool kTrackRemoval;
+```
+
+The world logs removals of this component (see [`ecs::World::RemovedCount`](ecs.md#ecs-world-removedcount-const)).
+
+### `id` {#scene-instancedhandle-id}
+
+`variable scene::InstancedHandle::id` — defined in `engine/scene/components.h`
+
+```cpp
+renderer::InstancedId id;
+```
+
+The instanced mesh in the render scene, or invalid.
+
 ## `ActiveCamera` {#scene-activecamera}
 
 `struct scene::ActiveCamera` — defined in `engine/scene/components.h`
@@ -786,6 +897,36 @@ u64 terrains_set;
 
 `SetTerrain` calls (a new source, material, placement or hidden state).
 
+### `instanced_added` {#scene-scenesyncreport-instanced-added}
+
+`variable scene::SceneSyncReport::instanced_added` — defined in `engine/scene/render_sync.h`
+
+```cpp
+u64 instanced_added;
+```
+
+Instanced meshes added to the render scene (a re-add counts again).
+
+### `instanced_removed` {#scene-scenesyncreport-instanced-removed}
+
+`variable scene::SceneSyncReport::instanced_removed` — defined in `engine/scene/render_sync.h`
+
+```cpp
+u64 instanced_removed;
+```
+
+Instanced meshes removed from the render scene.
+
+### `instanced_set` {#scene-scenesyncreport-instanced-set}
+
+`variable scene::SceneSyncReport::instanced_set` — defined in `engine/scene/render_sync.h`
+
+```cpp
+u64 instanced_set;
+```
+
+`SetInstanced` calls (a new set, mesh, material, placement or hidden state).
+
 ### `invalid` {#scene-scenesyncreport-invalid}
 
 `variable scene::SceneSyncReport::invalid` — defined in `engine/scene/render_sync.h`
@@ -859,6 +1000,43 @@ Builds the system that mirrors [`scene::Terrain`](#scene-terrain) entities into 
 | Returns | the description to add to a schedule; it reads `Terrain`, `Hidden` and `WorldTransform`, writes `TerrainHandle`, and writes the link and report resources. |
 | Fails | never. |
 | Ownership | the system keeps one share of each terrain's source and textures through the render scene. |
+
+## `MakeInstancedSyncSystem(const char*)` {#scene-makeinstancedsyncsystem-const-char-star}
+
+`function scene::MakeInstancedSyncSystem` — defined in `engine/scene/render_sync.h`
+
+```cpp
+ecs::SystemDesc MakeInstancedSyncSystem(const char* name);
+```
+
+Builds the system that mirrors [`scene::InstancedMesh`](#scene-instancedmesh) entities into the [`scene::SceneLink`](#scene-scenelink) scene: it adds an instanced mesh when an entity gets the component, replaces it when the set, the mesh, the material, the limits, the placement or the [`scene::Hidden`](#scene-hidden) tag changes, and removes it when the component or the entity goes. The entity's `WorldTransform` (relative to the render origin) becomes the set's position, rotation and uniform scale; an entity with a mesh or set missing, or a transform that is not a translation, a rotation and a positive uniform scale, is counted as `invalid` and not drawn. It reports in [`scene::SceneSyncReport`](#scene-scenesyncreport).
+
+| Field | Value |
+|---|---|
+| Parameter `name` | the system's name. |
+| Returns | the description to add to a schedule; it reads `InstancedMesh`, `Hidden` and `WorldTransform`, writes `InstancedHandle`, and writes the link and report resources. |
+| Fails | never. |
+| Ownership | the render scene shares each set; the sync's handle component keeps each mesh alive. |
+
+## `DecomposeUniform(const Mat4&,Vec3*,Quaternion*,f32*)` {#scene-decomposeuniform-const-mat4-amp-vec3-star-quaternion-star-f32-star}
+
+`function scene::DecomposeUniform` — defined in `engine/scene/render_sync.h`
+
+```cpp
+bool DecomposeUniform(const Mat4& matrix, Vec3* position, Quaternion* rotation, f32* scale);
+```
+
+Splits a transform into a translation, a rotation and a uniform scale.
+
+| Field | Value |
+|---|---|
+| Parameter `matrix` | a local-to-scene matrix. |
+| Parameter `position` | receives the translation. |
+| Parameter `rotation` | receives the unit rotation. |
+| Parameter `scale` | receives the scale. |
+| Returns | false when the matrix is not a rotation times a uniform positive scale (columns of unequal length beyond 1e-3 relative, not orthogonal, mirrored, or not finite); the outputs are then not written. |
+| Fails | reported through the return value. |
+| Ownership | borrows `matrix` for the call; the outputs are written through the pointers. |
 
 ## `SceneComponentId` {#scene-scenecomponentid}
 

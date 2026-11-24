@@ -80,6 +80,10 @@ inline constexpr ResourceType kMeshCollider = ResourceType::FromChars('M', 'C', 
 inline constexpr ResourceType kAudioClip = ResourceType::FromChars('A', 'C', 'L', 'P');
 /// A height map: 16-bit terrain heights with their mip chain and a block min/max pyramid.
 inline constexpr ResourceType kHeightMap = ResourceType::FromChars('H', 'G', 'H', 'T');
+/// An instance set: the chunks of many instances of one mesh (records and optional data), in Morton order.
+inline constexpr ResourceType kInstances = ResourceType::FromChars('I', 'N', 'S', 'T');
+/// An instance tree: a forest of instanced nodes (parent indices, local transforms, meshes and material slots).
+inline constexpr ResourceType kInstanceTrees = ResourceType::FromChars('I', 'T', 'R', 'E');
 /// A script: its source text, the entry points the minter found and its dependencies.
 inline constexpr ResourceType kScript = ResourceType::FromChars('S', 'C', 'R', 'P');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).

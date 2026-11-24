@@ -181,12 +181,12 @@ void RandomEdits(InstanceSet& set, Vector<Model>& model, Rng& rng, u32 ops, u32 
     }
 }
 
-UniquePtr<InstanceSet> MakeSet(bool data, u32 max = kMaxInstances)
+InstanceSetPtr MakeSet(bool data, u32 max = kMaxInstances)
 {
     InstanceSetDesc d;
     d.has_data = data;
     d.max_instances = max;
-    UniquePtr<InstanceSet> set = InstanceSet::Create(d);
+    InstanceSetPtr set = InstanceSet::Create(d);
     REQUIRE(set.Get() != nullptr);
     return set;
 }
@@ -224,7 +224,7 @@ TEST_CASE("100,000 random adds, removes and moves agree with a brute-force model
 {
     for (int with_data = 0; with_data < 2; ++with_data)
     {
-        UniquePtr<InstanceSet> set = MakeSet(with_data != 0);
+        InstanceSetPtr set = MakeSet(with_data != 0);
         Vector<Model> model;
         Rng rng(7 + with_data);
         RandomEdits(*set, model, rng, 50000, 2500, 300.0, true);
@@ -234,7 +234,7 @@ TEST_CASE("100,000 random adds, removes and moves agree with a brute-force model
 
 TEST_CASE("An id stays valid while other instances are removed, and a stale id is refused", "[instance_set]")
 {
-    UniquePtr<InstanceSet> set = MakeSet(true);
+    InstanceSetPtr set = MakeSet(true);
     Rng rng(3);
     Vector<Model> model;
     for (int i = 0; i < 2000; ++i)
@@ -281,7 +281,7 @@ TEST_CASE("An id stays valid while other instances are removed, and a stale id i
 
 TEST_CASE("The capacity and bad values are refused with a status and change nothing", "[instance_set]")
 {
-    UniquePtr<InstanceSet> set = MakeSet(false, 300);
+    InstanceSetPtr set = MakeSet(false, 300);
     Rng rng(5);
     Vector<InstanceId> ids;
     for (int i = 0; i < 300; ++i)
@@ -298,7 +298,7 @@ TEST_CASE("The capacity and bad values are refused with a status and change noth
     const u64 version = set->Version();
     InstanceTransform bad = RandomTransform(rng, -10.0, 10.0);
     bad.position.x = Limits<f64>::QuietNaN();
-    UniquePtr<InstanceSet> roomy = MakeSet(false);
+    InstanceSetPtr roomy = MakeSet(false);
     REQUIRE(roomy->Add(bad, nullptr, nullptr) == InstanceStatus::InvalidValue);
     bad = RandomTransform(rng, -10.0, 10.0);
     bad.position.y = 2.0 * kMaxInstanceCoordinate;
@@ -324,7 +324,7 @@ TEST_CASE("The capacity and bad values are refused with a status and change noth
 
 TEST_CASE("A set without data refuses data calls and a set with data holds them", "[instance_set]")
 {
-    UniquePtr<InstanceSet> plain = MakeSet(false);
+    InstanceSetPtr plain = MakeSet(false);
     InstanceId id;
     Rng rng(9);
     REQUIRE(plain->Add(RandomTransform(rng, -5.0, 5.0), nullptr, &id) == InstanceStatus::Ok);
@@ -333,7 +333,7 @@ TEST_CASE("A set without data refuses data calls and a set with data holds them"
     REQUIRE(plain->GetData(id, &e) == InstanceStatus::NoData);
     REQUIRE(plain->Extras(0).Size() == 0);
 
-    UniquePtr<InstanceSet> rich = MakeSet(true);
+    InstanceSetPtr rich = MakeSet(true);
     e.tint = Vec4(0.25f, 0.5f, 0.75f, 1.0f);
     e.custom = 42;
     REQUIRE(rich->Add(RandomTransform(rng, -5.0, 5.0), &e, &id) == InstanceStatus::Ok);
@@ -349,7 +349,7 @@ TEST_CASE("A set without data refuses data calls and a set with data holds them"
 
 TEST_CASE("An edit stamps only the chunks it changed", "[instance_set]")
 {
-    UniquePtr<InstanceSet> set = MakeSet(true);
+    InstanceSetPtr set = MakeSet(true);
     Rng rng(11);
     Vector<InstanceId> ids;
     for (int i = 0; i < 3000; ++i)
@@ -381,7 +381,7 @@ TEST_CASE("An edit stamps only the chunks it changed", "[instance_set]")
 TEST_CASE("Rebuild keeps every instance and id, does not worsen the chunk volumes, and fills the chunks",
           "[instance_set]")
 {
-    UniquePtr<InstanceSet> set = MakeSet(true);
+    InstanceSetPtr set = MakeSet(true);
     Vector<Model> model;
     Rng rng(21);
     RandomEdits(*set, model, rng, 30000, 30000, 400.0, false);
@@ -430,8 +430,8 @@ TEST_CASE("Rebuild keeps every instance and id, does not worsen the chunk volume
 
 TEST_CASE("The same operations give the same chunk layout", "[instance_set]")
 {
-    UniquePtr<InstanceSet> a = MakeSet(true);
-    UniquePtr<InstanceSet> b = MakeSet(true);
+    InstanceSetPtr a = MakeSet(true);
+    InstanceSetPtr b = MakeSet(true);
     Vector<Model> ma;
     Vector<Model> mb;
     Rng ra(33);
@@ -465,7 +465,7 @@ TEST_CASE("The same operations give the same chunk layout", "[instance_set]")
 TEST_CASE("A set 10,000 km from the origin keeps exact offsets and bounds", "[instance_set]")
 {
     const f64 base = 1.0e7;
-    UniquePtr<InstanceSet> set = MakeSet(false);
+    InstanceSetPtr set = MakeSet(false);
     Vector<Model> model;
     Rng rng(41);
     for (int i = 0; i < 5000; ++i)
@@ -512,7 +512,7 @@ TEST_CASE("A set 10,000 km from the origin keeps exact offsets and bounds", "[in
 TEST_CASE("An instance set holds and edits a million instances and agrees with a model", "[instance_set]")
 {
     const u32 total = test_support::SoakCount(50000, 1000000);
-    UniquePtr<InstanceSet> set = MakeSet(true);
+    InstanceSetPtr set = MakeSet(true);
     Vector<Model> model;
     model.Reserve(total);
     Rng rng(77);

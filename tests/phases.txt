@@ -207,6 +207,7 @@ tests/renderer/sky_test.cpp                           28
 tests/renderer/terrain_tiles_test.cpp                 28
 tests/renderer/instance_set_test.cpp                28
 tests/renderer/instance_cull_test.cpp               28
+tests/renderer/instance_tree_test.cpp               28
 tests/renderer/terrain_material_test.cpp              28
 tests/renderer/lsan_options.cpp                       5
 tests/renderer/material_test.cpp                      5
@@ -422,6 +423,7 @@ tests/scene/scene_cost_test.cpp                     17   # Phase 17 Day 233
 tests/scene/level_spawner_test.cpp               22   # Phase 22 Day 329
 tests/scene/scene_components_test.cpp            27   # Phase 27 Day 456: the scene's components in the storage registry
 tests/scene/terrain_sync_test.cpp                28   # Phase 28 Day 490
+tests/scene/instanced_sync_test.cpp              28   # Phase 28 Day 498
 tests/scene/CMakeLists.txt                      17
 
 # --- Phase 20: networking ---

@@ -14,3 +14,5 @@ TriangleMesh|TriangleMeshPtr|TriangleMeshConstPtr|engine/physics/triangle_mesh.h
 CompoundShape|CompoundShapePtr|CompoundShapeConstPtr|engine/physics/compound.h
 AudioClip|AudioClipPtr|AudioClipConstPtr|engine/audio/clip.h
 TerrainSource|TerrainSourcePtr|TerrainSourceConstPtr|engine/renderer/terrain_source.h
+InstanceSet|InstanceSetPtr|InstanceSetConstPtr|engine/renderer/instance_set.h
+InstanceTree|InstanceTreePtr|InstanceTreeConstPtr|engine/renderer/instance_tree.h

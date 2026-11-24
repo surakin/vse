@@ -81,6 +81,16 @@ Status LoadHeightMap(const LoadContext& context, HeightMapView* out, void*)
     return out->Open(context.Buffer(), context.Types());
 }
 
+Status LoadInstances(const LoadContext& context, InstanceBlobView* out, void*)
+{
+    return out->Open(context.Buffer(), context.Types());
+}
+
+Status LoadInstanceTrees(const LoadContext& context, InstanceTreeBlobView* out, void*)
+{
+    return out->Open(context.Buffer(), context.Types());
+}
+
 Status LoadMaterial(const LoadContext& context, MaterialAssetData* out, void*)
 {
     return LoadMaterialBlob(context.Bytes(), context.Types(), out);
@@ -109,6 +119,8 @@ void RegisterCpuLoaders(ResourceManager* manager)
     manager->RegisterLoader<MaterialAssetData>(&LoadMaterial);
     manager->RegisterLoader<MeshColliderView>(&LoadMeshCollider);
     manager->RegisterLoader<HeightMapView>(&LoadHeightMap);
+    manager->RegisterLoader<InstanceBlobView>(&LoadInstances);
+    manager->RegisterLoader<InstanceTreeBlobView>(&LoadInstanceTrees);
     manager->RegisterLoader<LevelSummary>(&LoadLevel);
 }
 

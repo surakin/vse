@@ -316,7 +316,7 @@ TEST_CASE("Instanced meshes are generational, bounded by the scene's capacity, a
 
     RenderScene scene(RenderSceneDesc{4, 4, 2, 2});
     InstancedObject o;
-    o.set = set.Get();
+    o.set = set;
     o.mesh = &mesh;
     const InstancedId a = scene.AddInstanced(o);
     const InstancedId b = scene.AddInstanced(o);

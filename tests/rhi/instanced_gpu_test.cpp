@@ -79,7 +79,7 @@ bool MakeScene(Rig& rig, Scene* s)
 InstancedObject MakeObject(const Scene& s)
 {
     InstancedObject o;
-    o.set = s.set.Get();
+    o.set = s.set;
     o.mesh = &s.mesh;
     o.material = s.material.index;
     return o;
