@@ -620,11 +620,6 @@ TextureHandle Dx12Device::CreateTexture(const TextureDesc& desc)
         RhiLog(LogVerbosity::Error, "CreateTexture: %s", why);
         return {};
     }
-    if (desc.dimension == TextureDimension::Cube && !caps_.cube_textures)
-    {
-        RhiLog(LogVerbosity::Error, "CreateTexture: cube textures are not supported on this backend yet");
-        return {};
-    }
     if (!FormatSupport(desc.format, desc.usage))
     {
         RhiLog(LogVerbosity::Error, "CreateTexture: the format %s cannot be used with these usages on this device",
@@ -632,6 +627,9 @@ TextureHandle Dx12Device::CreateTexture(const TextureDesc& desc)
         return {};
     }
     const bool is3d = desc.dimension == TextureDimension::Tex3D;
+    // A cube is a 2D array of six slices (Validate keeps it square, single-sampled and to sampling and copies); only
+    // its shader view differs, a TextureCube over the six.
+    const bool is_cube = desc.dimension == TextureDimension::Cube;
     const FormatProperties& fp = FormatInfo(desc.format);
     D3D12_RESOURCE_DESC rd{};
     rd.Dimension = is3d ? D3D12_RESOURCE_DIMENSION_TEXTURE3D : D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -710,6 +708,11 @@ TextureHandle Dx12Device::CreateTexture(const TextureDesc& desc)
         {
             v.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
             v.Texture3D.MipLevels = desc.mip_levels;
+        }
+        else if (is_cube)
+        {
+            v.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+            v.TextureCube.MipLevels = desc.mip_levels;
         }
         else if (ms)
         {

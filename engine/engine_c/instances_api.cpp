@@ -12,7 +12,7 @@ namespace vse::engine_c
 namespace
 {
 
-constexpr f64 kLimit = renderer::kMaxInstanceCoordinate;
+constexpr f64 kInstanceCoordinateLimit = renderer::kMaxInstanceCoordinate;
 constexpr u32 kMaxBulk = 65536;
 constexpr u32 kDefaultMaxInstances = 1u << 20;
 
@@ -23,7 +23,7 @@ bool FiniteF(f32 v)
 
 bool FiniteD(f64 v)
 {
-    return v - v == 0.0 && v <= kLimit && v >= -kLimit;
+    return v - v == 0.0 && v <= kInstanceCoordinateLimit && v >= -kInstanceCoordinateLimit;
 }
 
 bool ValidRotation(const f32 r[4])

@@ -788,7 +788,7 @@ The bytecode format `CreateShader` takes: SPIR-V on Vulkan, DXIL on Direct3D 12.
 bool cube_textures;
 ```
 
-Whether cube textures (`TextureDimension::Cube`: six square faces, sampled and copied) can be created: true on the Vulkan and Metal backends and the null device; the default (and a backend without them) is false, and `CreateTexture` then fails for a cube.
+Whether cube textures (`TextureDimension::Cube`: six square faces, sampled and copied) can be created: true on the Vulkan, Direct3D 12 and Metal backends and the null device; the default (and a backend without them) is false, and `CreateTexture` then fails for a cube.
 
 ### `object_index_stream` {#rhi-devicecaps-object-index-stream}
 

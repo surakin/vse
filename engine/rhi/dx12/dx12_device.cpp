@@ -376,6 +376,7 @@ void Dx12Device::FillCaps()
     c.supports_bindless = false;
     c.shader_format = ShaderFormat::Dxil;
     c.object_index_stream = true;  // D3D12 shaders have no base instance (shaders/target_common.slang)
+    c.cube_textures = true;        // a 6-slice 2D array resource with a TextureCube view (Phase 28 Day 502)
     caps_ = c;
 }
 

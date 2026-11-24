@@ -2609,7 +2609,7 @@ Tree nodes the tree culls emitted (before the frame's instance budget).
 u32 instances_dropped;
 ```
 
-Visible instances left out because the frame's instance buffer was full ([`renderer::kDefaultFrameInstances`](#renderer-kdefaultframeinstances) unless the frame resources were made with another size).
+Visible instances left out because the frame's instance buffer was full ([`renderer::kDefaultFrameInstances`](#renderer-kdefaultframeinstances) unless the frame resources were made with another size), or, on Direct3D 12, past the object index stream's [`renderer::kObjectIndexStreamEntries`](#renderer-kobjectindexstreamentries).
 
 ### `instance_chunks_tested` {#renderer-gbufferstats-instance-chunks-tested}
 
@@ -6894,7 +6894,17 @@ The vertex attribute location a material vertex shader reads the object index fr
 inline constexpr u32 kMaxObjectIndices;
 ```
 
-How many object indices the object index stream holds: the most objects one pass draws by index.
+The most objects one pass draws by index (draw `i` with `first_instance = i`).
+
+## `kObjectIndexStreamEntries` {#renderer-kobjectindexstreamentries}
+
+`variable renderer::kObjectIndexStreamEntries` — defined in `engine/renderer/material.h`
+
+```cpp
+inline constexpr u32 kObjectIndexStreamEntries;
+```
+
+How many indices the object index stream holds: the objects one pass draws by index ([`renderer::kMaxObjectIndices`](#renderer-kmaxobjectindices)) and the instances of a frame's default instance buffer ([`renderer::kDefaultFrameInstances`](#renderer-kdefaultframeinstances)), since an instanced draw on Direct3D 12 reads entry `first_instance + i` for its instance `i`.
 
 ## `TextureDefault` {#renderer-texturedefault}
 
@@ -8009,7 +8019,7 @@ Returns the layout of the object storage group (set 2).
 rhi::BufferHandle ObjectIndexStream() const;
 ```
 
-Returns the object index stream: a vertex buffer holding the indices `0 .. kMaxObjectIndices - 1` as `u32`, which a pass binds at [`renderer::MaterialSystem::ObjectIndexSlotFor`](#renderer-materialsystem-objectindexslotfor-bool) once before drawing objects, on a device whose shaders read the index from an instance-rate attribute ([`rhi::DeviceCaps::object_index_stream`](rhi.md#rhi-devicecaps-object-index-stream), Direct3D 12). Draw `i` with `first_instance = i` then reads `i`.
+Returns the object index stream: a vertex buffer holding the indices `0 .. kObjectIndexStreamEntries - 1` as `u32`, which a pass binds at [`renderer::MaterialSystem::ObjectIndexSlotFor`](#renderer-materialsystem-objectindexslotfor-bool) once before drawing objects, on a device whose shaders read the index from an instance-rate attribute ([`rhi::DeviceCaps::object_index_stream`](rhi.md#rhi-devicecaps-object-index-stream), Direct3D 12). Draw `i` with `first_instance = i` then reads `i`; an instanced draw of `n` instances from `first_instance = f` reads `f .. f + n - 1`, so a frame writes no instance past the stream's end.
 
 | Field | Value |
 |---|---|

@@ -428,13 +428,13 @@ bool MaterialSystem::CreateDefaults()
     if (ok && device_->Caps().object_index_stream)
     {
         rhi::BufferDesc bd;
-        bd.size = u64{kMaxObjectIndices} * sizeof(u32);
+        bd.size = u64{kObjectIndexStreamEntries} * sizeof(u32);
         bd.usage = rhi::BufferUsage::Vertex | rhi::BufferUsage::CopyDst;
         bd.debug_name = "object index stream";
         object_index_stream_ = device_->CreateBuffer(bd);
         Vector<u32> indices;
-        indices.Resize(kMaxObjectIndices);
-        for (u32 i = 0; i < kMaxObjectIndices; ++i)
+        indices.Resize(kObjectIndexStreamEntries);
+        for (u32 i = 0; i < kObjectIndexStreamEntries; ++i)
         {
             indices[i] = i;
         }

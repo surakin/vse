@@ -11,6 +11,7 @@
 #include "renderer/material.h"
 #include "renderer/mesh.h"
 #include "renderer/render_scene.h"
+#include "renderer/renderer_log.h"
 #include "rhi/null/null_device.h"
 #include "cstr/mem_ops.h"
 #include "containers/array.h"
@@ -32,10 +33,13 @@ struct Rig
     MaterialSystem* sys = nullptr;  // views of the owners
     FrameResources* frame = nullptr;
     GBufferTemplates templates;
-    Rig()
+    Rig() : Rig(nullptr, kDefaultFrameInstances) {}
+    // A device shaped by `options` (null: the Vulkan-shaped default) and a frame of `max_instances` instances.
+    Rig(const rhi::NullDeviceOptions* options, u32 max_instances)
+        : device(options != nullptr ? rhi::CreateNullDevice(*options) : rhi::CreateNullDevice())
     {
         sys_owner = MakeUnique<MaterialSystem>(device.Get(), MaterialSystemDesc{});
-        frame_owner = MakeUnique<FrameResources>(device.Get(), 32);
+        frame_owner = MakeUnique<FrameResources>(device.Get(), 32, 64, 1024, max_instances);
         sys = sys_owner.Get();
         frame = frame_owner.Get();
         templates = CreateGBufferTemplates(sys);
@@ -694,6 +698,70 @@ TEST_CASE("An instanced tree draws one draw per run and names a material that is
         CHECK_FALSE(pass.Prepare(scene, WideFrustum()));
         CHECK(StringView(pass.LastError()).Contains("GBufferOptions::instanced"));
         CHECK(pass.Stats().draws == 0);
+        rig.frame->Flush();
+        rig.device->EndFrame();
+    }
+}
+
+TEST_CASE("On a device that reads the object index stream, no instance is written past the stream's end",
+          "[renderer][gbuffer][instancing][dxil]")
+{
+    // Direct3D 12 reads instance i of a draw from entry first_instance + i of the object index stream, so a frame whose
+    // instance buffer is larger than the stream stops at the stream's end and counts the rest as dropped; a
+    // Vulkan-shaped device (gl_InstanceIndex) uses the whole buffer.
+    rhi::NullDeviceOptions d3d12;
+    d3d12.caps.shader_format = rhi::ShaderFormat::Dxil;
+    d3d12.caps.object_index_stream = true;
+    for (int k = 0; k < 2; ++k)
+    {
+        const bool stream = k == 1;
+        Rig rig(stream ? &d3d12 : nullptr, kObjectIndexStreamEntries + 1000);
+        REQUIRE(rig.templates.instanced.IsValid());
+        CHECK(rig.sys->ObjectIndexStream().IsValid() == stream);
+        MeshData data;
+        REQUIRE(MakeSphereMesh(1.0f, 8, 4, &data) == nullptr);
+        GpuMesh mesh;
+        REQUIRE(mesh.Create(rig.device.Get(), data, "sphere"));
+        rig.MakeReady(&mesh);
+        InstanceSetDesc sd;
+        InstanceSetPtr set = InstanceSet::Create(sd);
+        REQUIRE(set.Get() != nullptr);
+        for (u32 i = 0; i < 50; ++i)
+        {
+            InstanceTransform t;
+            t.position = Vec3d(static_cast<f64>(i) * 0.2 - 5.0, 0.0, 0.0);
+            REQUIRE(set->Add(t, nullptr, nullptr) == InstanceStatus::Ok);
+        }
+        GBufferOptions io;
+        io.instanced = true;
+        const MaterialId instanced = CreateGBufferMaterial(rig.sys, rig.templates, io, "instanced");
+        REQUIRE(instanced.IsValid());
+        InstancedObject o;
+        o.set = set;
+        o.mesh = &mesh;
+        o.material = instanced.index;
+        RenderScene scene(RenderSceneDesc{4, 4, 1, 4});
+        scene.AddInstanced(o);
+        rig.BeginFrame(1);
+        // Fill the frame's buffer to 10 short of the stream's end, as earlier objects of the frame would.
+        Vector<GpuInstance> filler;
+        filler.Resize(4096);
+        u32 left = kObjectIndexStreamEntries - 10;
+        while (left > 0)
+        {
+            const u32 n = left < filler.Size() ? left : static_cast<u32>(filler.Size());
+            REQUIRE(rig.frame->WriteInstances(filler.Data(), n) != kNoInstances);
+            left -= n;
+        }
+        GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
+        const bool was = LogRender.Enabled();
+        LogRender.SetEnabled(false);  // the dropped instances are warned about
+        CHECK(pass.Prepare(scene, WideFrustum()));
+        LogRender.SetEnabled(was);
+        const GBufferStats s = pass.Stats();
+        CHECK(s.instances_visible == (stream ? 10u : 50u));
+        CHECK(s.instances_dropped == (stream ? 40u : 0u));
+        CHECK(rig.frame->InstancesWritten() == (stream ? kObjectIndexStreamEntries : kObjectIndexStreamEntries + 40));
         rig.frame->Flush();
         rig.device->EndFrame();
     }

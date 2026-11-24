@@ -57,6 +57,23 @@ bool HasColor(const VertexLayoutData& layout)
     return false;
 }
 
+static_assert(kObjectIndexStreamEntries >= kDefaultFrameInstances,
+              "the object index stream covers a default frame's instances");
+
+// How many more instances this frame may write: what its instance buffer still holds, and, where the shaders read the
+// instance index from the object index stream (Direct3D 12), no index past the stream's end.
+u32 InstanceRoom(const FrameResources& frame, bool index_stream)
+{
+    const u32 written = frame.InstancesWritten();
+    u32 room = frame.MaxInstances() - written;
+    if (index_stream)
+    {
+        const u32 stream_room = written < kObjectIndexStreamEntries ? kObjectIndexStreamEntries - written : 0;
+        room = room < stream_room ? room : stream_room;
+    }
+    return room;
+}
+
 }  // namespace
 
 bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_capacity)
@@ -511,10 +528,10 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
                                ->ObjectIndexStream();  // valid only where shaders read the index from it (Direct3D 12)
     if (object_index_stream_.IsValid() && cap > kMaxObjectIndices)
     {
-        // Draw i reads entry i of the stream: a frame with more objects than it holds would read past it (Vulkan has no
+        // Draw i reads entry i of the stream; a pass draws at most kMaxObjectIndices objects by index (Vulkan has no
         // such limit).
         FormatTo(error_, sizeof(error_),
-                 "G-buffer: %u objects per frame is more than the object index stream holds (%u)", cap,
+                 "G-buffer: %u objects per frame is more than a pass draws by object index on this device (%u)", cap,
                  kMaxObjectIndices);
         return false;
     }
@@ -896,11 +913,6 @@ void GBufferPass::PrepareInstanced(const RenderScene& scene, const Frustum& frus
                    slot);
             continue;
         }
-        if (object_index_stream_.IsValid())
-        {
-            Reject("G-buffer: instanced meshes are not drawn on this backend yet (slot %u)", slot);
-            continue;
-        }
         const PipelineLookup pipeline = materials_->GetPipeline(material, target, mesh->Layout(), mesh->Topology(),
                                                                 mesh->HasPrimitiveRestart());
         if (!pipeline.pipeline.IsValid() || draw_count_ >= cap)
@@ -951,7 +963,7 @@ void GBufferPass::PrepareInstanced(const RenderScene& scene, const Frustum& frus
         u32 written = 0;
         bool full = false;
         // The frame's buffer takes this many more; the rest of the visible instances is counted as dropped.
-        const u32 room = frame_->MaxInstances() - frame_->InstancesWritten();
+        const u32 room = InstanceRoom(*frame_, object_index_stream_.IsValid());
         const u32 limit = cs.instances_emitted < room ? cs.instances_emitted : room;
         u32 produced = 0;
         for (const InstanceRun& run : cull_result_.runs)
@@ -1060,9 +1072,13 @@ void GBufferPass::PrepareInstanced(const RenderScene& scene, const Frustum& frus
     }
     if (stats_.instances_dropped > 0)
     {
-        RenderLog(LogVerbosity::Warn,
-                  "G-buffer: the instance buffer is full (%u instances): %u instances were not drawn",
-                  frame_->MaxInstances(), stats_.instances_dropped);
+        // The frame's instance budget: its buffer, and on Direct3D 12 the object index stream's end, whichever is
+        // lower.
+        const bool stream_limited = object_index_stream_.IsValid() &&
+                                    frame_->MaxInstances() > kObjectIndexStreamEntries;
+        RenderLog(LogVerbosity::Warn, "G-buffer: the frame's %s is full (%u instances): %u instances were not drawn",
+                  stream_limited ? "object index stream" : "instance buffer",
+                  stream_limited ? kObjectIndexStreamEntries : frame_->MaxInstances(), stats_.instances_dropped);
     }
 }
 
@@ -1070,11 +1086,6 @@ void GBufferPass::PrepareTree(u32 slot, const InstancedObject& obj, const Frustu
                               const PipelineTarget& target, rhi::PipelineHandle* last_pipeline,
                               rhi::BindGroupHandle* last_group)
 {
-    if (object_index_stream_.IsValid())
-    {
-        Reject("G-buffer: instanced meshes are not drawn on this backend yet (slot %u)", slot);
-        return;
-    }
     const InstanceTree& tree = *obj.tree.Get();
     // Cull in the tree's own space, like a set: the planes and the camera are carried into it.
     const Quaternion inverse = obj.rotation.Conjugate();
@@ -1149,7 +1160,7 @@ void GBufferPass::PrepareTree(u32 slot, const InstancedObject& obj, const Frustu
         u32 first = kNoInstances;
         u32 written = 0;
         bool full = false;
-        const u32 room = frame_->MaxInstances() - frame_->InstancesWritten();
+        const u32 room = InstanceRoom(*frame_, object_index_stream_.IsValid());
         const u32 limit = records.Size() < room ? static_cast<u32>(records.Size()) : room;
         for (u32 k = 0; k < limit && !full; ++k)
         {
@@ -1369,11 +1380,11 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user)
                 list->SetBindGroup(MaterialSystem::kInstanceSet, self->instance_group_);
             }
         }
-        if (!d.instanced && self->object_index_stream_.IsValid() &&
-            index_slot != MaterialSystem::ObjectIndexSlotFor(d.skinned))
+        if (self->object_index_stream_.IsValid() && index_slot != MaterialSystem::ObjectIndexSlotFor(d.skinned))
         {
-            // Draw i is issued with first_instance = i; Direct3D 12 fetches this instance-rate stream at that index.
-            // It follows the mesh's streams, so a skinned mesh (two streams) has it one slot later.
+            // Draw i is issued with first_instance = i, an instanced draw with first_instance = its first instance;
+            // Direct3D 12 fetches this instance-rate stream from that index. It follows the mesh's streams, so a
+            // skinned mesh (two streams) has it one slot later.
             index_slot = MaterialSystem::ObjectIndexSlotFor(d.skinned);
             list->SetVertexBuffer(index_slot, self->object_index_stream_, 0);
         }

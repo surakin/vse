@@ -74,14 +74,17 @@ void TerrainPass::Build()
     rhi::Device* device = device_;
     vertex_ = rhi::CreateShaderFromSet(*device, shaders::kTerrainVertShader, rhi::ShaderStage::Vertex);
     fragment_ = rhi::CreateShaderFromSet(*device, shaders::kTerrainFragShader, rhi::ShaderStage::Fragment);
-    rhi::BindingDesc bindings[8] = {{0, rhi::BindingType::StorageBuffer, rhi::ShaderStage::Vertex, 1},
-                                    {1, rhi::BindingType::SampledTexture, rhi::ShaderStage::Vertex, 1},
-                                    {2, rhi::BindingType::Sampler, rhi::ShaderStage::Vertex, 1},
-                                    {3, rhi::BindingType::UniformBuffer, rhi::ShaderStage::Fragment, 1},
-                                    {4, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
-                                    {5, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
-                                    {6, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1},
-                                    {7, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1}};
+    // StructuredBuffer<TileInstance> tiles (terrain.vert): read-only, with its element size, which Direct3D 12's
+    // structured view needs.
+    rhi::BindingDesc bindings[8] = {
+        {0, rhi::BindingType::ReadOnlyStorageBuffer, rhi::ShaderStage::Vertex, 1, kTileInstanceBytes},
+        {1, rhi::BindingType::SampledTexture, rhi::ShaderStage::Vertex, 1},
+        {2, rhi::BindingType::Sampler, rhi::ShaderStage::Vertex, 1},
+        {3, rhi::BindingType::UniformBuffer, rhi::ShaderStage::Fragment, 1},
+        {4, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
+        {5, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
+        {6, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1},
+        {7, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1}};
     rhi::BindGroupLayoutDesc ld;
     ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 8);
     layout_ = device->CreateBindGroupLayout(ld);

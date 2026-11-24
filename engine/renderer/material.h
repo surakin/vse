@@ -94,8 +94,14 @@ enum class DefaultTexture : u8
 /// The vertex attribute location a material vertex shader reads the object index from on a device with
 /// [[rhi::DeviceCaps::object_index_stream]] (semantic `TEXCOORD15`; `shaders/target_common.slang`).
 inline constexpr u32 kObjectIndexLocation = 15;
-/// How many object indices the object index stream holds: the most objects one pass draws by index.
+/// The most objects one pass draws by index (draw `i` with `first_instance = i`).
 inline constexpr u32 kMaxObjectIndices = 65536;
+/// How many indices the object index stream holds: the objects one pass draws by index
+/// ([[renderer::kMaxObjectIndices]]) and the instances of a frame's default instance buffer
+/// ([[renderer::kDefaultFrameInstances]]), since an instanced draw on Direct3D 12 reads entry `first_instance + i` for
+/// its instance `i`.
+inline constexpr u32 kObjectIndexStreamEntries = 1u << 18;
+static_assert(kObjectIndexStreamEntries >= kMaxObjectIndices, "the stream covers every object index");
 
 /// Names the default texture of one texture slot, overriding the name-based choice.
 ///
@@ -612,10 +618,11 @@ public:
     /// - Fails: never.
     rhi::BindGroupLayoutHandle ObjectLayout() const;
 
-    /// Returns the object index stream: a vertex buffer holding the indices `0 .. kMaxObjectIndices - 1` as `u32`,
-    /// which a pass binds at [[renderer::MaterialSystem::ObjectIndexSlotFor]] once before drawing objects, on a device
-    /// whose shaders read the index from an instance-rate attribute ([[rhi::DeviceCaps::object_index_stream]], Direct3D
-    /// 12). Draw `i` with `first_instance = i` then reads `i`.
+    /// Returns the object index stream: a vertex buffer holding the indices `0 .. kObjectIndexStreamEntries - 1` as
+    /// `u32`, which a pass binds at [[renderer::MaterialSystem::ObjectIndexSlotFor]] once before drawing objects, on a
+    /// device whose shaders read the index from an instance-rate attribute ([[rhi::DeviceCaps::object_index_stream]],
+    /// Direct3D 12). Draw `i` with `first_instance = i` then reads `i`; an instanced draw of `n` instances from
+    /// `first_instance = f` reads `f .. f + n - 1`, so a frame writes no instance past the stream's end.
     ///
     /// - Returns: the buffer, or an invalid handle on a device that does not need it (Vulkan reads `gl_InstanceIndex`).
     /// - Fails: an invalid handle, as described.

@@ -335,7 +335,8 @@ struct GBufferStats
     /// Tree nodes the tree culls emitted (before the frame's instance budget).
     u32 instance_tree_nodes = 0;
     /// Visible instances left out because the frame's instance buffer was full ([[renderer::kDefaultFrameInstances]]
-    /// unless the frame resources were made with another size).
+    /// unless the frame resources were made with another size), or, on Direct3D 12, past the object index stream's
+    /// [[renderer::kObjectIndexStreamEntries]].
     u32 instances_dropped = 0;
     /// Chunks of instance sets whose box was tested.
     u32 instance_chunks_tested = 0;
