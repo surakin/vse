@@ -24,6 +24,7 @@
 #include "renderer/frame_data.h"
 #include "renderer/frustum.h"
 #include "renderer/instance_cull.h"
+#include "renderer/instance_tree_cull.h"
 #include "renderer/material.h"
 #include "renderer/render_graph.h"
 #include "renderer/render_scene.h"
@@ -325,8 +326,14 @@ struct GBufferStats
     u32 morph_targets_dropped = 0;
     /// Instanced meshes drawn this frame (each is one draw when any of its instances is visible).
     u32 instanced_sets = 0;
-    /// Instances written to the frame's instance buffer.
+    /// Instances written to the frame's instance buffer (the nodes of trees included).
     u32 instances_visible = 0;
+    /// Instance trees drawn this frame (each run of nodes with one mesh, material slot and level is one draw).
+    u32 instance_trees = 0;
+    /// Draws made for runs of tree nodes.
+    u32 instance_tree_runs = 0;
+    /// Tree nodes the tree culls emitted (before the frame's instance budget).
+    u32 instance_tree_nodes = 0;
     /// Visible instances left out because the frame's instance buffer was full ([[renderer::kDefaultFrameInstances]]
     /// unless the frame resources were made with another size).
     u32 instances_dropped = 0;
@@ -448,6 +455,8 @@ private:
     static constexpr u32 kNoMorphJob = 0xFFFFFFFFu;
     static void Record(const PassExecuteContext& context, void* user);
     void PrepareInstanced(const RenderScene& scene, const Frustum& frustum, const PipelineTarget& target);
+    void PrepareTree(u32 slot, const InstancedObject& obj, const Frustum& frustum, const PipelineTarget& target,
+                     rhi::PipelineHandle* last_pipeline, rhi::BindGroupHandle* last_group);
     static void RecordMorph(const PassExecuteContext& context, void* user);
     void Reject(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
@@ -477,6 +486,8 @@ private:
     Vec3 view_position_ = Vec3(0, 0, 0);
     jobs::Scheduler* scheduler_ = nullptr;
     InstanceCullResult cull_result_;         // reused by every instanced set
+    TreeCullResult tree_cull_;               // reused by every instance tree
+    Vector<TreeLodState> tree_lod_;          // hysteresis state of each instance tree entry, by scene slot
     rhi::BindGroupHandle joint_group_;       // the frame's joint palette (set 3), bound for skinned draws only
     Vector<MorphJob> morph_jobs_;            // this frame's morphed objects (glTF coverage Day 7)
     u64 morph_bytes_ = 0;                    // the size of the frame's morph buffer

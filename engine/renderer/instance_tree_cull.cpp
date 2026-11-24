@@ -61,7 +61,6 @@ TreeDecision TreeDecide(const TreeLod& lod, f32 d, u8* state)
 
 struct TreeCullContext
 {
-    const InstanceTree* tree;
     const TreeCullParams* params;
     u8* levels;  // by node id, or null
 };
@@ -82,9 +81,8 @@ void EmitNode(const InstanceTreeNode& node, u32 index, u32 mesh, u32 level, Tree
     out->nodes.Push(v);
 }
 
-void CullRoot(const TreeCullContext& ctx, u32 root, TreeGroupOut* out)
+void CullRoot(const InstanceTree& tree, const TreeCullContext& ctx, u32 root, TreeGroupOut* out)
 {
-    const InstanceTree& tree = *ctx.tree;
     const TreeCullParams& p = *ctx.params;
     const InstanceTreeNode& root_node = tree.Node(root);
     const Vec3 rel_root = (root_node.origin - p.render_origin).Narrow();
@@ -186,14 +184,13 @@ void CullRoot(const TreeCullContext& ctx, u32 root, TreeGroupOut* out)
     }
 }
 
-void CullGroup(const TreeCullContext& ctx, TreeGroupOut* groups, u32 group)
+void CullGroup(const InstanceTree& tree, const TreeCullContext& ctx, TreeGroupOut* groups, u32 group)
 {
-    const InstanceTree& tree = *ctx.tree;
     const u32 begin = group * kTreeCullGroup;
     const u32 end = Min(begin + kTreeCullGroup, tree.RootCount());
     for (u32 r = begin; r < end; ++r)
     {
-        CullRoot(ctx, tree.RootIndex(r), &groups[group]);
+        CullRoot(tree, ctx, tree.RootIndex(r), &groups[group]);
     }
 }
 
@@ -235,17 +232,17 @@ void CullInstanceTree(const InstanceTree& tree, const TreeCullParams& params, Tr
         }
         levels = state->levels_.Data();
     }
-    const TreeCullContext ctx{&tree, &params, levels};
+    const TreeCullContext ctx{&params, levels};
     const u32 groups = (roots + kTreeCullGroup - 1) / kTreeCullGroup;
     Vector<TreeGroupOut> parts;
     parts.Resize(groups);
     if (scheduler != nullptr && groups > 1)
     {
-        auto body = [&ctx, &parts](usize begin, usize end)
+        auto body = [&tree, &ctx, &parts](usize begin, usize end)
         {
             for (usize g = begin; g < end; ++g)
             {
-                CullGroup(ctx, parts.Data(), static_cast<u32>(g));
+                CullGroup(tree, ctx, parts.Data(), static_cast<u32>(g));
             }
         };
         jobs::ParallelForBlocking(*scheduler, groups, 1, body);
@@ -254,7 +251,7 @@ void CullInstanceTree(const InstanceTree& tree, const TreeCullParams& params, Tr
     {
         for (u32 g = 0; g < groups; ++g)
         {
-            CullGroup(ctx, parts.Data(), g);
+            CullGroup(tree, ctx, parts.Data(), g);
         }
     }
     Vector<TreeVisibleNode> joined;

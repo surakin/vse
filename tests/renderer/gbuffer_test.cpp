@@ -628,3 +628,73 @@ TEST_CASE("Instanced objects draw as one draw per set and name what they cannot 
         rig.device->EndFrame();
     }
 }
+
+TEST_CASE("An instanced tree draws one draw per run and names a material that is not instanced",
+          "[renderer][gbuffer][instancing]")
+{
+    Rig rig;
+    MeshData data;
+    REQUIRE(MakeSphereMesh(1.0f, 8, 4, &data) == nullptr);
+    GpuMesh mesh;
+    REQUIRE(mesh.Create(rig.device.Get(), data, "sphere"));
+    rig.MakeReady(&mesh);
+
+    Vector<TreeMeshInfo> infos;
+    TreeMeshInfo info;
+    info.bounds = Aabb::FromMinMax(Vec3(-1, -1, -1), Vec3(1, 1, 1));
+    infos.Push(info);
+    InstanceTreeBuilder builder(Span<const TreeMeshInfo>(infos.Data(), infos.Size()));
+    TreeNodeDesc root_desc;
+    root_desc.mesh = 0;
+    TreeNodeId root;
+    REQUIRE(builder.AddRoot(root_desc, &root) == TreeStatus::Ok);
+    for (u32 i = 0; i < 9; ++i)
+    {
+        TreeNodeDesc child;
+        child.mesh = 0;
+        child.position = Vec3d(static_cast<f64>(i) - 4.0, 0.0, 0.0);
+        child.scale = Vec3(0.3f, 0.3f, 0.3f);
+        REQUIRE(builder.AddChild(root, child, nullptr) == TreeStatus::Ok);
+    }
+    InstanceTreePtr tree = builder.Finish(nullptr);
+    REQUIRE(tree.Get() != nullptr);
+
+    GBufferOptions io;
+    io.instanced = true;
+    const MaterialId instanced = CreateGBufferMaterial(rig.sys, rig.templates, io, "instanced");
+    const MaterialId plain = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "plain");
+    REQUIRE(instanced.IsValid());
+
+    InstancedObject o;
+    o.tree = tree;
+    o.tree_meshes[0] = &mesh;
+    o.tree_materials[0] = instanced.index;
+    {
+        RenderScene scene(RenderSceneDesc{4, 4, 1, 4});
+        scene.AddInstanced(o);
+        rig.BeginFrame(1);
+        GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
+        CHECK(pass.Prepare(scene, WideFrustum()));
+        const GBufferStats s = pass.Stats();
+        CHECK(s.instance_trees == 1);
+        CHECK(s.instance_tree_runs == 1);
+        CHECK(s.instance_tree_nodes == 10);
+        CHECK(s.draws == 1);
+        CHECK(rig.frame->InstancesWritten() == 10);
+        rig.frame->Flush();
+        rig.device->EndFrame();
+    }
+    {
+        InstancedObject wrong = o;
+        wrong.tree_materials[0] = plain.index;
+        RenderScene scene(RenderSceneDesc{4, 4, 1, 4});
+        scene.AddInstanced(wrong);
+        rig.BeginFrame(2);
+        GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
+        CHECK_FALSE(pass.Prepare(scene, WideFrustum()));
+        CHECK(StringView(pass.LastError()).Contains("GBufferOptions::instanced"));
+        CHECK(pass.Stats().draws == 0);
+        rig.frame->Flush();
+        rig.device->EndFrame();
+    }
+}

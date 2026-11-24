@@ -425,6 +425,7 @@ tests/scene/level_spawner_test.cpp               22   # Phase 22 Day 329
 tests/scene/scene_components_test.cpp            27   # Phase 27 Day 456: the scene's components in the storage registry
 tests/scene/terrain_sync_test.cpp                28   # Phase 28 Day 490
 tests/scene/instanced_sync_test.cpp              28   # Phase 28 Day 498
+tests/scene/hierarchy_sync_test.cpp                 28   # Phase 28 Day 501
 tests/scene/CMakeLists.txt                      17
 
 # --- Phase 20: networking ---

@@ -4,6 +4,7 @@
 //! from this list; programs that use the ECS fill it with `scene::MakeRenderSyncSystem` (module `engine/scene`), which
 //! mirrors entities into it and touches it only for what changed. The renderer's own tests build it directly.
 
+#include "containers/array.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "math/matrix.h"
@@ -11,6 +12,7 @@
 #include "renderer/bounds.h"
 #include "renderer/frustum.h"
 #include "renderer/instance_set.h"
+#include "renderer/instance_tree.h"
 #include "renderer/mesh.h"
 #include "renderer/terrain_material.h"
 #include "renderer/terrain_source.h"
@@ -226,7 +228,11 @@ struct InstancedId
     constexpr bool operator!=(const InstancedId& o) const { return !(*this == o); }
 };
 
-/// An instanced mesh in a scene: one mesh and material drawn at every instance of a set.
+/// The meshes and the material slots a tree entry of an [[renderer::InstancedObject]] can name.
+inline constexpr u32 kMaxSceneTreeMeshes = 16;
+
+/// An instanced mesh in a scene: one mesh and material drawn at every instance of a set, or a hierarchy of instanced
+/// nodes (an [[renderer::InstanceTree]]) drawn with the meshes and materials its nodes name.
 ///
 /// The set's own transform is a place, a unit rotation and a uniform scale (`position`, `rotation`, `scale`); the
 /// instances are in the set's space, so moving the entity that owns the set moves them all without touching the set.
@@ -238,9 +244,18 @@ struct InstancedId
 ///   object.
 struct InstancedObject
 {
-    InstanceSetPtr set;             ///< The instances; must not be null; the scene keeps a share.
-    const GpuMesh* mesh = nullptr;  ///< The geometry (a rigid mesh without vertex colors); must not be null.
+    InstanceSetPtr set;             ///< The instances; null for a tree entry; the scene keeps a share.
+    const GpuMesh* mesh = nullptr;  ///< The geometry (a rigid mesh without vertex colors); must not be null for a set.
     u32 material = 0;               ///< A material made with `GBufferOptions::instanced`.
+    /// A hierarchy to draw instead of a set (exactly one of `set` and `tree` is set); the scene keeps a share. Its
+    /// world transforms must be current ([[renderer::InstanceTree::UpdateWorldTransforms]]) when a frame is prepared.
+    InstanceTreePtr tree;
+    /// The geometry of tree mesh `i`, for `i` below the tree's mesh count (at most `kMaxSceneTreeMeshes`): rigid, in
+    /// the standard layout, without vertex colors; borrowed, as `mesh` is.
+    Array<const GpuMesh*, kMaxSceneTreeMeshes> tree_meshes = {};
+    /// The material (made with `GBufferOptions::instanced`) of material slot `i`, for the slots below
+    /// `kMaxSceneTreeMeshes`; a node naming a higher slot is not drawn.
+    Array<u32, kMaxSceneTreeMeshes> tree_materials = {};
     Vec3 position = Vec3(0, 0, 0);  ///< Where the set's origin is, in scene space.
     Quaternion rotation;            ///< The set's rotation; a unit quaternion.
     f32 scale = 1.0f;               ///< The set's uniform scale; above 0.

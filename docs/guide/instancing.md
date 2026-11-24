@@ -87,3 +87,15 @@ An `ITRE` resource (`asset/instance_tree_blob.h`) holds a tree as minted bytes: 
 A node can carry a `TreeLod` (`TreeNodeDesc::has_lod`): up to four meshes (its own and three coarser ones) with the distances beyond which each coarser one is used, a `cull_distance` beyond which the node's own mesh is not drawn (with `cull_children_beyond`, nor are the nodes below it), and a stand-in, a simplified mesh drawn at the node's place instead of the node and its whole subtree beyond `standin_distance` (a distant tree as one merged mesh, with no node of its subtree drawn a second time). Distances are from the camera to the node's world position, and every level of a node must fit inside the box of its level 0 mesh. With a `TreeLodState` (one per tree and camera) the `hysteresis` margin applies: a level, the cull and the stand-in change only once the distance has passed the boundary by that many metres, so a camera moving back and forth across a boundary changes the level once; without a state the plain rule is used (`TreeLevelForDistance`).
 
 The result lists the emitted nodes grouped into `TreeDrawRun`s of one mesh, material slot and level (two counting sorts, a fixed order: mesh, level, slot, nodes in array order inside a run), so a draw is one instanced draw per run. `CompactTreeNodes` writes the instance records and data of those nodes relative to a render origin, each position summed in `f64` from the root and narrowed.
+
+## Drawing a hierarchy
+
+An `InstancedObject` of the render scene holds either a set or a tree. A tree object carries up to 16 meshes and materials (`tree_meshes`, `tree_materials`, indexed by a node's mesh slot), and every material must be built with `GBufferOptions::instanced`; `GBufferPass::Prepare` names the first one that is not. For each tree the pass carries the view's frustum and camera into the tree's space, culls it (`CullInstanceTree`, with a `TreeLodState` it keeps per object), writes the visible nodes' instance records with `CompactTreeNodes` composed with the object's own placement, and makes one instanced draw per run. `GBufferStats` counts `instance_trees`, `instance_tree_runs` and `instance_tree_nodes`.
+
+## A hierarchy as a component
+
+`scene::InstanceHierarchy` holds the tree, the meshes and the materials of an entity; `MakeHierarchySyncSystem` mirrors it into the render scene as `MakeInstancedSyncSystem` does for sets (hide with `Hidden`, replace on a change, remove with the component or the entity; a tree whose mesh slots are not all filled counts as `invalid`), and recomposes the marked subtrees each frame, counted in `SceneSyncReport::hierarchy_nodes_updated`. Moving the entity moves the whole tree through the placement without touching a node.
+
+## Wind
+
+`scene::MakeWindSystem` sways the nodes flagged `kTreeNodeWind`: each gets a rotation about x of `WindAngle(wind, id)`, a function of the `WindState` resource (time, amplitude, frequency) and the node's id alone, so the result is the same for any thread count. Only the flagged nodes are marked, so only their subtrees are recomposed. Register it before the hierarchy sync, and advance `WindState::time` yourself.

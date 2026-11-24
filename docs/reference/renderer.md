@@ -2569,7 +2569,37 @@ Instanced meshes drawn this frame (each is one draw when any of its instances is
 u32 instances_visible;
 ```
 
-Instances written to the frame's instance buffer.
+Instances written to the frame's instance buffer (the nodes of trees included).
+
+### `instance_trees` {#renderer-gbufferstats-instance-trees}
+
+`variable renderer::GBufferStats::instance_trees` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instance_trees;
+```
+
+Instance trees drawn this frame (each run of nodes with one mesh, material slot and level is one draw).
+
+### `instance_tree_runs` {#renderer-gbufferstats-instance-tree-runs}
+
+`variable renderer::GBufferStats::instance_tree_runs` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instance_tree_runs;
+```
+
+Draws made for runs of tree nodes.
+
+### `instance_tree_nodes` {#renderer-gbufferstats-instance-tree-nodes}
+
+`variable renderer::GBufferStats::instance_tree_nodes` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 instance_tree_nodes;
+```
+
+Tree nodes the tree culls emitted (before the frame's instance budget).
 
 ### `instances_dropped` {#renderer-gbufferstats-instances-dropped}
 
@@ -11897,6 +11927,16 @@ constexpr bool operator!=(const InstancedId& o) const;
 
 Returns whether the ids differ.
 
+## `kMaxSceneTreeMeshes` {#renderer-kmaxscenetreemeshes}
+
+`variable renderer::kMaxSceneTreeMeshes` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+inline constexpr u32 kMaxSceneTreeMeshes;
+```
+
+The meshes and the material slots a tree entry of an [`renderer::InstancedObject`](#renderer-instancedobject) can name.
+
 ## `InstancedObject` {#renderer-instancedobject}
 
 `struct renderer::InstancedObject` — defined in `engine/renderer/render_scene.h`
@@ -11905,7 +11945,7 @@ Returns whether the ids differ.
 struct InstancedObject { ... }
 ```
 
-An instanced mesh in a scene: one mesh and material drawn at every instance of a set.
+An instanced mesh in a scene: one mesh and material drawn at every instance of a set, or a hierarchy of instanced nodes (an [`renderer::InstanceTree`](#renderer-instancetree)) drawn with the meshes and materials its nodes name.
 
 The set's own transform is a place, a unit rotation and a uniform scale (`position`, `rotation`, `scale`); the instances are in the set's space, so moving the entity that owns the set moves them all without touching the set. Each frame the visible instances are culled, composed with that transform and written to the frame's instance buffer, and drawn in one draw.
 
@@ -11922,7 +11962,7 @@ The set's own transform is a place, a unit rotation and a uniform scale (`positi
 InstanceSetPtr set;
 ```
 
-The instances; must not be null; the scene keeps a share.
+The instances; null for a tree entry; the scene keeps a share.
 
 ### `mesh` {#renderer-instancedobject-mesh}
 
@@ -11932,7 +11972,7 @@ The instances; must not be null; the scene keeps a share.
 const GpuMesh* mesh;
 ```
 
-The geometry (a rigid mesh without vertex colors); must not be null.
+The geometry (a rigid mesh without vertex colors); must not be null for a set.
 
 ### `material` {#renderer-instancedobject-material}
 
@@ -11943,6 +11983,36 @@ u32 material;
 ```
 
 A material made with `GBufferOptions::instanced`.
+
+### `tree` {#renderer-instancedobject-tree}
+
+`variable renderer::InstancedObject::tree` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+InstanceTreePtr tree;
+```
+
+A hierarchy to draw instead of a set (exactly one of `set` and `tree` is set); the scene keeps a share. Its world transforms must be current ([`renderer::InstanceTree::UpdateWorldTransforms`](#renderer-instancetree-updateworldtransforms-jobs-scheduler-star)) when a frame is prepared.
+
+### `tree_meshes` {#renderer-instancedobject-tree-meshes}
+
+`variable renderer::InstancedObject::tree_meshes` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+Array<const GpuMesh*, kMaxSceneTreeMeshes> tree_meshes;
+```
+
+The geometry of tree mesh `i`, for `i` below the tree's mesh count (at most `kMaxSceneTreeMeshes`): rigid, in the standard layout, without vertex colors; borrowed, as `mesh` is.
+
+### `tree_materials` {#renderer-instancedobject-tree-materials}
+
+`variable renderer::InstancedObject::tree_materials` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+Array<u32, kMaxSceneTreeMeshes> tree_materials;
+```
+
+The material (made with `GBufferOptions::instanced`) of material slot `i`, for the slots below `kMaxSceneTreeMeshes`; a node naming a higher slot is not drawn.
 
 ### `position` {#renderer-instancedobject-position}
 

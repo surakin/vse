@@ -83,6 +83,14 @@ struct SceneSyncReport
     u64 lights_set = 0;
     /// Adds the full render scene refused (an entity is retried every frame until there is room).
     u64 refused_full = 0;
+    /// Hierarchies added to the render scene (a re-add counts again).
+    u64 hierarchies_added = 0;
+    /// Hierarchies removed from the render scene.
+    u64 hierarchies_removed = 0;
+    /// `SetInstanced` calls for hierarchies (a new tree, mesh, material, placement or hidden state).
+    u64 hierarchies_set = 0;
+    /// Nodes whose world transform the sync recomposed (the marked subtrees of the trees it drew).
+    u64 hierarchy_nodes_updated = 0;
     /// Terrains added to the render scene (a re-add counts again).
     u64 terrains_added = 0;
     /// Terrains removed from the render scene.
@@ -161,6 +169,22 @@ ecs::SystemDesc MakeTerrainSyncSystem(const char* name);
 /// - Fails: never.
 /// - Ownership: the render scene shares each set; the sync's handle component keeps each mesh alive.
 ecs::SystemDesc MakeInstancedSyncSystem(const char* name);
+
+/// Builds the system that mirrors [[scene::InstanceHierarchy]] entities into the [[scene::SceneLink]] scene as
+/// instanced trees, as [[scene::MakeInstancedSyncSystem]] does for sets: it adds the tree when an entity gets the
+/// component, replaces it when the tree, a mesh, a material or the entity's placement changes, hides it with
+/// [[scene::Hidden]], removes it when the component or the entity goes, and recomposes the marked subtrees of each tree
+/// it draws
+/// ([[renderer::InstanceTree::UpdateWorldTransforms]]; `SceneSyncReport::hierarchy_nodes_updated` counts them). A tree
+/// that is null, empty, names more meshes than the component holds or has an invalid mesh, or a placement that is not
+/// a translation, a rotation and a uniform scale, counts as `invalid`.
+///
+/// - Param name: the system's name.
+/// - Returns: the description to add to a schedule; it reads `InstanceHierarchy`, `Hidden` and `WorldTransform`, writes
+///   `HierarchyHandle`, and writes the link and report resources.
+/// - Fails: never.
+/// - Ownership: the render scene shares each tree; the system keeps one share of each mesh.
+ecs::SystemDesc MakeHierarchySyncSystem(const char* name);
 
 /// Splits a transform into a translation, a rotation and a uniform scale.
 ///

@@ -866,6 +866,14 @@ void GBufferPass::PrepareInstanced(const RenderScene& scene, const Frustum& frus
             continue;
         }
         const InstancedObject& obj = scene.InstancedAt(slot);
+        if (obj.tree.Get() != nullptr)
+        {
+            if ((obj.flags & ObjectFlags::kHidden) == 0 && obj.tree->NodeCount() != 0)
+            {
+                PrepareTree(slot, obj, frustum, target, &last_pipeline, &last_group);
+            }
+            continue;
+        }
         if ((obj.flags & ObjectFlags::kHidden) != 0 || obj.set->Count() == 0)
         {
             continue;
@@ -1055,6 +1063,166 @@ void GBufferPass::PrepareInstanced(const RenderScene& scene, const Frustum& frus
         RenderLog(LogVerbosity::Warn,
                   "G-buffer: the instance buffer is full (%u instances): %u instances were not drawn",
                   frame_->MaxInstances(), stats_.instances_dropped);
+    }
+}
+
+void GBufferPass::PrepareTree(u32 slot, const InstancedObject& obj, const Frustum& frustum,
+                              const PipelineTarget& target, rhi::PipelineHandle* last_pipeline,
+                              rhi::BindGroupHandle* last_group)
+{
+    if (object_index_stream_.IsValid())
+    {
+        Reject("G-buffer: instanced meshes are not drawn on this backend yet (slot %u)", slot);
+        return;
+    }
+    const InstanceTree& tree = *obj.tree.Get();
+    // Cull in the tree's own space, like a set: the planes and the camera are carried into it.
+    const Quaternion inverse = obj.rotation.Conjugate();
+    const f32 inverse_scale = 1.0f / obj.scale;
+    TreeCullParams params;
+    for (u32 i = 0; i < 6; ++i)
+    {
+        const Plane& p = frustum.planes[i];
+        params.frustum.planes[i].normal = inverse.RotateVector(p.normal);
+        params.frustum.planes[i].d = (p.normal.Dot(obj.position) + p.d) * inverse_scale;
+    }
+    params.render_origin = Vec3d(0, 0, 0);
+    params.camera_position = inverse.RotateVector(view_position_ - obj.position) * inverse_scale;
+    while (tree_lod_.Size() <= slot)
+    {
+        tree_lod_.Push(TreeLodState());
+    }
+    CullInstanceTree(tree, params, &tree_lod_[slot], scheduler_, &tree_cull_);
+    stats_.instance_tree_nodes += tree_cull_.stats.nodes_emitted;
+    if (tree_cull_.stats.nodes_emitted == 0)
+    {
+        return;
+    }
+    bool drew = false;
+    Vector<InstanceRecord> records;
+    Vector<InstanceExtra> extras;
+    for (const TreeDrawRun& run : tree_cull_.runs)
+    {
+        const GpuMesh* mesh = run.mesh < kMaxSceneTreeMeshes ? obj.tree_meshes[run.mesh] : nullptr;
+        if (mesh == nullptr || !mesh->Valid() || !mesh->Ready())
+        {
+            Reject("G-buffer: tree mesh %u of the instanced object in slot %u is missing or not prepared", run.mesh,
+                   slot);
+            continue;
+        }
+        if (mesh->Skinned() || HasColor(mesh->Layout()) || mesh->MorphTargetCount() != 0)
+        {
+            Reject("G-buffer: tree mesh %u of the instanced object in slot %u is skinned, morphed or vertex-colored",
+                   run.mesh, slot);
+            continue;
+        }
+        const u32 material_index = run.material_slot < kMaxSceneTreeMeshes ? obj.tree_materials[run.material_slot] : 0;
+        const MaterialId material = materials_->MaterialAtIndex(material_index);
+        if (!material.IsValid() || !materials_->IsInstanced(material))
+        {
+            Reject("G-buffer: material slot %u of the instanced tree in slot %u needs a material made with "
+                   "GBufferOptions::instanced",
+                   run.material_slot, slot);
+            continue;
+        }
+        const PipelineLookup pipeline = materials_->GetPipeline(material, target, mesh->Layout(), mesh->Topology(),
+                                                                mesh->HasPrimitiveRestart());
+        if (!pipeline.pipeline.IsValid() || draw_count_ >= frame_->MaxObjects())
+        {
+            Reject("G-buffer: no pipeline or draw could be made for a run of the instanced tree in slot %u", slot);
+            continue;
+        }
+        if (!instance_group_.IsValid())
+        {
+            instance_group_ = materials_->InstanceBindGroup(frame_->InstanceRegion());
+            if (!instance_group_.IsValid())
+            {
+                Reject("G-buffer: the instance bind group could not be created");
+                continue;
+            }
+        }
+        CompactTreeNodes(tree, Span<const TreeVisibleNode>(tree_cull_.nodes.Data() + run.first, run.count),
+                         Vec3d(0, 0, 0), &records, &extras);
+        constexpr u32 kBatch = 256;
+        GpuInstance batch[kBatch];
+        u32 filled = 0;
+        u32 first = kNoInstances;
+        u32 written = 0;
+        bool full = false;
+        const u32 room = frame_->MaxInstances() - frame_->InstancesWritten();
+        const u32 limit = records.Size() < room ? static_cast<u32>(records.Size()) : room;
+        for (u32 k = 0; k < limit && !full; ++k)
+        {
+            const InstanceRecord& r = records[k];
+            const Vec3 world = obj.position + obj.rotation.RotateVector(r.position * obj.scale);
+            const Quaternion q = obj.rotation * r.rotation;
+            const InstanceExtra& e = extras[k];
+            GpuInstance& g = batch[filled++];
+            g.position[0] = world.x;
+            g.position[1] = world.y;
+            g.position[2] = world.z;
+            g.rotation[0] = q.x;
+            g.rotation[1] = q.y;
+            g.rotation[2] = q.z;
+            g.rotation[3] = q.w;
+            g.scale[0] = r.scale.x * obj.scale;
+            g.scale[1] = r.scale.y * obj.scale;
+            g.scale[2] = r.scale.z * obj.scale;
+            g.tint[0] = e.tint.x;
+            g.tint[1] = e.tint.y;
+            g.tint[2] = e.tint.z;
+            g.tint[3] = e.tint.w;
+            g.custom = e.custom;
+            g.pad = 0;
+            if (filled == kBatch || k + 1 == limit)
+            {
+                const u32 at = frame_->WriteInstances(batch, filled);
+                if (at == kNoInstances)
+                {
+                    full = true;
+                    break;
+                }
+                first = first == kNoInstances ? at : first;
+                written += filled;
+                filled = 0;
+            }
+        }
+        stats_.instances_visible += written;
+        if (written < records.Size())
+        {
+            stats_.instances_dropped += static_cast<u32>(records.Size()) - written;
+        }
+        if (written == 0)
+        {
+            continue;
+        }
+        Draw& d = draws_[draw_count_++];
+        d.pipeline = pipeline.pipeline;
+        d.material_group = materials_->MaterialBindGroup(material);
+        d.mesh = mesh;
+        d.first_instance = first;
+        d.instance_count = written;
+        d.first_index = 0;
+        d.index_count = 0;
+        d.skinned = false;
+        d.instanced = true;
+        d.morph_job = kNoMorphJob;
+        if (!(d.pipeline == *last_pipeline))
+        {
+            ++stats_.pipeline_binds;
+        }
+        if (!(d.material_group == *last_group))
+        {
+            ++stats_.material_binds;
+        }
+        *last_pipeline = d.pipeline;
+        *last_group = d.material_group;
+        ++stats_.instance_tree_runs;
+        drew = true;
+    }
+    if (drew)
+    {
+        ++stats_.instance_trees;
     }
 }
 

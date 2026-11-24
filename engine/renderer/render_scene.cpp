@@ -503,7 +503,19 @@ namespace
 {
 void CheckInstanced(const InstancedObject& o)
 {
-    ENGINE_ASSERT(o.set.Get() != nullptr && o.mesh != nullptr, "instanced: the set or the mesh is null");
+    ENGINE_ASSERT((o.set.Get() != nullptr) != (o.tree.Get() != nullptr), "instanced: give a set or a tree, not both");
+    if (o.tree.Get() != nullptr)
+    {
+        ENGINE_ASSERT(o.tree->MeshCount() <= kMaxSceneTreeMeshes, "instanced: the tree names too many meshes");
+        for (u32 i = 0; i < o.tree->MeshCount(); ++i)
+        {
+            ENGINE_ASSERT(o.tree_meshes[i] != nullptr, "instanced: a tree mesh is null");
+        }
+    }
+    else
+    {
+        ENGINE_ASSERT(o.mesh != nullptr, "instanced: the mesh is null");
+    }
     ENGINE_ASSERT(IsFinite(o.scale) && o.scale > 0.0f && IsFinite(o.position.x) && IsFinite(o.position.y) &&
                       IsFinite(o.position.z),
                   "instanced: the position or the scale is not valid");

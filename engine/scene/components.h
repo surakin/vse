@@ -171,6 +171,38 @@ struct InstancedHandle
     renderer::InstancedId id;
 };
 
+/// A hierarchy of instanced nodes (a tree with branches, a building with its parts) drawn at the entity's place: the
+/// [[renderer::InstanceTree]], the meshes its nodes name and the material of each slot. The entity's `WorldTransform`
+/// (a translation, a rotation and a uniform positive scale) is the tree's own transform, so moving the entity moves the
+/// whole tree; animating a node is [[renderer::InstanceTree::SetLocal]] from a system, and the sync recomposes only the
+/// marked subtrees before drawing. [[scene::Hidden]] skips it.
+///
+/// The tree names at most `renderer::kMaxSceneTreeMeshes` meshes; `meshes[i]` is the geometry of tree mesh `i` (rigid,
+/// standard layout, no vertex colors) and `materials[i]` the material id (made with `GBufferOptions::instanced`) of
+/// material slot `i`; a node naming a slot above that is not drawn.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: shares the tree and the meshes; the render sync holds one more share of each mesh per tree it added.
+struct InstanceHierarchy
+{
+    renderer::InstanceTreePtr tree;                                     ///< The nodes; null means "draw nothing".
+    Array<renderer::GpuMeshPtr, renderer::kMaxSceneTreeMeshes> meshes;  ///< Geometry of tree mesh `i`.
+    Array<u32, renderer::kMaxSceneTreeMeshes> materials = {};           ///< Material of slot `i`.
+    u32 flags = 0;                                                      ///< Extra `renderer::ObjectFlags` bits.
+};
+
+/// What the sync keeps on a mirrored hierarchy entity: its id in the render scene. The world logs the removal of this
+/// component, which is how the sync learns that the entity was destroyed.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct HierarchyHandle
+{
+    /// The world logs removals of this component (see [[ecs::World::RemovedCount]]).
+    static constexpr bool kTrackRemoval = true;
+    /// The hierarchy in the render scene, or invalid.
+    renderer::InstancedId id;
+};
+
 /// The resource naming the camera entity (the entity needs [[scene::Camera]] and a `WorldTransform`).
 ///
 /// - Thread-safety: thread-compatible plain data.

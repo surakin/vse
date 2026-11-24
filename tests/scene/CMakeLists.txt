@@ -10,6 +10,7 @@ set(SCENE_TEST_SOURCES
   scene_components_test.cpp  # Phase 27 Day 456: the scene's components in the storage registry
   terrain_sync_test.cpp  # Phase 28 Day 490
   instanced_sync_test.cpp  # Phase 28 Day 498
+  hierarchy_sync_test.cpp  # Phase 28 Day 501
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 329: the level minter, to make the levels the spawner loads
 )
 

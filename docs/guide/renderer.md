@@ -1168,3 +1168,7 @@ it (`(position - origin)` computed in `f64`, then narrowed), so a scene 100,000 
 
 Each frame the renderer stores its frame number in a crash state counter, so a report shows `frame: <n>` next to the `gpu:` line
 the RHI registers. Add your own counter with [[debug::CrashStateCounter]] and store to it as often as you like (one atomic store).
+
+## Instanced meshes
+
+A set of instances, or a tree of them, is one `InstancedObject` in the `RenderScene`: the pass culls it in chunks (sets) or by subtree (trees), writes the visible records into the frame's instance buffer and draws one instanced draw per set or per (mesh, level, slot) run, with materials built with `GBufferOptions::instanced`. The full description is in [Instancing](instancing.md).
