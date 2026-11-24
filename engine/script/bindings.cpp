@@ -37,6 +37,7 @@ const char* ValueKindText(ValueKind kind)
     case ValueKind::Bytes: return "bytes";
     case ValueKind::Array: return "array";
     case ValueKind::Map: return "map";
+    case ValueKind::Handle: return "handle";
     }
     return "unknown";
 }

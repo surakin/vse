@@ -246,6 +246,7 @@ struct Writer
         switch (value.Kind())
         {
         case ValueKind::Nil: v.tag = ENGINE_VALUE_NIL; break;
+        case ValueKind::Handle: v.tag = ENGINE_VALUE_NIL; break;  // a script's handle has no tag in the C API: nil
         case ValueKind::Bool:
             v.tag = ENGINE_VALUE_BOOL;
             v.i = value.AsBool() ? 1 : 0;

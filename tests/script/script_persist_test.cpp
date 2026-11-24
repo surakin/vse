@@ -192,6 +192,7 @@ Value Everything()
     map.Set("quat", Value::FromQuat(q));
     const u8 raw[3] = {0, 255, 7};
     map.Set("bytes", Value::FromBytes(Span<const u8>(raw, 3)));
+    map.Set("handle", Value::FromHandle(HandleType::Resource, 0xfedcba9876543210ull));
     Value array = Value::MakeArray();
     array.Push(Number(1));
     array.Push(Value::FromText("two"));

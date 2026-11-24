@@ -184,12 +184,14 @@ enum Tag : int
     kTagBytes,
     kTagArray,
     kTagMap,
+    kTagResource,  // a userdata of 8 bytes: the id of a resource
     kTagCount,
     kTagNone = -1,
 };
 
-const char* const kTagNames[kTagCount] = {"engine.vec2",   "engine.vec3",  "engine.vec4",  "engine.quat",
-                                          "engine.entity", "engine.bytes", "engine.array", "engine.map"};
+const char* const kTagNames[kTagCount] = {"engine.vec2",  "engine.vec3",   "engine.vec4",
+                                          "engine.quat",  "engine.entity", "engine.bytes",
+                                          "engine.array", "engine.map",    "engine.resource"};
 
 // State shared by the conversions of one call. It lives in the frame that makes the protected call.
 struct Marshal
@@ -247,6 +249,23 @@ void Tagged(lua_State* L, Tag tag, int narr, int nrec)
     lua_setmetatable(L, -2);
 }
 
+int ResourceEq(lua_State* L)
+{
+    const u64* a = static_cast<const u64*>(lua_touserdata(L, 1));
+    const u64* b = static_cast<const u64*>(lua_touserdata(L, 2));
+    lua_pushboolean(L, a != nullptr && b != nullptr && *a == *b ? 1 : 0);
+    return 1;
+}
+
+int ResourceToString(lua_State* L)
+{
+    const u64* a = static_cast<const u64*>(lua_touserdata(L, 1));
+    char text[48];
+    FormatTo(text, sizeof(text), "resource(%016llx)", static_cast<unsigned long long>(a != nullptr ? *a : 0));
+    lua_pushstring(L, text);
+    return 1;
+}
+
 // Pushes `v` as a Lua value. May raise (memory); keeps no owner alive. The stack must have room (the caller checked).
 void PushValue(lua_State* L, const Value& v)
 {
@@ -287,6 +306,15 @@ void PushValue(lua_State* L, const Value& v)
         SetNumberField(L, "index", v.AsEntity().index);
         SetNumberField(L, "generation", v.AsEntity().generation);
         return;
+    case ValueKind::Handle:
+    {
+        // A userdata, not a number: the id of a resource can be any 64 bits, and a script must not read or forge it.
+        u64* block = static_cast<u64*>(lua_newuserdata(L, sizeof(u64)));
+        *block = v.AsHandleId();
+        lua_getfield(L, LUA_REGISTRYINDEX, kTagNames[kTagResource]);
+        lua_setmetatable(L, -2);
+        return;
+    }
     case ValueKind::Bytes:
         Tagged(L, kTagBytes, 0, 1);
         lua_pushstring(L, "data");
@@ -429,7 +457,14 @@ bool ReadValue(lua_State* L, int index, Value* out, Marshal* m, u32 depth)
         return true;
     }
     case LUA_TTABLE: break;
-    default: return Fail(m, "a function, userdata or thread cannot cross to the engine");
+    case LUA_TUSERDATA:
+        if (TagOf(L, index) == kTagResource && lua_objlen(L, index) == sizeof(u64))
+        {
+            *out = Value::FromHandle(HandleType::Resource, *static_cast<const u64*>(lua_touserdata(L, index)));
+            return true;
+        }
+        return Fail(m, "a userdata that is not an engine handle cannot cross to the engine");
+    default: return Fail(m, "a function or thread cannot cross to the engine");
     }
     const int tag = TagOf(L, index);
     f64 a = 0;
@@ -1539,6 +1574,15 @@ void OpenLibs(lua_State* L, Request* r)
         lua_getfield(L, LUA_REGISTRYINDEX, kTagNames[t]);
     }
     lua_call(L, 5, 0);
+    // A resource handle compares by its id and prints as `resource(<hex>)`; its metatable is locked like the others.
+    lua_getfield(L, LUA_REGISTRYINDEX, kTagNames[kTagResource]);
+    lua_pushcfunction(L, &ResourceEq);
+    lua_setfield(L, -2, "__eq");
+    lua_pushcfunction(L, &ResourceToString);
+    lua_setfield(L, -2, "__tostring");
+    lua_pushboolean(L, 0);
+    lua_setfield(L, -2, "__metatable");
+    lua_pop(L, 1);
     // The other tags (bytes, arrays, maps) have no operators, but their metatables are hidden and locked the same way:
     // getmetatable answers false and setmetatable refuses, so a script cannot change how every engine value behaves.
     for (int t = kTagBytes; t <= kTagMap; ++t)

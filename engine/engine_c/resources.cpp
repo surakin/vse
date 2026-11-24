@@ -415,6 +415,32 @@ engine_status ResourceHost::FindMeshSlot(u64 id, StringView name, u32* index)
     return Fail(ENGINE_ERROR_NOT_FOUND, "the mesh has no slot of that name");
 }
 
+bool ResourceHost::FindResourceByPath(StringView name, u64* id)
+{
+    if (name.Length() == 0 || name.Length() > 1024)
+    {
+        return false;
+    }
+    StringBuilder<HeapAllocator> rooted(HeapAllocator::Default());
+    rooted.Append(StringView("/"));
+    rooted.Append(name);
+    const StringView tries[2] = {name, rooted.View()};
+    for (usize t = 0; t < 2; ++t)
+    {
+        if (t == 1 && name.Data()[0] == '/')
+        {
+            break;
+        }
+        asset::ResourceId rid;
+        if (ResolveId(0, engine_string{tries[t].Data(), tries[t].Length()}, &rid) == ENGINE_OK)
+        {
+            *id = rid.Value();
+            return true;
+        }
+    }
+    return false;
+}
+
 bool ResourceHost::FindClipByName(StringView name, u64* id)
 {
     if (name.Length() == 0 || name.Length() > 1024)

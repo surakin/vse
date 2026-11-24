@@ -395,20 +395,23 @@ void EnvironmentSet(Value fields)
     }
 }
 
-void EnvironmentSetSkyCube(i64 texture)
+void EnvironmentSetSkyCube(Value texture)
 {
     PartitionContext* context = SceneContext();
     if (context == nullptr || SceneServicesOf(context) == nullptr)
     {
         return;
     }
-    if (texture < 0)
+    SkyCubePayload p = {};
+    if (texture.Kind() == ValueKind::Handle && texture.AsHandleType() == script::HandleType::Resource)
     {
-        script::RaiseScriptError("environment.set_sky_cube takes a texture resource id, or 0 for none");
+        p.texture = texture.AsHandleId();
+    }
+    else if (!texture.IsNil() && !(texture.Kind() == ValueKind::Int && texture.AsInt() == 0))
+    {
+        script::RaiseScriptError("environment.set_sky_cube takes a texture handle (`resource.find`), or nil for none");
         return;
     }
-    SkyCubePayload p = {};
-    p.texture = static_cast<u64>(texture);
     SceneRecord(context, kCommandSkyCubeSet, ecs::Entity(), &p, sizeof(p));
 }
 
@@ -1242,6 +1245,23 @@ ResourceHost* ResourcesOf(const SceneScriptServices* services)
     return services->runtime == nullptr ? nullptr : services->runtime->ResourcesIfCreated();
 }
 
+Value ResourceFind(StringView path)
+{
+    PartitionContext* context = SceneContext();
+    const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
+    if (services == nullptr)
+    {
+        return Value();
+    }
+    ResourceHost* resources = ResourcesOf(services);
+    u64 id = 0;
+    if (resources == nullptr || !resources->FindResourceByPath(path, &id))
+    {
+        return Value();
+    }
+    return Value::FromHandle(script::HandleType::Resource, id);
+}
+
 Value AnimationClip(StringView name)
 {
     PartitionContext* context = SceneContext();
@@ -1256,7 +1276,7 @@ Value AnimationClip(StringView name)
     {
         return Value();
     }
-    return Value::FromInt(static_cast<i64>(id));
+    return Value::FromHandle(script::HandleType::Resource, id);
 }
 
 bool ClipParamNumber(const Value& params, const char* key, f32* out)
@@ -1276,7 +1296,7 @@ bool ClipParamNumber(const Value& params, const char* key, f32* out)
     return true;
 }
 
-void AnimationPlay(ecs::Entity e, i64 clip, Value params)
+void AnimationPlay(ecs::Entity e, Value clip_value, Value params)
 {
     PartitionContext* context = SceneContext();
     const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
@@ -1290,13 +1310,25 @@ void AnimationPlay(ecs::Entity e, i64 clip, Value params)
         script::RaiseScriptError("animation.play: this world has no engine runtime to read clips from");
         return;
     }
-    if (clip <= 0)
+    ClipPlayPayload p{};
+    if (clip_value.Kind() == ValueKind::Handle && clip_value.AsHandleType() == script::HandleType::Resource)
     {
-        script::RaiseScriptError("animation.play: `clip` is the id `animation.clip` returned");
+        p.clip = clip_value.AsHandleId();
+    }
+    else if (clip_value.Kind() == ValueKind::Text)
+    {
+        if (!resources->FindClipByName(clip_value.Text(), &p.clip))
+        {
+            SceneRaise(StringView("not_found: animation.play: no clip is mounted at `"), clip_value.Text(),
+                       StringView("`"));
+            return;
+        }
+    }
+    else
+    {
+        script::RaiseScriptError("animation.play: `clip` is a clip handle (`animation.clip`) or a clip path");
         return;
     }
-    ClipPlayPayload p{};
-    p.clip = static_cast<u64>(clip);
     p.flags = ENGINE_PLAY_LOOP;
     if (!params.IsNil())
     {
@@ -1650,10 +1682,10 @@ void MeshSetSlot(ecs::Entity e, StringView slot, StringView field, Value value)
         p.kind = ENGINE_SLOT_HOST_TEXTURE;
         p.host_texture = handle.value;
     }
-    else if (value.Kind() == ValueKind::Int && value.AsInt() > 0)
+    else if (value.Kind() == ValueKind::Handle && value.AsHandleType() == script::HandleType::Resource)
     {
         shaped = true;
-        p.texture_resource = static_cast<u64>(value.AsInt());
+        p.texture_resource = value.AsHandleId();
     }
     if (beyond)
     {
@@ -1665,7 +1697,7 @@ void MeshSetSlot(ecs::Entity e, StringView slot, StringView field, Value value)
         SceneRaise(StringView("type_mismatch: mesh.set_slot: the field `"), field, StringView("` of slot `"), slot,
                    StringView(expected == ENGINE_SLOT_FLOAT ? "` takes a number"
                               : expected == ENGINE_SLOT_TEXTURE
-                                  ? "` takes a texture name (a string) or a texture resource id"
+                                  ? "` takes a texture name (a string) or a resource handle"
                               : expected == ENGINE_SLOT_VEC4 ? "` takes a vec4"
                                                              : "` takes a colour (a vec4, "
                                                                "a vec3 or {r, g, b, a})"));
@@ -1799,8 +1831,8 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "the script's at the sync point inside the next frame.");
     ok &= registry->Add<&EnvironmentSetSkyCube>(
         "environment", "set_sky_cube", ThreadRule::WorldWrite, "texture",
-        "Draws the sky from the cube texture resource with id `texture` (a minted cube or environment texture the host "
-        "added), or from the gradient again when `texture` is 0, at the sync point. The cube turns by "
+        "Draws the sky from the cube texture resource that the handle `texture` names (`resource.find`: a minted cube or "
+        "environment texture the host added), or from the gradient again when `texture` is nil, at the sync point. The cube turns by "
         "`environment.set({sky_rotation = radians})` and shows while `sky_mode` is 2. A resource that is not mounted "
         "or is not a texture counts a failed command and changes nothing.");
     ok &= registry->Add<&EnvironmentGet>(
@@ -1854,14 +1886,21 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "this one (`pose * added`, about the joint's own axes). The identity takes it away; it stays until set again, "
         "and several calls for one joint in a tick are last-wins. A joint the skeleton does not have, an entity with "
         "no loaded skeleton instance, or a quaternion that is not finite or not of length 1 within 0.1% is an error.");
+    ok &= registry->Add<&ResourceFind>(
+        "resource", "find", ThreadRule::WorldRead, "path",
+        "Returns a handle to the resource of any type that the path `path` names among the mounted resources (a name "
+        "without a leading `/` is tried with one too; the first mount in priority order wins), or nil when there is none. "
+        "A handle is a value the engine made: a script cannot read its 64-bit id or make one, and two handles of one "
+        "resource are equal. Bindings that take a resource take one (`mesh.set_slot` for a texture field, "
+        "`environment.set_sky_cube`).");
     ok &= registry->Add<&AnimationClip>(
         "animation", "clip", ThreadRule::WorldRead, "name",
-        "Returns the id of the clip resource that the path `name` names among the mounted resources (a level's or an "
+        "Returns a resource handle to the clip that the path `name` names among the mounted resources (a level's or an "
         "import's clips; a name without a leading `/` is tried with one too; the first mount in priority order that "
-        "has it wins), or nil when there is none or it is not a clip. The id goes to `animation.play`.");
+        "has it wins), or nil when there is none or it is not a clip. The handle goes to `animation.play`, which also takes the clip path itself.");
     ok &= registry->Add<&AnimationPlay>(
         "animation", "play", ThreadRule::WorldWrite, "e, clip, params",
-        "Starts the clip `clip` (an id from `animation.clip`) on entity `e` at the sync point, as `animation_play` in the "
+        "Starts the clip `clip` (a handle from `animation.clip`, or a clip path) on entity `e` at the sync point, as `animation_play` in the "
         "C API. `params` is nil or a table with `speed` (above 0; 1 by default), `start_time` (seconds), `fade_seconds` "
         "(blend from what plays now) and `loop` (true by default). Playing the clip that already plays does not "
         "restart it (a stopped one resumes, at the speed given). A clip that is not mounted or was made for another "
@@ -1884,7 +1923,7 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "(a colour: a vec4, a vec3 or `{r, g, b, a}`), `roughness`, `metallic`, `alpha_cutoff`, `occlusion`, "
         "`occlusion_strength` or `emissive_from_albedo` (a number), `albedo_uv` (a vec4), `albedo_uv_outside` (a colour) or "
         "a texture field (`albedo_tex`, `normal_tex`, `metallic_roughness_tex`, `occlusion_tex`, `emissive_tex`) given "
-        "the name of a host texture (the `name` it was made with; the newest of that name) or a texture resource id. An "
+        "the name of a host texture (the `name` it was made with; the newest of that name) or a resource handle (`resource.find`). An "
         "entity without that mesh slot (not_found), a name that is not a field or a texture, or a value of the wrong "
         "kind (type_mismatch) is an error naming the slot and the field.");
     ok &= registry->Add<&MeshClearSlot>(

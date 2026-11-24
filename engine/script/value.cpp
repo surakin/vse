@@ -281,6 +281,15 @@ Value Value::FromEntity(ecs::Entity value)
     return v;
 }
 
+Value Value::FromHandle(HandleType type, u64 id)
+{
+    Value v;
+    v.kind_ = ValueKind::Handle;
+    v.entity_.index = static_cast<u32>(type);
+    v.int_ = static_cast<i64>(id);
+    return v;
+}
+
 Value Value::FromBytes(Span<const u8> bytes)
 {
     Value v;
@@ -370,6 +379,18 @@ Quaternion Value::AsQuat() const
     q.z = lanes_[2];
     q.w = lanes_[3];
     return q;
+}
+
+HandleType Value::AsHandleType() const
+{
+    ENGINE_ASSERT(kind_ == ValueKind::Handle, "script::Value::AsHandleType: the value is not a handle");
+    return static_cast<HandleType>(entity_.index);
+}
+
+u64 Value::AsHandleId() const
+{
+    ENGINE_ASSERT(kind_ == ValueKind::Handle, "script::Value::AsHandleId: the value is not a handle");
+    return static_cast<u64>(int_);
 }
 
 ecs::Entity Value::AsEntity() const
@@ -577,7 +598,8 @@ static ValueCheck CheckNode(const Value& v, CheckState& state)
     case ValueKind::Nil:
     case ValueKind::Bool:
     case ValueKind::Int:
-    case ValueKind::Entity: break;
+    case ValueKind::Entity:
+    case ValueKind::Handle: break;
     }
     return ValueCheck::Ok;
 }
@@ -622,6 +644,7 @@ bool Value::Equals(const Value& other) const
         return true;
     case ValueKind::Entity:
         return entity_.index == other.entity_.index && entity_.generation == other.entity_.generation;
+    case ValueKind::Handle: return entity_.index == other.entity_.index && int_ == other.int_;
     case ValueKind::Bytes:
         return bytes_.Size() == other.bytes_.Size() &&
                MemCompare(bytes_.Data(), other.bytes_.Data(), bytes_.Size()) == 0;
@@ -677,6 +700,10 @@ static void HashNode(const Value& v, Hasher& h)
         h.F32(v.AsQuat().y);
         h.F32(v.AsQuat().z);
         h.F32(v.AsQuat().w);
+        break;
+    case ValueKind::Handle:
+        h.Byte(static_cast<u8>(v.AsHandleType()));
+        h.U64(v.AsHandleId());
         break;
     case ValueKind::Entity: h.U64((static_cast<u64>(v.AsEntity().generation) << 32) | v.AsEntity().index); break;
     case ValueKind::Bytes: h.Bytes(reinterpret_cast<const char*>(v.Bytes().Data()), v.Bytes().Size()); break;

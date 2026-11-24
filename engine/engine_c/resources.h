@@ -118,6 +118,11 @@ public:
     ///   INVALID_ARGUMENT (another skeleton's, or joint tracks for an entity without a skeleton), with the text set.
     engine_status PinClip(u64 id, u64 skeleton_id, bool* has_weights = nullptr);
 
+    /// Finds the resource of any type that the path `name` names (as `FindClipByName`, which also checks the type).
+    ///
+    /// - Returns: false when no mount has the path.
+    bool FindResourceByPath(StringView name, u64* id);
+
     /// Finds the clip resource that the path `name` names (as `resource_resolve` reads a path; a name without a
     /// leading `/` is tried as given and then with one): the first mount in priority order that has the path wins.
     ///

@@ -185,6 +185,28 @@ TEST_CASE("Value::Equals compares floats by bit pattern and maps in order", "[sc
         a.Equals(b));  // the same entries in another order are another value (iteration order is part of the state)
 }
 
+TEST_CASE("Value: a handle keeps a 64-bit id, compares by type and id, and is not an entity or a number",
+          "[script][value]")
+{
+    const u64 big = 0xfedcba9876543210ull;  // above 2^53: a number could not hold it
+    const Value h = Value::FromHandle(HandleType::Resource, big);
+    CHECK(h.Kind() == ValueKind::Handle);
+    CHECK(h.AsHandleType() == HandleType::Resource);
+    CHECK(h.AsHandleId() == big);
+    CHECK(h.Equals(Value::FromHandle(HandleType::Resource, big)));
+    CHECK_FALSE(h.Equals(Value::FromHandle(HandleType::Resource, big - 1)));
+    CHECK_FALSE(h.Equals(Value::FromInt(5)));
+    CHECK(h.Hash() == Value::FromHandle(HandleType::Resource, big).Hash());
+    CHECK(h.Hash() != Value::FromHandle(HandleType::Resource, big - 1).Hash());
+    ecs::Entity e;
+    e.index = 1;
+    e.generation = 0;
+    CHECK_FALSE(Value::FromHandle(HandleType::Resource, 1).Equals(Value::FromEntity(e)));
+    Value copy = h;
+    CHECK(copy.Equals(h));
+    CHECK(h.Check(ValueLimits()) == ValueCheck::Ok);
+}
+
 TEST_CASE("Value::Hash is a stable function of the content", "[script][value]")
 {
     CHECK(Value::FromInt(1).Hash() == Value::FromInt(1).Hash());

@@ -2204,30 +2204,30 @@ script::BindingInfo::doc	variable	script	script-bindinginfo-doc	script.md	engine
 script::BindingInfo::rule	variable	script	script-bindinginfo-rule	script.md	engine/script/bindings.h:143
 script::BindingInfo::arity	variable	script	script-bindinginfo-arity	script.md	engine/script/bindings.h:145
 script::BindingInfo::BindingInfo()	function	script	script-bindinginfo-bindinginfo	script.md	engine/script/bindings.h:148
-script::Installation	class	script	script-installation	script.md	engine/script/bindings.h:508
-script::Installation::Installed() const	function	script	script-installation-installed-const	script.md	engine/script/bindings.h:514
-script::Installation::Refusing() const	function	script	script-installation-refusing-const	script.md	engine/script/bindings.h:518
-script::Installation::Skipped() const	function	script	script-installation-skipped-const	script.md	engine/script/bindings.h:522
-script::Installation::~Installation()	function	script	script-installation-tilde-installation	script.md	engine/script/bindings.h:525
-script::Installation::Installation(const Installation&)	function	script	script-installation-installation-const-installation-amp	script.md	engine/script/bindings.h:526
-script::Installation::operator=(const Installation&)	function	script	script-installation-operator-eq-const-installation-amp	script.md	engine/script/bindings.h:527
-script::Installation::Installation()	function	script	script-installation-installation	script.md	engine/script/bindings.h:529
-script::BindingRegistry	class	script	script-bindingregistry	script.md	engine/script/bindings.h:557
-script::BindingRegistry::BindingRegistry()	function	script	script-bindingregistry-bindingregistry	script.md	engine/script/bindings.h:561
-script::BindingRegistry::~BindingRegistry()	function	script	script-bindingregistry-tilde-bindingregistry	script.md	engine/script/bindings.h:563
-script::BindingRegistry::BindingRegistry(const BindingRegistry&)	function	script	script-bindingregistry-bindingregistry-const-bindingregistry-amp	script.md	engine/script/bindings.h:564
-script::BindingRegistry::operator=(const BindingRegistry&)	function	script	script-bindingregistry-operator-eq-const-bindingregistry-amp	script.md	engine/script/bindings.h:565
-script::BindingRegistry::Add(StringView,StringView,ThreadRule,StringView,StringView,Outcome*)	function	script	script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star	script.md	engine/script/bindings.h:581
-script::BindingRegistry::AddDynamic(StringView,StringView,ThreadRule,StringView,StringView,Outcome(*)(void*,Span<const Value>,Vector<Value>*),void*,Outcome*)	function	script	script-bindingregistry-adddynamic-stringview-stringview-threadrule-stringview-stringview-outcome-star-void-star-span-lt-const-value-gt-vector-lt-value-gt-star-void-star-outcome-star	script.md	engine/script/bindings.h:608
-script::BindingRegistry::Count() const	function	script	script-bindingregistry-count-const	script.md	engine/script/bindings.h:615
-script::BindingRegistry::At(usize) const	function	script	script-bindingregistry-at-usize-const	script.md	engine/script/bindings.h:620
-script::BindingRegistry::Find(StringView) const	function	script	script-bindingregistry-find-stringview-const	script.md	engine/script/bindings.h:627
-script::BindingRegistry::FindById(u32) const	function	script	script-bindingregistry-findbyid-u32-const	script.md	engine/script/bindings.h:634
-script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:646
-script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:654
-script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:673
-script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:684
-script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:695
+script::Installation	class	script	script-installation	script.md	engine/script/bindings.h:520
+script::Installation::Installed() const	function	script	script-installation-installed-const	script.md	engine/script/bindings.h:526
+script::Installation::Refusing() const	function	script	script-installation-refusing-const	script.md	engine/script/bindings.h:530
+script::Installation::Skipped() const	function	script	script-installation-skipped-const	script.md	engine/script/bindings.h:534
+script::Installation::~Installation()	function	script	script-installation-tilde-installation	script.md	engine/script/bindings.h:537
+script::Installation::Installation(const Installation&)	function	script	script-installation-installation-const-installation-amp	script.md	engine/script/bindings.h:538
+script::Installation::operator=(const Installation&)	function	script	script-installation-operator-eq-const-installation-amp	script.md	engine/script/bindings.h:539
+script::Installation::Installation()	function	script	script-installation-installation	script.md	engine/script/bindings.h:541
+script::BindingRegistry	class	script	script-bindingregistry	script.md	engine/script/bindings.h:569
+script::BindingRegistry::BindingRegistry()	function	script	script-bindingregistry-bindingregistry	script.md	engine/script/bindings.h:573
+script::BindingRegistry::~BindingRegistry()	function	script	script-bindingregistry-tilde-bindingregistry	script.md	engine/script/bindings.h:575
+script::BindingRegistry::BindingRegistry(const BindingRegistry&)	function	script	script-bindingregistry-bindingregistry-const-bindingregistry-amp	script.md	engine/script/bindings.h:576
+script::BindingRegistry::operator=(const BindingRegistry&)	function	script	script-bindingregistry-operator-eq-const-bindingregistry-amp	script.md	engine/script/bindings.h:577
+script::BindingRegistry::Add(StringView,StringView,ThreadRule,StringView,StringView,Outcome*)	function	script	script-bindingregistry-add-stringview-stringview-threadrule-stringview-stringview-outcome-star	script.md	engine/script/bindings.h:593
+script::BindingRegistry::AddDynamic(StringView,StringView,ThreadRule,StringView,StringView,Outcome(*)(void*,Span<const Value>,Vector<Value>*),void*,Outcome*)	function	script	script-bindingregistry-adddynamic-stringview-stringview-threadrule-stringview-stringview-outcome-star-void-star-span-lt-const-value-gt-vector-lt-value-gt-star-void-star-outcome-star	script.md	engine/script/bindings.h:620
+script::BindingRegistry::Count() const	function	script	script-bindingregistry-count-const	script.md	engine/script/bindings.h:627
+script::BindingRegistry::At(usize) const	function	script	script-bindingregistry-at-usize-const	script.md	engine/script/bindings.h:632
+script::BindingRegistry::Find(StringView) const	function	script	script-bindingregistry-find-stringview-const	script.md	engine/script/bindings.h:639
+script::BindingRegistry::FindById(u32) const	function	script	script-bindingregistry-findbyid-u32-const	script.md	engine/script/bindings.h:646
+script::BindingRegistry::Install(State*,const InstallProfile&,Outcome*) const	function	script	script-bindingregistry-install-state-star-const-installprofile-amp-outcome-star-const	script.md	engine/script/bindings.h:658
+script::BindingRegistry::RenderMarkdown() const	function	script	script-bindingregistry-rendermarkdown-const	script.md	engine/script/bindings.h:666
+script::RaiseScriptError(StringView)	function	script	script-raisescripterror-stringview	script.md	engine/script/bindings.h:685
+script::RegisterStandardBindings(BindingRegistry*)	function	script	script-registerstandardbindings-bindingregistry-star	script.md	engine/script/bindings.h:696
+script::RegisterRuntimeBindings(BindingRegistry*)	function	script	script-registerruntimebindings-bindingregistry-star	script.md	engine/script/bindings.h:707
 script::kPlaceholdersPerPartition	variable	script	script-kplaceholdersperpartition	script.md	engine/script/command_buffer.h:19
 script::CommandRecord	struct	script	script-commandrecord	script.md	engine/script/command_buffer.h:24
 script::CommandRecord::order_key	variable	script	script-commandrecord-order-key	script.md	engine/script/command_buffer.h:27
@@ -2827,78 +2827,87 @@ script::TaskPool::StateCount() const	function	script	script-taskpool-statecount-
 script::TaskPool::Resets() const	function	script	script-taskpool-resets-const	script.md	engine/script/task_pool.h:291
 script::kMaxValueDepth	variable	script	script-kmaxvaluedepth	script.md	engine/script/value.h:23
 script::kMaxContainerItems	variable	script	script-kmaxcontaineritems	script.md	engine/script/value.h:25
-script::ValueKind	enum	script	script-valuekind	script.md	engine/script/value.h:30
-script::ValueKind::Nil	enumerator	script	script-valuekind-nil	script.md	engine/script/value.h:33
-script::ValueKind::Bool	enumerator	script	script-valuekind-bool	script.md	engine/script/value.h:35
-script::ValueKind::Int	enumerator	script	script-valuekind-int	script.md	engine/script/value.h:37
-script::ValueKind::Float	enumerator	script	script-valuekind-float	script.md	engine/script/value.h:39
-script::ValueKind::Text	enumerator	script	script-valuekind-text	script.md	engine/script/value.h:41
-script::ValueKind::Vec2	enumerator	script	script-valuekind-vec2	script.md	engine/script/value.h:43
-script::ValueKind::Vec3	enumerator	script	script-valuekind-vec3	script.md	engine/script/value.h:45
-script::ValueKind::Vec4	enumerator	script	script-valuekind-vec4	script.md	engine/script/value.h:47
-script::ValueKind::Quat	enumerator	script	script-valuekind-quat	script.md	engine/script/value.h:49
-script::ValueKind::Entity	enumerator	script	script-valuekind-entity	script.md	engine/script/value.h:51
-script::ValueKind::Bytes	enumerator	script	script-valuekind-bytes	script.md	engine/script/value.h:53
-script::ValueKind::Array	enumerator	script	script-valuekind-array	script.md	engine/script/value.h:55
-script::ValueKind::Map	enumerator	script	script-valuekind-map	script.md	engine/script/value.h:57
-script::ValueCheck	enum	script	script-valuecheck	script.md	engine/script/value.h:63
-script::ValueCheck::Ok	enumerator	script	script-valuecheck-ok	script.md	engine/script/value.h:66
-script::ValueCheck::TooDeep	enumerator	script	script-valuecheck-toodeep	script.md	engine/script/value.h:68
-script::ValueCheck::TooManyNodes	enumerator	script	script-valuecheck-toomanynodes	script.md	engine/script/value.h:70
-script::ValueCheck::TextTooLong	enumerator	script	script-valuecheck-texttoolong	script.md	engine/script/value.h:72
-script::ValueCheck::BlobTooLarge	enumerator	script	script-valuecheck-blobtoolarge	script.md	engine/script/value.h:74
-script::ValueCheck::NotFinite	enumerator	script	script-valuecheck-notfinite	script.md	engine/script/value.h:76
-script::ValueLimits	struct	script	script-valuelimits	script.md	engine/script/value.h:83
-script::ValueLimits::max_depth	variable	script	script-valuelimits-max-depth	script.md	engine/script/value.h:86
-script::ValueLimits::max_nodes	variable	script	script-valuelimits-max-nodes	script.md	engine/script/value.h:88
-script::ValueLimits::max_text_bytes	variable	script	script-valuelimits-max-text-bytes	script.md	engine/script/value.h:90
-script::ValueLimits::max_blob_bytes	variable	script	script-valuelimits-max-blob-bytes	script.md	engine/script/value.h:92
-script::ValueLimits::require_finite	variable	script	script-valuelimits-require-finite	script.md	engine/script/value.h:94
-script::Value	class	script	script-value	script.md	engine/script/value.h:108
-script::Value::Value()	function	script	script-value-value	script.md	engine/script/value.h:112
-script::Value::Value(const Value&)	function	script	script-value-value-const-value-amp	script.md	engine/script/value.h:114
-script::Value::Value(Value&&) noexcept	function	script	script-value-value-value-amp-amp-noexcept	script.md	engine/script/value.h:116
-script::Value::operator=(const Value&)	function	script	script-value-operator-eq-const-value-amp	script.md	engine/script/value.h:118
-script::Value::operator=(Value&&) noexcept	function	script	script-value-operator-eq-value-amp-amp-noexcept	script.md	engine/script/value.h:120
-script::Value::~Value()	function	script	script-value-tilde-value	script.md	engine/script/value.h:122
-script::Value::FromBool(bool)	function	script	script-value-frombool-bool	script.md	engine/script/value.h:125
-script::Value::FromInt(i64)	function	script	script-value-fromint-i64	script.md	engine/script/value.h:127
-script::Value::FromFloat(f64)	function	script	script-value-fromfloat-f64	script.md	engine/script/value.h:129
-script::Value::FromText(StringView)	function	script	script-value-fromtext-stringview	script.md	engine/script/value.h:133
-script::Value::FromVec2(Vec2)	function	script	script-value-fromvec2-vec2	script.md	engine/script/value.h:135
-script::Value::FromVec3(Vec3)	function	script	script-value-fromvec3-vec3	script.md	engine/script/value.h:137
-script::Value::FromVec3d(Vec3d)	function	script	script-value-fromvec3d-vec3d	script.md	engine/script/value.h:139
-script::Value::FromVec4(Vec4)	function	script	script-value-fromvec4-vec4	script.md	engine/script/value.h:141
-script::Value::FromQuat(Quaternion)	function	script	script-value-fromquat-quaternion	script.md	engine/script/value.h:143
-script::Value::FromEntity(ecs::Entity)	function	script	script-value-fromentity-ecs-entity	script.md	engine/script/value.h:145
-script::Value::FromBytes(Span<const u8>)	function	script	script-value-frombytes-span-lt-const-u8-gt	script.md	engine/script/value.h:149
-script::Value::MakeArray()	function	script	script-value-makearray	script.md	engine/script/value.h:151
-script::Value::MakeMap()	function	script	script-value-makemap	script.md	engine/script/value.h:153
-script::Value::Kind() const	function	script	script-value-kind-const	script.md	engine/script/value.h:156
-script::Value::IsNil() const	function	script	script-value-isnil-const	script.md	engine/script/value.h:160
-script::Value::IsNumber() const	function	script	script-value-isnumber-const	script.md	engine/script/value.h:164
-script::Value::AsBool() const	function	script	script-value-asbool-const	script.md	engine/script/value.h:169
-script::Value::AsInt() const	function	script	script-value-asint-const	script.md	engine/script/value.h:173
-script::Value::AsFloat() const	function	script	script-value-asfloat-const	script.md	engine/script/value.h:177
-script::Value::ToDouble() const	function	script	script-value-todouble-const	script.md	engine/script/value.h:181
-script::Value::Text() const	function	script	script-value-text-const	script.md	engine/script/value.h:185
-script::Value::AsVec2() const	function	script	script-value-asvec2-const	script.md	engine/script/value.h:189
-script::Value::AsVec3() const	function	script	script-value-asvec3-const	script.md	engine/script/value.h:193
-script::Value::AsVec3d() const	function	script	script-value-asvec3d-const	script.md	engine/script/value.h:197
-script::Value::AsVec4() const	function	script	script-value-asvec4-const	script.md	engine/script/value.h:201
-script::Value::AsQuat() const	function	script	script-value-asquat-const	script.md	engine/script/value.h:205
-script::Value::AsEntity() const	function	script	script-value-asentity-const	script.md	engine/script/value.h:209
-script::Value::Bytes() const	function	script	script-value-bytes-const	script.md	engine/script/value.h:213
-script::Value::Size() const	function	script	script-value-size-const	script.md	engine/script/value.h:218
-script::Value::At(usize) const	function	script	script-value-at-usize-const	script.md	engine/script/value.h:222
-script::Value::KeyAt(usize) const	function	script	script-value-keyat-usize-const	script.md	engine/script/value.h:226
-script::Value::Find(StringView) const	function	script	script-value-find-stringview-const	script.md	engine/script/value.h:231
-script::Value::Push(Value&&)	function	script	script-value-push-value-amp-amp	script.md	engine/script/value.h:239
-script::Value::Set(StringView,Value&&)	function	script	script-value-set-stringview-value-amp-amp	script.md	engine/script/value.h:246
-script::Value::Depth() const	function	script	script-value-depth-const	script.md	engine/script/value.h:249
-script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:253
-script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:258
-script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:261
+script::HandleType	enum	script	script-handletype	script.md	engine/script/value.h:30
+script::HandleType::None	enumerator	script	script-handletype-none	script.md	engine/script/value.h:33
+script::HandleType::Resource	enumerator	script	script-handletype-resource	script.md	engine/script/value.h:35
+script::ResourceHandle	struct	script	script-resourcehandle	script.md	engine/script/value.h:42
+script::ResourceHandle::id	variable	script	script-resourcehandle-id	script.md	engine/script/value.h:45
+script::ValueKind	enum	script	script-valuekind	script.md	engine/script/value.h:51
+script::ValueKind::Nil	enumerator	script	script-valuekind-nil	script.md	engine/script/value.h:54
+script::ValueKind::Bool	enumerator	script	script-valuekind-bool	script.md	engine/script/value.h:56
+script::ValueKind::Int	enumerator	script	script-valuekind-int	script.md	engine/script/value.h:58
+script::ValueKind::Float	enumerator	script	script-valuekind-float	script.md	engine/script/value.h:60
+script::ValueKind::Text	enumerator	script	script-valuekind-text	script.md	engine/script/value.h:62
+script::ValueKind::Vec2	enumerator	script	script-valuekind-vec2	script.md	engine/script/value.h:64
+script::ValueKind::Vec3	enumerator	script	script-valuekind-vec3	script.md	engine/script/value.h:66
+script::ValueKind::Vec4	enumerator	script	script-valuekind-vec4	script.md	engine/script/value.h:68
+script::ValueKind::Quat	enumerator	script	script-valuekind-quat	script.md	engine/script/value.h:70
+script::ValueKind::Entity	enumerator	script	script-valuekind-entity	script.md	engine/script/value.h:72
+script::ValueKind::Bytes	enumerator	script	script-valuekind-bytes	script.md	engine/script/value.h:74
+script::ValueKind::Array	enumerator	script	script-valuekind-array	script.md	engine/script/value.h:76
+script::ValueKind::Map	enumerator	script	script-valuekind-map	script.md	engine/script/value.h:78
+script::ValueKind::Handle	enumerator	script	script-valuekind-handle	script.md	engine/script/value.h:81
+script::ValueCheck	enum	script	script-valuecheck	script.md	engine/script/value.h:87
+script::ValueCheck::Ok	enumerator	script	script-valuecheck-ok	script.md	engine/script/value.h:90
+script::ValueCheck::TooDeep	enumerator	script	script-valuecheck-toodeep	script.md	engine/script/value.h:92
+script::ValueCheck::TooManyNodes	enumerator	script	script-valuecheck-toomanynodes	script.md	engine/script/value.h:94
+script::ValueCheck::TextTooLong	enumerator	script	script-valuecheck-texttoolong	script.md	engine/script/value.h:96
+script::ValueCheck::BlobTooLarge	enumerator	script	script-valuecheck-blobtoolarge	script.md	engine/script/value.h:98
+script::ValueCheck::NotFinite	enumerator	script	script-valuecheck-notfinite	script.md	engine/script/value.h:100
+script::ValueLimits	struct	script	script-valuelimits	script.md	engine/script/value.h:107
+script::ValueLimits::max_depth	variable	script	script-valuelimits-max-depth	script.md	engine/script/value.h:110
+script::ValueLimits::max_nodes	variable	script	script-valuelimits-max-nodes	script.md	engine/script/value.h:112
+script::ValueLimits::max_text_bytes	variable	script	script-valuelimits-max-text-bytes	script.md	engine/script/value.h:114
+script::ValueLimits::max_blob_bytes	variable	script	script-valuelimits-max-blob-bytes	script.md	engine/script/value.h:116
+script::ValueLimits::require_finite	variable	script	script-valuelimits-require-finite	script.md	engine/script/value.h:118
+script::Value	class	script	script-value	script.md	engine/script/value.h:132
+script::Value::Value()	function	script	script-value-value	script.md	engine/script/value.h:136
+script::Value::Value(const Value&)	function	script	script-value-value-const-value-amp	script.md	engine/script/value.h:138
+script::Value::Value(Value&&) noexcept	function	script	script-value-value-value-amp-amp-noexcept	script.md	engine/script/value.h:140
+script::Value::operator=(const Value&)	function	script	script-value-operator-eq-const-value-amp	script.md	engine/script/value.h:142
+script::Value::operator=(Value&&) noexcept	function	script	script-value-operator-eq-value-amp-amp-noexcept	script.md	engine/script/value.h:144
+script::Value::~Value()	function	script	script-value-tilde-value	script.md	engine/script/value.h:146
+script::Value::FromBool(bool)	function	script	script-value-frombool-bool	script.md	engine/script/value.h:149
+script::Value::FromInt(i64)	function	script	script-value-fromint-i64	script.md	engine/script/value.h:151
+script::Value::FromFloat(f64)	function	script	script-value-fromfloat-f64	script.md	engine/script/value.h:153
+script::Value::FromText(StringView)	function	script	script-value-fromtext-stringview	script.md	engine/script/value.h:157
+script::Value::FromVec2(Vec2)	function	script	script-value-fromvec2-vec2	script.md	engine/script/value.h:159
+script::Value::FromVec3(Vec3)	function	script	script-value-fromvec3-vec3	script.md	engine/script/value.h:161
+script::Value::FromVec3d(Vec3d)	function	script	script-value-fromvec3d-vec3d	script.md	engine/script/value.h:163
+script::Value::FromVec4(Vec4)	function	script	script-value-fromvec4-vec4	script.md	engine/script/value.h:165
+script::Value::FromQuat(Quaternion)	function	script	script-value-fromquat-quaternion	script.md	engine/script/value.h:167
+script::Value::FromEntity(ecs::Entity)	function	script	script-value-fromentity-ecs-entity	script.md	engine/script/value.h:169
+script::Value::FromHandle(HandleType,u64)	function	script	script-value-fromhandle-handletype-u64	script.md	engine/script/value.h:173
+script::Value::FromBytes(Span<const u8>)	function	script	script-value-frombytes-span-lt-const-u8-gt	script.md	engine/script/value.h:177
+script::Value::MakeArray()	function	script	script-value-makearray	script.md	engine/script/value.h:179
+script::Value::MakeMap()	function	script	script-value-makemap	script.md	engine/script/value.h:181
+script::Value::Kind() const	function	script	script-value-kind-const	script.md	engine/script/value.h:184
+script::Value::IsNil() const	function	script	script-value-isnil-const	script.md	engine/script/value.h:188
+script::Value::IsNumber() const	function	script	script-value-isnumber-const	script.md	engine/script/value.h:192
+script::Value::AsBool() const	function	script	script-value-asbool-const	script.md	engine/script/value.h:197
+script::Value::AsInt() const	function	script	script-value-asint-const	script.md	engine/script/value.h:201
+script::Value::AsFloat() const	function	script	script-value-asfloat-const	script.md	engine/script/value.h:205
+script::Value::ToDouble() const	function	script	script-value-todouble-const	script.md	engine/script/value.h:209
+script::Value::Text() const	function	script	script-value-text-const	script.md	engine/script/value.h:213
+script::Value::AsVec2() const	function	script	script-value-asvec2-const	script.md	engine/script/value.h:217
+script::Value::AsVec3() const	function	script	script-value-asvec3-const	script.md	engine/script/value.h:221
+script::Value::AsVec3d() const	function	script	script-value-asvec3d-const	script.md	engine/script/value.h:225
+script::Value::AsVec4() const	function	script	script-value-asvec4-const	script.md	engine/script/value.h:229
+script::Value::AsQuat() const	function	script	script-value-asquat-const	script.md	engine/script/value.h:233
+script::Value::AsEntity() const	function	script	script-value-asentity-const	script.md	engine/script/value.h:237
+script::Value::AsHandleType() const	function	script	script-value-ashandletype-const	script.md	engine/script/value.h:241
+script::Value::AsHandleId() const	function	script	script-value-ashandleid-const	script.md	engine/script/value.h:245
+script::Value::Bytes() const	function	script	script-value-bytes-const	script.md	engine/script/value.h:249
+script::Value::Size() const	function	script	script-value-size-const	script.md	engine/script/value.h:254
+script::Value::At(usize) const	function	script	script-value-at-usize-const	script.md	engine/script/value.h:258
+script::Value::KeyAt(usize) const	function	script	script-value-keyat-usize-const	script.md	engine/script/value.h:262
+script::Value::Find(StringView) const	function	script	script-value-find-stringview-const	script.md	engine/script/value.h:267
+script::Value::Push(Value&&)	function	script	script-value-push-value-amp-amp	script.md	engine/script/value.h:275
+script::Value::Set(StringView,Value&&)	function	script	script-value-set-stringview-value-amp-amp	script.md	engine/script/value.h:282
+script::Value::Depth() const	function	script	script-value-depth-const	script.md	engine/script/value.h:285
+script::Value::Check(const ValueLimits&) const	function	script	script-value-check-const-valuelimits-amp-const	script.md	engine/script/value.h:289
+script::Value::Equals(const Value&) const	function	script	script-value-equals-const-value-amp-const	script.md	engine/script/value.h:294
+script::Value::Hash() const	function	script	script-value-hash-const	script.md	engine/script/value.h:297
 script::kValueRecordVersion	variable	script	script-kvaluerecordversion	script.md	engine/script/value_codec.h:16
 script::ValueRecordStatus	enum	script	script-valuerecordstatus	script.md	engine/script/value_codec.h:21
 script::ValueRecordStatus::Ok	enumerator	script	script-valuerecordstatus-ok	script.md	engine/script/value_codec.h:24

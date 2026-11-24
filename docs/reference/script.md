@@ -9024,6 +9024,49 @@ inline constexpr usize kMaxContainerItems;
 
 The most items one array or map may hold. Enforced when an item is added.
 
+## `HandleType` {#script-handletype}
+
+`enum script::HandleType` — defined in `engine/script/value.h`
+
+```cpp
+enum class HandleType : u8 { ... }
+```
+
+What a [`script::ValueKind::Handle`](#script-valuekind-handle) names. A new type is added at the end; the codes are stored.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="script-handletype-none"></a>`None` | `0` | No type (never a valid handle). |
+| <a id="script-handletype-resource"></a>`Resource` | `1` | A resource of the engine (a clip, a texture, ...) by its 64-bit resource id. |
+
+## `ResourceHandle` {#script-resourcehandle}
+
+`struct script::ResourceHandle` — defined in `engine/script/value.h`
+
+```cpp
+struct ResourceHandle { ... }
+```
+
+A resource handle as a binding parameter or result (`Codec<ResourceHandle>`): the 64-bit resource id of a value of kind `Handle` and type `Resource`.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `id` {#script-resourcehandle-id}
+
+`variable script::ResourceHandle::id` — defined in `engine/script/value.h`
+
+```cpp
+u64 id;
+```
+
+The resource id (0 is none).
+
 ## `ValueKind` {#script-valuekind}
 
 `enum script::ValueKind` — defined in `engine/script/value.h`
@@ -9053,6 +9096,7 @@ The kind of a [`script::Value`](#script-value).
 | <a id="script-valuekind-bytes"></a>`Bytes` |  | A byte blob. |
 | <a id="script-valuekind-array"></a>`Array` |  | An ordered list of values. |
 | <a id="script-valuekind-map"></a>`Map` |  | Text keys to values, in insertion order (so iteration is the same everywhere). |
+| <a id="script-valuekind-handle"></a>`Handle` |  | A handle: a type code and a 64-bit id of something the engine owns (a resource), which a script holds but can neither read nor forge ([`script::HandleType`](#script-handletype)). |
 
 ## `ValueCheck` {#script-valuecheck}
 
@@ -9322,6 +9366,20 @@ static Value FromEntity(ecs::Entity value);
 
 Makes an entity id (any id, valid or not).
 
+### `FromHandle(HandleType,u64)` {#script-value-fromhandle-handletype-u64}
+
+`method script::Value::FromHandle` — defined in `engine/script/value.h`
+
+```cpp
+static Value FromHandle(HandleType type, u64 id);
+```
+
+Makes a handle of type `type` for the 64-bit `id`.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `FromBytes(Span<const u8>)` {#script-value-frombytes-span-lt-const-u8-gt}
 
 `method script::Value::FromBytes` — defined in `engine/script/value.h`
@@ -9547,6 +9605,34 @@ The entity id.
 | Field | Value |
 |---|---|
 | Aborts | the kind is not `Entity`. |
+
+### `AsHandleType()` {#script-value-ashandletype-const}
+
+`method script::Value::AsHandleType` — defined in `engine/script/value.h`
+
+```cpp
+HandleType AsHandleType() const;
+```
+
+The type of a handle.
+
+| Field | Value |
+|---|---|
+| Aborts | the kind is not `Handle`. |
+
+### `AsHandleId()` {#script-value-ashandleid-const}
+
+`method script::Value::AsHandleId` — defined in `engine/script/value.h`
+
+```cpp
+u64 AsHandleId() const;
+```
+
+The id of a handle.
+
+| Field | Value |
+|---|---|
+| Aborts | the kind is not `Handle`. |
 
 ### `Bytes()` {#script-value-bytes-const}
 

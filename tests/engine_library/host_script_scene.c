@@ -738,10 +738,14 @@ static const char kClipScript[] =
     "    end)\n"
     "    event.on('probe', function()\n"
     "      report(2, has(fails(animation.play, me, other, nil), 'skeleton'),\n"
-    "                has(fails(animation.play, me, 4096, nil), 'not_found'),\n"
+    "                has(fails(animation.play, me, '/clips/nothing', nil), 'not_found'),\n"
     "                has(fails(animation.set_speed, plain, 1), 'no animation'),\n"
     "                has(fails(animation.stop, plain), 'no animation'),\n"
     "                has(fails(animation.play, me, idle, {speed = 'fast'}), 'speed'))\n"
+    "      report(4, has(fails(animation.play, me, 4096, nil), 'clip handle'),\n"
+    "                (resource.find('/clips/idle') == idle) and 1 or 0, (resource.find('/clips/nope') == nil) and 1 or 0,\n"
+    "                (type(idle) == 'userdata' and has(tostring(idle), 'resource(') == 1) and 1 or 0,\n"
+    "                (getmetatable(idle) == false) and 1 or 0)\n"
     "    end)\n"
     "  end,\n"
     "})\n";
@@ -869,6 +873,10 @@ static void TestClips(engine_handle engine)
     Frames(engine, 3);
     CHECK(g_rows[2].seen && Near(g_rows[2].v[0], 1.0) && Near(g_rows[2].v[1], 1.0) && Near(g_rows[2].v[2], 1.0) &&
           Near(g_rows[2].v[3], 1.0) && Near(g_rows[2].v[4], 1.0));
+    /* a clip id is a handle: raw integers are refused, resource.find gives the same handle, it is opaque and protected
+     */
+    CHECK(g_rows[4].seen && Near(g_rows[4].v[0], 1.0) && Near(g_rows[4].v[1], 1.0) && Near(g_rows[4].v[2], 1.0) &&
+          Near(g_rows[4].v[3], 1.0) && Near(g_rows[4].v[4], 1.0));
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
     CHECK_STATUS(g_api->resource_remove(engine, 0xc01ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
     CHECK_STATUS(g_api->resource_remove(engine, 0xc02ull, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
@@ -882,6 +890,132 @@ static void TestClips(engine_handle engine)
             free(blobs[i].data);
         }
     }
+}
+
+/* A clip whose id is above 2^53 (a seeded import) is a handle in a script, found by path or by animation.clip, never a
+   number that loses its low bits (maintenance, 2026-11-24). */
+static const char kBigClipGltf[] =
+    "{\"asset\":{\"version\":\"2.0\"},\"extensionsUsed\":[\"KHR_lights_punctual\"],"
+    "\"extensions\":{\"KHR_lights_punctual\":{\"lights\":["
+    "{\"name\":\"sun\",\"type\":\"directional\",\"color\":[1,0.5,0.25],\"intensity\":2},"
+    "{\"name\":\"bulb\",\"type\":\"point\",\"intensity\":10,\"range\":4},"
+    "{\"name\":\"torch\",\"type\":\"spot\",\"intensity\":10,\"range\":6,"
+    "\"spot\":{\"innerConeAngle\":0.2,\"outerConeAngle\":0.6}}]}},"
+    "\"scene\":0,\"scenes\":[{\"nodes\":[0,1,2,3]}],"
+    "\"nodes\":[{\"name\":\"face\",\"mesh\":0},"
+    "{\"name\":\"sun\",\"extensions\":{\"KHR_lights_punctual\":{\"light\":0}}},"
+    "{\"name\":\"bulb\",\"translation\":[0,2,0],\"extensions\":{\"KHR_lights_punctual\":{\"light\":1}}},"
+    "{\"name\":\"torch\",\"extensions\":{\"KHR_lights_punctual\":{\"light\":2}}}],"
+    "\"materials\":[{\"name\":\"skin\"}],"
+    "\"meshes\":[{\"name\":\"face\",\"weights\":[0.5],\"primitives\":[{\"attributes\":{\"POSITION\":0},"
+    "\"targets\":[{\"POSITION\":1}],\"material\":0}]}],"
+    "\"animations\":[{\"name\":\"open\",\"samplers\":[{\"input\":2,\"output\":3,\"interpolation\":\"LINEAR\"}],"
+    "\"channels\":[{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"weights\"}}]}],"
+    "\"accessors\":["
+    "{\"bufferView\":0,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\",\"min\":[0,0,0],\"max\":[1,1,0]},"
+    "{\"bufferView\":1,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\",\"min\":[0,0,1],\"max\":[0,0,1]},"
+    "{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\",\"min\":[0],\"max\":[1]},"
+    "{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"}],"
+    "\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":36},{\"buffer\":0,\"byteOffset\":36,"
+    "\"byteLength\":36},{\"buffer\":0,\"byteOffset\":72,\"byteLength\":8},{\"buffer\":0,\"byteOffset\":80,"
+    "\"byteLength\":8}],"
+    "\"buffers\":[{\"byteLength\":88,\"uri\":\"data:application/octet-stream;base64,"
+    "AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPw=="
+    "\"}]}";
+
+static const char kBigClipScript[] =
+    "local function fails(f, ...)\n"
+    "  local ok, message = pcall(f, ...)\n"
+    "  return (not ok) and tostring(message) or ''\n"
+    "end\n"
+    "local function has(message, text) return string.find(message, text, 1, true) ~= nil and 1 or 0 end\n"
+    "behavior('big', {\n"
+    "  on_create = function(self)\n"
+    "    local me = entity.self()\n"
+    "    local clip = animation.clip('/big/clips/open_face')\n"
+    "    local found = resource.find('/big/clips/open_face')\n"
+    "    host.report(1, clip and 1 or 0, (clip == found) and 1 or 0, 0, 0, 0, 0, 0, 0, 0)\n"
+    "    event.on('go', function(_, what)\n"
+    "      if what == 1 then animation.play(me, clip, {loop = false})\n"
+    "      elseif what == 2 then animation.play(me, '/big/clips/open_face', {loop = false})\n"
+    "      elseif what == 3 then\n"
+    "        host.report(2, has(fails(animation.play, me, '/big/clips/none', nil), '/big/clips/none'), 0, 0, 0, 0, 0, 0, 0, 0)\n"
+    "      end\n"
+    "    end)\n"
+    "  end,\n"
+    "})\n";
+
+static void TestBigClipId(engine_handle engine)
+{
+    engine_import_options options;
+    engine_import_result result;
+    engine_handle world;
+    engine_script_load load;
+    engine_script_component component;
+    engine_animation_state state;
+    uint64_t script = 0;
+    uint64_t face;
+    uint64_t clip = 0;
+    uint32_t i;
+    memset(g_rows, 0, sizeof(g_rows));
+    memset(&options, 0, sizeof(options));
+    options.struct_size = sizeof(options);
+    options.id_seed = 0x5eed;
+    options.path_prefix = Str("/big");
+    memset(&result, 0, sizeof(result));
+    result.struct_size = sizeof(result);
+    CHECK_STATUS(g_api->import_gltf(engine, kBigClipGltf, sizeof(kBigClipGltf) - 1, &options, &result), ENGINE_OK);
+    for (i = 0; i < result.resource_count; ++i)
+    {
+        uint32_t type;
+        memcpy(&type, result.types.data + i * sizeof(type), sizeof(type));
+        if (type == ENGINE_RESOURCE_ANIMATION)
+        {
+            memcpy(&clip, result.ids.data + i * sizeof(clip), sizeof(clip));
+        }
+    }
+    CHECK(clip > (1ull << 53)); /* a Lua number could not hold it */
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->script_register_function(world, Str("host.report"), 10, 0, &HostReport, NULL), ENGINE_OK);
+    face = PlaceEntity(world);
+    memset(&load, 0, sizeof(load));
+    load.struct_size = sizeof(load);
+    load.name = Str("big");
+    load.source = Str(kBigClipScript);
+    CHECK_STATUS(g_api->script_load(world, &load, &script), ENGINE_OK);
+    memset(&component, 0, sizeof(component));
+    component.struct_size = sizeof(component);
+    component.enabled = 1;
+    strcpy(component.behavior, "big");
+    CHECK_STATUS(g_api->component_set(world, face, ENGINE_COMPONENT_SCRIPT, &component), ENGINE_OK);
+    Frames(engine, 2);
+    CHECK(g_rows[1].seen && Near(g_rows[1].v[0], 1.0) && Near(g_rows[1].v[1], 1.0));
+    EmitTurn(world, "go", 1.0, face);
+    Frames(engine, 3);
+    ClipState(world, face, &state);
+    CHECK(state.clip == clip && state.playing == 1);
+    CHECK_STATUS(g_api->animation_stop(world, face), ENGINE_OK);
+    EmitTurn(world, "go", 2.0, face);
+    Frames(engine, 3);
+    ClipState(world, face, &state);
+    CHECK(state.clip == clip && state.playing == 1);
+    EmitTurn(world, "go", 3.0, face);
+    Frames(engine, 3);
+    CHECK(g_rows[2].seen && Near(g_rows[2].v[0], 1.0));
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+    for (i = 0; i < result.resource_count; ++i)
+    {
+        uint64_t id;
+        memcpy(&id, result.ids.data + i * sizeof(id), sizeof(id));
+        CHECK_STATUS(g_api->resource_remove(engine, id, ENGINE_RESOURCE_FORCE, NULL), ENGINE_OK);
+    }
+    engine_buffer_release(&result.ids);
+    engine_buffer_release(&result.types);
+    engine_buffer_release(&result.paths);
+    engine_buffer_release(&result.warnings);
+    engine_buffer_release(&result.manifest);
+    engine_buffer_release(&result.summary);
 }
 
 static const char kBytesScript[] =
@@ -1047,6 +1181,10 @@ int main(void)
     }
     TestJoints(engine);
     TestClips(engine);
+    if ((info.caps & ENGINE_CAP_IMPORT_GLTF) != 0)
+    {
+        TestBigClipId(engine);
+    }
     TestBytes(engine);
     if (getenv("HOST_SCRIPT_SCENE_NO_PICTURE") == NULL) /* ThreadSanitizer cannot run the GPU driver's threads */
     {

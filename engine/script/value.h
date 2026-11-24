@@ -24,6 +24,27 @@ inline constexpr u32 kMaxValueDepth = 16;
 /// The most items one array or map may hold. Enforced when an item is added.
 inline constexpr usize kMaxContainerItems = usize{1} << 16;
 
+/// What a [[script::ValueKind::Handle]] names. A new type is added at the end; the codes are stored.
+///
+/// - Thread-safety: thread-compatible plain data.
+enum class HandleType : u8
+{
+    /// No type (never a valid handle).
+    None = 0,
+    /// A resource of the engine (a clip, a texture, ...) by its 64-bit resource id.
+    Resource = 1,
+};
+
+/// A resource handle as a binding parameter or result (`Codec<ResourceHandle>`): the 64-bit resource id of a value of
+/// kind `Handle` and type `Resource`.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct ResourceHandle
+{
+    /// The resource id (0 is none).
+    u64 id = 0;
+};
+
 /// The kind of a [[script::Value]].
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -55,6 +76,9 @@ enum class ValueKind : u8
     Array,
     /// Text keys to values, in insertion order (so iteration is the same everywhere).
     Map,
+    /// A handle: a type code and a 64-bit id of something the engine owns (a resource), which a script holds but can
+    /// neither read nor forge ([[script::HandleType]]).
+    Handle,
 };
 
 /// What [[Value::Check]] found wrong with a value that came from a script or a host.
@@ -143,6 +167,10 @@ public:
     static Value FromQuat(Quaternion value);
     /// Makes an entity id (any id, valid or not).
     static Value FromEntity(ecs::Entity value);
+    /// Makes a handle of type `type` for the 64-bit `id`.
+    ///
+    /// - Fails: never.
+    static Value FromHandle(HandleType type, u64 id);
     /// Makes a blob by copying `bytes`.
     ///
     /// - Aborts: the heap is out of memory.
@@ -207,6 +235,14 @@ public:
     ///
     /// - Aborts: the kind is not `Entity`.
     ecs::Entity AsEntity() const;
+    /// The type of a handle.
+    ///
+    /// - Aborts: the kind is not `Handle`.
+    HandleType AsHandleType() const;
+    /// The id of a handle.
+    ///
+    /// - Aborts: the kind is not `Handle`.
+    u64 AsHandleId() const;
     /// The blob's bytes, valid until the value changes or is destroyed.
     ///
     /// - Aborts: the kind is not `Bytes`.
@@ -271,7 +307,7 @@ private:
     f64 float_ = 0.0;
     f32 lanes_[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     f64 wide_[3] = {0.0, 0.0, 0.0};  // the lanes of a `Vec3`
-    ecs::Entity entity_;
+    ecs::Entity entity_;             // a Handle keeps its type code in `entity_.index` and its id in `int_` (as bits)
     String<HeapAllocator> text_;
     Vector<u8> bytes_;
     Vector<Value> items_;

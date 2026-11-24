@@ -308,6 +308,18 @@ template <> struct Codec<ecs::Entity>
     static ecs::Entity Get(const Value& v) { return v.AsEntity(); }
     static Value Put(ecs::Entity x) { return Value::FromEntity(x); }
 };
+/// A resource handle (`ValueKind::Handle` of type `Resource`) crosses as a [[script::ResourceHandle]].
+template <> struct Codec<ResourceHandle>
+{
+    static constexpr const char* kName = "resource handle";
+    static constexpr bool kIsEntity = false;
+    static bool Check(const Value& v)
+    {
+        return v.Kind() == ValueKind::Handle && v.AsHandleType() == HandleType::Resource;
+    }
+    static ResourceHandle Get(const Value& v) { return ResourceHandle{v.AsHandleId()}; }
+    static Value Put(ResourceHandle x) { return Value::FromHandle(HandleType::Resource, x.id); }
+};
 /// A 4x4 matrix crosses as an array of 16 numbers in column-major order (`m[1..4]` is the first column).
 template <> struct Codec<Mat4>
 {

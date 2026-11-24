@@ -141,6 +141,7 @@ TEST_CASE("LuaJIT backend: tagged kinds and containers round trip", "[script][lu
     samples.Push(Value::FromEntity(e));
     const u8 raw[4] = {0, 1, 0, 255};
     samples.Push(Value::FromBytes(Span<const u8>(raw, 4)));
+    samples.Push(Value::FromHandle(HandleType::Resource, 0xfedcba9876543210ull));
     samples.Push(Value::MakeArray());
     samples.Push(Value::MakeMap());
     Value nested = Value::MakeMap();
@@ -159,6 +160,35 @@ TEST_CASE("LuaJIT backend: tagged kinds and containers round trip", "[script][lu
         INFO("sample " << i << " came back as kind " << static_cast<int>(out.results[0].Kind()));
         CHECK(out.results[0].Equals(samples[i]));
     }
+}
+
+TEST_CASE("LuaJIT backend: a handle is opaque userdata that scripts compare but cannot read or forge",
+          "[script][luajit]")
+{
+    UniquePtr<Backend> backend = luajit::CreateLuaJitBackend();
+    UniquePtr<State> state = Fresh(*backend, "function kind(h) return type(h) end\n"
+                                             "function same(a, b) return a == b end\n"
+                                             "function text(h) return tostring(h) end\n"
+                                             "function locked(h) return getmetatable(h) end\n"
+                                             "function key(h) local t = {} t[h] = 1 return t end\n"
+                                             "function other() return io end\n"
+                                             "function alien() return newproxy(true) end\n");
+    const Value a = Value::FromHandle(HandleType::Resource, 0xfedcba9876543210ull);
+    const Value b = Value::FromHandle(HandleType::Resource, 0xfedcba9876543211ull);
+    CallOutput out;
+    Value one[1] = {a};
+    REQUIRE(state->Call("kind", Span<const Value>(one, 1), Budget(), &out).IsOk());
+    CHECK(out.results[0].Equals(Value::FromText("userdata")));
+    Value same[2] = {a, Value::FromHandle(HandleType::Resource, 0xfedcba9876543210ull)};
+    REQUIRE(state->Call("same", Span<const Value>(same, 2), Budget(), &out).IsOk());
+    CHECK(out.results[0].Equals(Value::FromBool(true)));
+    Value diff[2] = {a, b};
+    REQUIRE(state->Call("same", Span<const Value>(diff, 2), Budget(), &out).IsOk());
+    CHECK(out.results[0].Equals(Value::FromBool(false)));
+    REQUIRE(state->Call("text", Span<const Value>(one, 1), Budget(), &out).IsOk());
+    CHECK(out.results[0].Equals(Value::FromText("resource(fedcba9876543210)")));
+    REQUIRE(state->Call("locked", Span<const Value>(one, 1), Budget(), &out).IsOk());
+    CHECK(out.results[0].Equals(Value::FromBool(false)));
 }
 
 TEST_CASE("LuaJIT backend: a map returns with its keys sorted", "[script][luajit]")

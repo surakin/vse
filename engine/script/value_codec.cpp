@@ -25,7 +25,8 @@ enum Tag : u8
     kBytes = 11,
     kArray = 12,
     kMap = 13,
-    kTagCount = 14,
+    kHandle = 14,
+    kTagCount = 15,
 };
 
 constexpr u8 kRawEntities = 0;
@@ -107,6 +108,11 @@ void Encode(const Value& v, bytes::ByteWriter* out, const storage::KeyIndex* ind
         }
         break;
     }
+    case ValueKind::Handle:
+        out->WriteU8(kHandle);
+        out->WriteU8(static_cast<u8>(v.AsHandleType()));
+        out->WriteU64(v.AsHandleId());
+        break;
     case ValueKind::Bytes:
     {
         const Span<const u8> b = v.Bytes();
@@ -316,6 +322,26 @@ ValueRecordStatus Decode(Reader* r, Value* out, u32 depth)
             }
             *out = Value::FromEntity(ecs::Entity::FromU64(packed));
         }
+        return ValueRecordStatus::Ok;
+    }
+    case kHandle:
+    {
+        u8 type = 0;
+        u64 id = 0;
+        e = r->in->ReadU8(&type);
+        if (e == bytes::ByteError::Ok)
+        {
+            e = r->in->ReadU64(&id);
+        }
+        if (e != bytes::ByteError::Ok)
+        {
+            return Fail(e);
+        }
+        if (type != static_cast<u8>(HandleType::Resource))
+        {
+            return ValueRecordStatus::Corrupt;
+        }
+        *out = Value::FromHandle(HandleType::Resource, id);
         return ValueRecordStatus::Ok;
     }
     case kBytes:
