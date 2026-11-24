@@ -15,6 +15,7 @@ namespace vse::engine_c
 {
 
 struct WorldObject;
+class Runtime;
 
 /// The command kinds the scene bindings record (ids the other bindings do not use).
 ///
@@ -29,6 +30,7 @@ enum SceneCommandKind : u16
     kCommandInstancesRemove = 135,  ///< `instances.remove`: removes one instance of a set.
     kCommandTreeSetLocal = 136,     ///< `tree.set_local`: sets a node's local transform.
     kCommandSkyCubeSet = 137,       ///< `environment.set_sky_cube`: names the texture resource of a cube sky.
+    kCommandJointRotation = 138,    ///< `animation.set_joint_rotation`: a rotation the host adds to a joint.
 };
 
 /// What the scene bindings need: its address goes in `MergeServices::extensions[script::kServiceScene]`.
@@ -38,6 +40,7 @@ enum SceneCommandKind : u16
 struct SceneScriptServices
 {
     WorldObject* object = nullptr;  ///< The world whose environment and lights the bindings change.
+    Runtime* runtime = nullptr;     ///< The engine's runtime, for the skeletons `skeleton.find_joint` reads.
 };
 
 /// The names a world's scripts see (`entity.name` and `entity.find`): the entity names of the C API, the ones
@@ -57,8 +60,8 @@ struct SceneNames
     script::SceneServices services;  ///< Give its address to `ScriptRuntimeConfig::scene`.
 };
 
-/// Registers `environment.set`, `light.set`, `light.create`, `instances.add`, `instances.set`, `instances.remove` and
-/// `tree.set_local`.
+/// Registers `environment.set`, `light.set`, `light.create`, `instances.add`, `instances.set`, `instances.remove`,
+/// `tree.set_local`, `skeleton.find_joint` and `animation.set_joint_rotation`.
 /// - Returns: false when a name is already taken.
 bool RegisterSceneBindings(script::BindingRegistry* registry);
 

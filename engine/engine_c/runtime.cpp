@@ -2325,28 +2325,21 @@ engine_status AnimationSetJointRotationFn(engine_handle world, u64 key, u32 join
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`quaternion` is NULL");
     }
-    Array<f32, 4> q;
-    f32 length_squared = 0.0f;
+    Array<f32, 4> raw;
     for (u32 c = 0; c < 4; ++c)
     {
-        q[c] = quaternion[c];
-        if (!Finite(q[c]))
-        {
-            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation is not finite");
-        }
-        length_squared += q[c] * q[c];
+        raw[c] = quaternion[c];
     }
-    if (!(length_squared > 0.998f && length_squared < 1.002f))
+    Array<f32, 4> q;
+    const animation::HostRotationCheck checked = animation::CheckHostRotation(raw, &q);
+    if (checked == animation::HostRotationCheck::NotFinite)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation is not finite");
+    }
+    if (checked != animation::HostRotationCheck::Ok)
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation is not a unit quaternion");
     }
-    const f32 inv = 1.0f / Sqrt(length_squared);
-    for (u32 c = 0; c < 4; ++c)
-    {
-        q[c] *= inv;
-    }
-    // The identity (either sign) takes the joint's rotation away.
-    const bool identity = Abs(q[0]) < 1e-6f && Abs(q[1]) < 1e-6f && Abs(q[2]) < 1e-6f;
     return WithWorld(
         world, true, key,
         [&](WorldObject& object, ecs::Entity entity)
@@ -2365,44 +2358,18 @@ engine_status AnimationSetJointRotationFn(engine_handle world, u64 key, u32 join
             {
                 return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the joint does not exist");
             }
-            animation::JointRotations* have = object.world.Poke<animation::JointRotations>(entity);
-            if (have == nullptr)
+            if (animation::JointRotations* have = object.world.Poke<animation::JointRotations>(entity))
             {
-                if (identity)
-                {
-                    return ENGINE_OK;  // nothing to take away
-                }
-                animation::JointRotations fresh;
-                animation::JointRotation entry;
-                entry.joint = joint;
-                entry.rotation = q;
-                fresh.list.Push(entry);
-                return SetOrAdd(object.world, entity, Move(fresh));
-            }
-            usize at = 0;
-            while (at < have->list.Size() && have->list[at].joint < joint)
-            {
-                ++at;
-            }
-            const bool present = at < have->list.Size() && have->list[at].joint == joint;
-            if (identity)
-            {
-                if (present)
-                {
-                    have->list.Remove(at);
-                }
+                animation::SetHostJointRotation(have, joint, q);
                 return ENGINE_OK;
             }
-            if (present)
+            if (animation::IsIdentityRotation(q))
             {
-                have->list[at].rotation = q;
-                return ENGINE_OK;
+                return ENGINE_OK;  // nothing to take away
             }
-            animation::JointRotation entry;
-            entry.joint = joint;
-            entry.rotation = q;
-            have->list.Insert(at, entry);
-            return ENGINE_OK;
+            animation::JointRotations fresh;
+            animation::SetHostJointRotation(&fresh, joint, q);
+            return SetOrAdd(object.world, entity, Move(fresh));
         });
 }
 

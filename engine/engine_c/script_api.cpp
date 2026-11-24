@@ -704,6 +704,7 @@ ScriptHost::Impl* ImplOf(WorldObject& object, const ScriptSettingValues* make_wi
         impl.physics.layers = &impl.layers;
         impl.physics.characters = object.characters.Get();
         impl.scene.object = &object;
+        impl.scene.runtime = CurrentRuntime();
     }
     return object.scripts->impl.Get();
 }

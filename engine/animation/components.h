@@ -106,6 +106,35 @@ struct JointRotations
     Vector<JointRotation> list;  ///< Ordered by joint.
 };
 
+/// What [[animation::CheckHostRotation]] found.
+enum class HostRotationCheck : u8
+{
+    Ok,         ///< A usable rotation.
+    NotFinite,  ///< A component is NaN or infinite.
+    NotUnit,    ///< The length is not 1 within 0.1%.
+};
+
+/// Checks a rotation a host gives for a joint and makes it unit length.
+///
+/// - Param in: x, y, z, w.
+/// - Param normalized: set to `in` scaled to length 1 when the result is `Ok`.
+/// - Returns: whether `in` is finite and of length 1 within 0.1%.
+/// - Fails: returns the reason, as described.
+/// - Ownership: borrows its arguments for the call.
+HostRotationCheck CheckHostRotation(const Array<f32, 4>& in, Array<f32, 4>* normalized);
+
+/// Whether a unit rotation is the identity (either sign of w), which takes a joint's host rotation away.
+///
+/// - Fails: never.
+bool IsIdentityRotation(const Array<f32, 4>& rotation);
+
+/// Sets the host rotation of `joint` in the list, keeping it ordered by joint; the identity removes the joint's entry.
+///
+/// - Param rotation: a unit rotation, as [[animation::CheckHostRotation]] leaves it.
+/// - Fails: never.
+/// - Ownership: borrows its arguments for the call.
+void SetHostJointRotation(JointRotations* rotations, u32 joint, const Array<f32, 4>& rotation);
+
 /// The root joint's movement over the last update, for a clip flagged root motion: the game applies it. Present only
 /// when the entity has the component.
 ///

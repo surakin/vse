@@ -1,5 +1,6 @@
 #include "engine_c/script_scene.h"
 
+#include "animation/components.h"
 #include "engine_c/instances.h"
 #include "engine_c/engine_internal.h"
 #include "engine_c/resources.h"
@@ -1083,6 +1084,143 @@ SceneNames::SceneNames()
     services.user = this;
 }
 
+// ---- joints
+
+struct JointRotationPayload
+{
+    u32 joint;
+    f32 rotation[4];
+};
+
+// The skeleton an entity is drawn with, or null (not an entity of the world as of the tick start, no skeleton
+// instance, or a skeleton that is not loaded).
+const asset::SkeletonView* SkeletonOfEntity(const SceneScriptServices* services, const ecs::World& world,
+                                            ecs::Entity entity)
+{
+    if (entity.IsPlaceholder() || services->runtime == nullptr)
+    {
+        return nullptr;
+    }
+    const animation::SkeletonInstance* instance = world.Get<animation::SkeletonInstance>(entity);
+    ResourceHost* resources = instance != nullptr ? services->runtime->ResourcesIfCreated() : nullptr;
+    return resources == nullptr ? nullptr
+                                : resources->Animation().FindSkeleton(asset::ResourceId::FromValue(instance->skeleton));
+}
+
+Value SkeletonFindJoint(ecs::Entity e, StringView name)
+{
+    PartitionContext* context = SceneContext();
+    const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
+    if (services == nullptr)
+    {
+        return Value();
+    }
+    if (services->runtime == nullptr)
+    {
+        script::RaiseScriptError("skeleton.find_joint: this world has no engine runtime to read skeletons from");
+        return Value();
+    }
+    u32 index = 0;
+    const asset::SkeletonView* skeleton = SkeletonOfEntity(services, *context->world, e);
+    if (skeleton == nullptr || name.Length() == 0 || name.Length() > 256 || !skeleton->FindJoint(name, &index))
+    {
+        return Value();
+    }
+    return Value::FromInt(static_cast<i64>(index));
+}
+
+void AnimationSetJointRotation(ecs::Entity e, i64 joint, Quaternion rotation)
+{
+    PartitionContext* context = SceneContext();
+    const SceneScriptServices* services = context != nullptr ? SceneServicesOf(context) : nullptr;
+    if (services == nullptr)
+    {
+        return;
+    }
+    if (services->runtime == nullptr)
+    {
+        script::RaiseScriptError(
+            "animation.set_joint_rotation: this world has no engine runtime to read skeletons from");
+        return;
+    }
+    const asset::SkeletonView* skeleton = SkeletonOfEntity(services, *context->world, e);
+    if (skeleton == nullptr)
+    {
+        script::RaiseScriptError("animation.set_joint_rotation: the entity has no loaded skeleton instance");
+        return;
+    }
+    if (joint < 0 || static_cast<u64>(joint) >= skeleton->JointCount() ||
+        static_cast<u64>(joint) >= animation::kMaxPoseJoints)
+    {
+        script::RaiseScriptError("animation.set_joint_rotation: `joint` is not a joint of the entity's skeleton");
+        return;
+    }
+    Array<f32, 4> raw = {{rotation.x, rotation.y, rotation.z, rotation.w}};
+    Array<f32, 4> unit;
+    const animation::HostRotationCheck checked = animation::CheckHostRotation(raw, &unit);
+    if (checked != animation::HostRotationCheck::Ok)
+    {
+        script::RaiseScriptError(checked == animation::HostRotationCheck::NotFinite
+                                     ? "animation.set_joint_rotation: `quaternion` is not finite"
+                                     : "animation.set_joint_rotation: `quaternion` is not a unit quaternion");
+        return;
+    }
+    JointRotationPayload p{};
+    p.joint = static_cast<u32>(joint);
+    for (u32 c = 0; c < 4; ++c)
+    {
+        p.rotation[c] = unit[c];
+    }
+    SceneRecord(context, kCommandJointRotation, e, &p, sizeof(p));
+}
+
+u32 JointRotationConflictKey(Span<const u8> payload)
+{
+    JointRotationPayload p;
+    if (payload.Size() != sizeof(p))
+    {
+        return 0;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    return p.joint + 1;
+}
+
+bool ApplyJointRotation(MergeContext& context, ecs::Entity target, Span<const u8> payload)
+{
+    JointRotationPayload p;
+    const animation::SkeletonInstance* instance = context.World()->Get<animation::SkeletonInstance>(target);
+    if (instance == nullptr || payload.Size() != sizeof(p))
+    {
+        return false;
+    }
+    MemCopy(&p, payload.Data(), sizeof(p));
+    const script::MergeServices* merge = static_cast<const script::MergeServices*>(context.User());
+    const SceneScriptServices* services = merge != nullptr ? static_cast<const SceneScriptServices*>(
+                                                                 merge->extensions[script::kServiceScene])
+                                                           : nullptr;
+    const asset::SkeletonView* skeleton = services != nullptr ? SkeletonOfEntity(services, *context.World(), target)
+                                                              : nullptr;
+    Array<f32, 4> raw = {{p.rotation[0], p.rotation[1], p.rotation[2], p.rotation[3]}};
+    Array<f32, 4> unit;
+    if (skeleton == nullptr || p.joint >= skeleton->JointCount() || p.joint >= animation::kMaxPoseJoints ||
+        animation::CheckHostRotation(raw, &unit) != animation::HostRotationCheck::Ok)
+    {
+        return false;
+    }
+    if (animation::JointRotations* have = context.World()->Get<animation::JointRotations>(target))
+    {
+        animation::SetHostJointRotation(have, p.joint, unit);
+        return true;
+    }
+    if (animation::IsIdentityRotation(unit))
+    {
+        return true;
+    }
+    animation::JointRotations fresh;
+    animation::SetHostJointRotation(&fresh, p.joint, unit);
+    return context.World()->Add(target, Move(fresh)) == ecs::Status::Ok;
+}
+
 bool RegisterSceneCommandKinds(CommandKindTable* kinds)
 {
     bool ok = true;
@@ -1097,6 +1235,8 @@ bool RegisterSceneCommandKinds(CommandKindTable* kinds)
     ok &= kinds->Register(kCommandInstancesRemove,
                           CommandKind{"instances.remove", &ApplyInstancesRemove, false, false, true});
     ok &= kinds->Register(kCommandTreeSetLocal, CommandKind{"tree.set_local", &ApplyTreeSetLocal, false, false, true});
+    ok &= kinds->Register(kCommandJointRotation, CommandKind{"animation.set_joint_rotation", &ApplyJointRotation, false,
+                                                             true, false, &JointRotationConflictKey});
     return ok;
 }
 
@@ -1164,6 +1304,17 @@ bool RegisterSceneBindings(script::BindingRegistry* registry)
         "instance tree `tree` at the sync point (a root's `position` is its world position, any other node's the "
         "offset from its parent); only that node's subtree is recomposed at the next frame. The values are checked "
         "as for `instances.add`; an unknown tree or node is an error.");
+    ok &= registry->Add<&SkeletonFindJoint>(
+        "skeleton", "find_joint", ThreadRule::WorldRead, "e, name",
+        "Returns the index of the joint called `name` in the skeleton entity `e` is drawn with, as of the tick start, "
+        "or nil when the entity has no loaded skeleton instance or the skeleton has no such joint.");
+    ok &= registry->Add<&AnimationSetJointRotation>(
+        "animation", "set_joint_rotation", ThreadRule::WorldWrite, "e, joint, quaternion",
+        "Adds the rotation `quaternion` (a unit quat) to joint `joint` of entity `e`'s skeleton at the sync point: "
+        "after the clips are sampled and blended the joint's local rotation becomes the pose's rotation composed with "
+        "this one (`pose * added`, about the joint's own axes). The identity takes it away; it stays until set again, "
+        "and several calls for one joint in a tick are last-wins. A joint the skeleton does not have, an entity with "
+        "no loaded skeleton instance, or a quaternion that is not finite or not of length 1 within 0.1% is an error.");
     return ok;
 }
 

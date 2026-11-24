@@ -2,6 +2,7 @@
 
 #include "containers/array.h"
 #include "ecs/query.h"
+#include "lang/scalar.h"
 #include "log/log.h"
 #include "sync/atomic.h"
 #include "storage/field.h"
@@ -92,6 +93,61 @@ void WriteBindPalette(const asset::SkeletonView& skeleton, const JointRotations&
 }
 
 }  // namespace
+
+HostRotationCheck CheckHostRotation(const Array<f32, 4>& in, Array<f32, 4>* normalized)
+{
+    f32 length_squared = 0.0f;
+    for (u32 c = 0; c < 4; ++c)
+    {
+        if (!IsFinite(in[c]))
+        {
+            return HostRotationCheck::NotFinite;
+        }
+        length_squared += in[c] * in[c];
+    }
+    if (!(length_squared > 0.998f && length_squared < 1.002f))
+    {
+        return HostRotationCheck::NotUnit;
+    }
+    const f32 inverse = 1.0f / Sqrt(length_squared);
+    for (u32 c = 0; c < 4; ++c)
+    {
+        (*normalized)[c] = in[c] * inverse;
+    }
+    return HostRotationCheck::Ok;
+}
+
+bool IsIdentityRotation(const Array<f32, 4>& rotation)
+{
+    return Abs(rotation[0]) < 1e-6f && Abs(rotation[1]) < 1e-6f && Abs(rotation[2]) < 1e-6f;
+}
+
+void SetHostJointRotation(JointRotations* rotations, u32 joint, const Array<f32, 4>& rotation)
+{
+    usize at = 0;
+    while (at < rotations->list.Size() && rotations->list[at].joint < joint)
+    {
+        ++at;
+    }
+    const bool present = at < rotations->list.Size() && rotations->list[at].joint == joint;
+    if (IsIdentityRotation(rotation))
+    {
+        if (present)
+        {
+            rotations->list.Remove(at);
+        }
+        return;
+    }
+    if (present)
+    {
+        rotations->list[at].rotation = rotation;
+        return;
+    }
+    JointRotation entry;
+    entry.joint = joint;
+    entry.rotation = rotation;
+    rotations->list.Insert(at, entry);
+}
 
 storage::Status RegisterAnimationComponents(storage::ComponentRegistry* registry)
 {

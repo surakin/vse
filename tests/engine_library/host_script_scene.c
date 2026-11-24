@@ -523,6 +523,179 @@ static void TestPicture(engine_handle engine)
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
 }
 
+/* Scripts find a joint and turn it (maintenance, 2026-11-24): skeleton.find_joint and animation.set_joint_rotation on a
+   skeleton entity, driven by events the host sends to it. The hero skeleton has a root and an "arm" one above it; the
+   idle clip holds the arm at 1.5 (speed 0), so a quarter turn of the root about Z lays it along -X. */
+typedef struct FileBlob
+{
+    unsigned char* data;
+    size_t size;
+} FileBlob;
+
+static FileBlob g_blobs[2];
+
+static FileBlob ReadBlob(const char* name)
+{
+    char path[1024];
+    FileBlob blob = {NULL, 0};
+    FILE* f;
+    snprintf(path, sizeof(path), "%s/%s", RES_DATA_DIR, name);
+    f = fopen(path, "rb");
+    if (f == NULL)
+    {
+        printf("host_script_scene: cannot open %s\n", path);
+        ++g_failures;
+        return blob;
+    }
+    fseek(f, 0, SEEK_END);
+    blob.size = (size_t)ftell(f);
+    fseek(f, 0, SEEK_SET);
+    blob.data = (unsigned char*)malloc(blob.size);
+    if (fread(blob.data, 1, blob.size, f) != blob.size)
+    {
+        ++g_failures;
+    }
+    fclose(f);
+    return blob;
+}
+
+static void AddBlobAs(engine_handle engine, uint64_t id, const FileBlob* blob)
+{
+    engine_resource_add_info info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = sizeof(info);
+    info.id = id;
+    info.bytes = blob->data;
+    info.size = blob->size;
+    CHECK_STATUS(g_api->resource_add(engine, &info), ENGINE_OK);
+}
+
+static const char kJointScript[] =
+    "local function fails(f, ...)\n"
+    "  local ok, message = pcall(f, ...)\n"
+    "  return (not ok) and tostring(message) or ''\n"
+    "end\n"
+    "local function has(message, text) return string.find(message, text, 1, true) ~= nil and 1 or 0 end\n"
+    "local function report(t, a, b, c, d) host.report(t, a or 0, b or 0, c or 0, d or 0, 0, 0, 0, 0, 0) end\n"
+    "behavior('tilt', {\n"
+    "  on_create = function(self)\n"
+    "    local me = entity.self()\n"
+    "    local plain = entity.find('plain')\n"
+    "    report(1, skeleton.find_joint(me, 'arm') or -1, skeleton.find_joint(me, 'tail') == nil and 1 or 0,\n"
+    "           skeleton.find_joint(plain, 'arm') == nil and 1 or 0)\n"
+    "    event.on('turn', function(_, angle)\n"
+    "      animation.set_joint_rotation(me, 0, quat.from_axis_angle(vec3.new(0, 0, 1), angle))\n"
+    "    end)\n"
+    "    event.on('probe', function()\n"
+    "      local up = quat.from_axis_angle(vec3.new(0, 0, 1), 1)\n"
+    "      report(2, has(fails(animation.set_joint_rotation, me, 7, up), 'joint'),\n"
+    "                has(fails(animation.set_joint_rotation, me, 0, quat.from_axis_angle(vec3.new(0, 0, 1), 0 / 0)), 'finite'),\n"
+    "                has(fails(animation.set_joint_rotation, plain, 0, up), 'skeleton'))\n"
+    "    end)\n"
+    "  end,\n"
+    "})\n";
+
+static void JointXY(engine_handle world, uint64_t key, uint32_t joint, double* x, double* y)
+{
+    float matrix[16];
+    memset(matrix, 0, sizeof(matrix));
+    CHECK_STATUS(g_api->skeleton_joint_transform(world, key, joint, matrix), ENGINE_OK);
+    *x = matrix[12];
+    *y = matrix[13];
+}
+
+static void EmitTurn(engine_handle world, const char* name, double angle, uint64_t target)
+{
+    engine_value item;
+    engine_value_pool pool;
+    memset(&item, 0, sizeof(item));
+    memset(&pool, 0, sizeof(pool));
+    item.tag = ENGINE_VALUE_NUMBER;
+    item.f = angle;
+    pool.struct_size = sizeof(pool);
+    pool.root_count = 1;
+    pool.item_count = 1;
+    pool.item_capacity = 1;
+    pool.items = &item;
+    CHECK_STATUS(g_api->script_event_emit(world, Str(name), &pool, target), ENGINE_OK);
+}
+
+static void TestJoints(engine_handle engine)
+{
+    engine_handle world;
+    engine_script_load load;
+    engine_script_component component;
+    engine_skeleton_instance instance;
+    engine_play_params play;
+    uint64_t script = 0;
+    uint64_t hero;
+    uint64_t plain;
+    double x = 0.0;
+    double y = 0.0;
+    memset(g_rows, 0, sizeof(g_rows));
+    g_blobs[0] = ReadBlob("hero.skel.blob");
+    g_blobs[1] = ReadBlob("idle.anim.blob");
+    if (g_blobs[0].data == NULL || g_blobs[1].data == NULL)
+    {
+        return;
+    }
+    AddBlobAs(engine, 0xa01ull, &g_blobs[0]);
+    AddBlobAs(engine, 0xc01ull, &g_blobs[1]);
+    memset(&world, 0, sizeof(world));
+    CHECK_STATUS(g_api->world_create(engine, &world), ENGINE_OK);
+    CHECK_STATUS(g_api->script_register_function(world, Str("host.report"), 10, 0, &HostReport, NULL), ENGINE_OK);
+    plain = PlaceEntity(world);
+    CHECK_STATUS(g_api->entity_name_set(world, plain, Str("plain")), ENGINE_OK);
+    hero = PlaceEntity(world);
+    memset(&instance, 0, sizeof(instance));
+    instance.struct_size = sizeof(instance);
+    instance.skeleton = 0xa01ull;
+    CHECK_STATUS(g_api->component_set(world, hero, ENGINE_COMPONENT_SKELETON_INSTANCE, &instance), ENGINE_OK);
+    memset(&play, 0, sizeof(play));
+    play.struct_size = sizeof(play);
+    play.flags = ENGINE_PLAY_LOOP;
+    play.speed = 1.0f;
+    play.start_time = 0.5f;
+    CHECK_STATUS(g_api->animation_play(world, hero, 0xc01ull, &play), ENGINE_OK);
+    CHECK_STATUS(g_api->animation_set_speed(world, hero, 0.0f), ENGINE_OK);
+    memset(&load, 0, sizeof(load));
+    load.struct_size = sizeof(load);
+    load.name = Str("tilt");
+    load.source = Str(kJointScript);
+    CHECK_STATUS(g_api->script_load(world, &load, &script), ENGINE_OK);
+    memset(&component, 0, sizeof(component));
+    component.struct_size = sizeof(component);
+    component.enabled = 1;
+    strcpy(component.behavior, "tilt");
+    CHECK_STATUS(g_api->component_set(world, hero, ENGINE_COMPONENT_SCRIPT, &component), ENGINE_OK);
+    Frame(engine);
+    Frame(engine);
+    /* the script found `arm`, not `tail`, and nothing on an entity with no skeleton */
+    CHECK(g_rows[1].seen && Near(g_rows[1].v[0], 1.0) && Near(g_rows[1].v[1], 1.0) && Near(g_rows[1].v[2], 1.0));
+    JointXY(world, hero, 1, &x, &y);
+    CHECK(Near(x, 0.0) && fabs(y - 1.5) < 0.01);
+    /* a quarter turn of the root, sent as an event to the entity: the arm lies along -X */
+    EmitTurn(world, "turn", 1.5707963, hero);
+    Frame(engine);
+    Frame(engine);
+    Frame(engine);
+    JointXY(world, hero, 1, &x, &y);
+    CHECK(fabs(x + 1.5) < 0.01 && fabs(y) < 0.01);
+    /* the identity (an angle of 0) takes it away: the clip's matrix again */
+    EmitTurn(world, "turn", 0.0, hero);
+    Frame(engine);
+    Frame(engine);
+    Frame(engine);
+    JointXY(world, hero, 1, &x, &y);
+    CHECK(fabs(x) < 0.01 && fabs(y - 1.5) < 0.01);
+    /* a joint the skeleton does not have, a rotation that is not finite and an entity with no skeleton are errors */
+    EmitTurn(world, "probe", 0.0, hero);
+    Frame(engine);
+    Frame(engine);
+    CHECK(g_rows[2].seen && Near(g_rows[2].v[0], 1.0) && Near(g_rows[2].v[1], 1.0) && Near(g_rows[2].v[2], 1.0));
+    CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
+}
+
 int main(void)
 {
     engine_create_info create;
@@ -554,11 +727,14 @@ int main(void)
     {
         TestFind(engine);
     }
+    TestJoints(engine);
     if (getenv("HOST_SCRIPT_SCENE_NO_PICTURE") == NULL) /* ThreadSanitizer cannot run the GPU driver's threads */
     {
         TestPicture(engine);
     }
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
+    free(g_blobs[0].data);
+    free(g_blobs[1].data);
     if (g_failures == 0)
     {
         printf("host_script_scene: ok\n");

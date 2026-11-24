@@ -382,8 +382,10 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
       # Scripts set the sky and the lights (2026-11-22): environment.set, light.set, light.create.
       add_executable(host_script_scene${suffix} host_script_scene.c)
       target_include_directories(host_script_scene${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)
+      target_compile_definitions(host_script_scene${suffix} PRIVATE "RES_DATA_DIR=\"${CMAKE_CURRENT_BINARY_DIR}/resource_data\"")
       target_link_libraries(host_script_scene${suffix} PRIVATE engine_c${suffix} Threads::Threads ${ENGINE_LIBRARY_HOST_LIBS})
       set_target_properties(host_script_scene${suffix} PROPERTIES LINKER_LANGUAGE CXX)
+      add_dependencies(host_script_scene${suffix} engine_resource_data)
       # A display that glows and reflects (2026-11-22): emissive_from_albedo and the sky reflection, in a world with no light.
       add_executable(host_glass_screen${suffix} host_glass_screen.c)
       target_include_directories(host_glass_screen${suffix} PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/engine)

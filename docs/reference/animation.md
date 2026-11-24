@@ -374,6 +374,70 @@ Vector<JointRotation> list;
 
 Ordered by joint.
 
+## `HostRotationCheck` {#animation-hostrotationcheck}
+
+`enum animation::HostRotationCheck` — defined in `engine/animation/components.h`
+
+```cpp
+enum class HostRotationCheck : u8 { ... }
+```
+
+What [`animation::CheckHostRotation`](#animation-checkhostrotation-const-array-lt-f32-4-gt-amp-array-lt-f32-4-gt-star) found.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="animation-hostrotationcheck-ok"></a>`Ok` |  | A usable rotation. |
+| <a id="animation-hostrotationcheck-notfinite"></a>`NotFinite` |  | A component is NaN or infinite. |
+| <a id="animation-hostrotationcheck-notunit"></a>`NotUnit` |  | The length is not 1 within 0.1%. |
+
+## `CheckHostRotation(const Array<f32,4>&,Array<f32,4>*)` {#animation-checkhostrotation-const-array-lt-f32-4-gt-amp-array-lt-f32-4-gt-star}
+
+`function animation::CheckHostRotation` — defined in `engine/animation/components.h`
+
+```cpp
+HostRotationCheck CheckHostRotation(const Array<f32, 4>& in, Array<f32, 4>* normalized);
+```
+
+Checks a rotation a host gives for a joint and makes it unit length.
+
+| Field | Value |
+|---|---|
+| Parameter `in` | x, y, z, w. |
+| Parameter `normalized` | set to `in` scaled to length 1 when the result is `Ok`. |
+| Returns | whether `in` is finite and of length 1 within 0.1%. |
+| Fails | returns the reason, as described. |
+| Ownership | borrows its arguments for the call. |
+
+## `IsIdentityRotation(const Array<f32,4>&)` {#animation-isidentityrotation-const-array-lt-f32-4-gt-amp}
+
+`function animation::IsIdentityRotation` — defined in `engine/animation/components.h`
+
+```cpp
+bool IsIdentityRotation(const Array<f32, 4>& rotation);
+```
+
+Whether a unit rotation is the identity (either sign of w), which takes a joint's host rotation away.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+## `SetHostJointRotation(JointRotations*,u32,const Array<f32,4>&)` {#animation-sethostjointrotation-jointrotations-star-u32-const-array-lt-f32-4-gt-amp}
+
+`function animation::SetHostJointRotation` — defined in `engine/animation/components.h`
+
+```cpp
+void SetHostJointRotation(JointRotations* rotations, u32 joint, const Array<f32, 4>& rotation);
+```
+
+Sets the host rotation of `joint` in the list, keeping it ordered by joint; the identity removes the joint's entry.
+
+| Field | Value |
+|---|---|
+| Parameter `rotation` | a unit rotation, as [`animation::CheckHostRotation`](#animation-checkhostrotation-const-array-lt-f32-4-gt-amp-array-lt-f32-4-gt-star) leaves it. |
+| Fails | never. |
+| Ownership | borrows its arguments for the call. |
+
 ## `RootMotion` {#animation-rootmotion}
 
 `struct animation::RootMotion` — defined in `engine/animation/components.h`
