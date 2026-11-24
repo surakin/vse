@@ -178,6 +178,61 @@ static void RunRest(const engine_api* api, Engine& engine)
     CHECK(adding.Finish(&failed) && !adding);
 }
 
+// Instanced sets and trees through the layer: the wrappers fill in the struct sizes, a refusal comes back as its
+// status.
+static void RunInstances(Engine& engine)
+{
+    World world;
+    CHECK(engine.CreateWorld(&world));
+    engine_instance_placement placement = Init<engine_instance_placement>();
+    placement.rotation[3] = 1.0f;
+    placement.scale = 1.0f;
+    uint64_t set = 0;
+    CHECK(world.InstanceSetCreate(placement, 1, 0, &set) && set != 0);
+    engine_instance items[3] = {};
+    uint64_t ids[3] = {};
+    for (int i = 0; i < 3; ++i)
+    {
+        items[i].position[0] = i * 2.0;
+        items[i].rotation[3] = 1.0f;
+        items[i].scale[0] = items[i].scale[1] = items[i].scale[2] = 1.0f;
+        items[i].tint[0] = items[i].tint[1] = items[i].tint[2] = items[i].tint[3] = 1.0f;
+    }
+    CHECK(world.InstanceSetAddMany(set, items, 3, ids));
+    engine_instance moved = items[1];
+    moved.position[1] = 5.0;
+    CHECK(world.InstanceSetSetTransform(set, ids[1], moved));
+    engine_instance back = {};
+    CHECK(world.InstanceSetGetTransform(set, ids[1], &back) && back.position[1] == 5.0);
+    CHECK(world.InstanceSetRemove(set, ids[2]));
+    CHECK(world.InstanceSetRemove(set, ids[2]) == ENGINE_ERROR_NOT_FOUND);
+    placement.position[0] = 10.0;
+    CHECK(world.InstanceSetUpdate(set, placement, 2));
+    placement.scale = 0.0f;
+    CHECK(world.InstanceSetUpdate(set, placement, 2) == ENGINE_ERROR_INVALID_ARGUMENT);
+    placement.scale = 1.0f;
+
+    engine_tree_node nodes[2] = {};
+    for (int i = 0; i < 2; ++i)
+    {
+        nodes[i].rotation[3] = 1.0f;
+        nodes[i].scale[0] = nodes[i].scale[1] = nodes[i].scale[2] = 1.0f;
+        nodes[i].tint[0] = nodes[i].tint[1] = nodes[i].tint[2] = nodes[i].tint[3] = 1.0f;
+    }
+    nodes[0].parent = -1;
+    nodes[1].parent = 0;
+    nodes[1].position[1] = 1.0;
+    const uint64_t meshes[1] = {1};
+    const float bounds[6] = {-1, -1, -1, 1, 1, 1};
+    uint64_t tree = 0;
+    CHECK(world.InstanceTreeCreate(placement, meshes, bounds, 1, nodes, 2, &tree) && tree != 0 && tree != set);
+    CHECK(world.InstanceTreeSetLocal(tree, 1, moved));
+    CHECK(world.InstanceTreeSetLocal(tree, 9, moved) == ENGINE_ERROR_NOT_FOUND);
+    CHECK(world.InstanceTreeUpdate(tree, placement));
+    CHECK(world.InstanceDestroy(tree) && world.InstanceDestroy(set));
+    CHECK(world.InstanceDestroy(set) == ENGINE_ERROR_NOT_FOUND);
+}
+
 int main()
 {
     const engine_api* api = nullptr;
@@ -241,6 +296,7 @@ int main()
         Counter counter;
         CHECK(engine.CreateCounter(&counter) && counter);
         RunRest(api, engine);
+        RunInstances(engine);
 
         engine_frame_stats stats = {};
         engine_frame_info frame = Init<engine_frame_info>();

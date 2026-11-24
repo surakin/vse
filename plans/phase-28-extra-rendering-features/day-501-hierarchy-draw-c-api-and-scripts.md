@@ -30,3 +30,7 @@ Draw trees, and reach them from hosts and scripts.
 Part 1 (hierarchy draw and scene), `/code-review high` inline, 3 findings: (1) fixed: `tree` pointer member in `TreeCullContext` violated `shared_unit_check` (now a parameter); (2) fixed: the wind system edits shared trees while the sync recomposes them, with no declared conflict (data race): it now declares `SceneLink` as written, so the schedule orders them; (3) recorded: `tree_lod_` is per scene slot, so a reused slot keeps stale hysteresis state (KNOWN-ISSUES). The C API and scripts are not done.
 
 Part 2 (C API, scripts), 3 findings: (1) fixed: a vertex-coloured mesh in an instanced set made the pass refuse the whole frame, so `SyncInstances` skips such meshes (counted unresolved); (2) recorded: only the default instanced material (KNOWN-ISSUES); (3) recorded: the script test does not read back the tree swing. Runs: plain `ran 4562 of 12226 tests (phases: all; flavors: plain; ...)`, asan `ran 3749 of 12226`, tsan `ran 3374 of 12226` (reduced); only the DXIL and Metal library tests failed in the sanitizer runs (recorded under Day 497); GCC build of `engine_c` clean.
+
+## C++ wrapper test (follow-up)
+
+- [x] `tests/engine_library/host_cpp.cpp` `RunInstances`: the `engine.h` wrappers for sets (create, add_many, set/get transform, remove, update) and trees (create, set_local, update), `InstanceDestroy`, and the refusals (unknown id, bad scale, bad node). Runs as `engine_c_host_cpp` (plain, asan, tsan: 3 of 3 passed).
