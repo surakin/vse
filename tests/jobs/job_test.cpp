@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "jobs/frame_pool.h"
+#include "debug/compiler.h"
 #include "jobs/job.h"
 
 using namespace vse;
@@ -18,18 +19,24 @@ namespace
 // Job bodies are free functions taking state by value / pointer — the
 // parameter-lifetime rule from job.h.
 
-Job Example()
+// Not inlined: a Job made and destroyed in one scope would otherwise have its frame allocation elided by the
+// optimizer (Release), and these tests count the pool's frames.
+ENGINE_NOINLINE Job Example()
 {
     co_return;
 }
 
-Job SetFlag(bool* flag)
+// Not inlined: a Job made and destroyed in one scope would otherwise have its frame allocation elided by the
+// optimizer (Release), and these tests count the pool's frames.
+ENGINE_NOINLINE Job SetFlag(bool* flag)
 {
     *flag = true;
     co_return;
 }
 
-Job CountResumes(int* counter)
+// Not inlined: a Job made and destroyed in one scope would otherwise have its frame allocation elided by the
+// optimizer (Release), and these tests count the pool's frames.
+ENGINE_NOINLINE Job CountResumes(int* counter)
 {
     ++*counter;
     co_await SuspendAlways{};

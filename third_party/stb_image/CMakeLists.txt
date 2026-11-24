@@ -10,7 +10,11 @@ function(engine_add_stb_jpeg name)
   if(MSVC AND NOT ENGINE_CLANG_CL)
     target_compile_options(${name} PRIVATE /w)
   else()
-    target_compile_options(${name} PRIVATE -w)
+    # -fwrapv: the integer IDCT of a corrupt file overflows `int` (stb_image.h `stbi__idct_block`: the dequantized
+    # coefficients are 16-bit but their products and sums are not bounded). Two's complement wrap is the intended and the
+    # only result on every machine we build for; with the flag it is defined, so the output is the same at every
+    # optimization level and UBSan has nothing to report. The header stays unmodified.
+    target_compile_options(${name} PRIVATE -w -fwrapv)
   endif()
 endfunction()
 

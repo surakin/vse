@@ -33,6 +33,12 @@ set(SCRIPT_TEST_SOURCES
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/script_source.cpp  # Day 462
 )
 
+# ThreadSanitizer's suppression for libgcc's unwind-frame registry (tests/script/tsan.supp): Linux and macOS.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  list(APPEND SCRIPT_TEST_SOURCES tsan_options.cpp)
+  set_source_files_properties(tsan_options.cpp PROPERTIES COMPILE_DEFINITIONS "ENGINE_SCRIPT_TSAN_SUPP=\"${CMAKE_CURRENT_SOURCE_DIR}/tsan.supp\"")
+endif()
+
 find_package(Threads REQUIRED)
 include(Catch)
 

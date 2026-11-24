@@ -7,6 +7,7 @@
 #include "audio/filter.h"
 #include "audio/mixer.h"
 #include "audio/stream.h"
+#include "soak.h"
 #include "build_defs.h"
 #include "containers/vector.h"
 #include "lang/scalar.h"
@@ -551,7 +552,7 @@ TEST_CASE("Snapshot: the cost of a voice at each quality, with and without effec
             Vector<f32> block;
             block.Resize(kBlockFrames * 2);
             mixer.RenderBlock(Span<f32>(block.Data(), block.Size()));
-            const u32 blocks = 400;
+            const u32 blocks = test_support::SoakCount(20, 400);
             const u64 start = os::MonotonicTimeNanos();
             for (u32 b = 0; b < blocks; ++b)
             {
@@ -561,8 +562,16 @@ TEST_CASE("Snapshot: the cost of a voice at each quality, with and without effec
             const f64 real_time = static_cast<f64>(blocks) * kBlockFrames / 48000.0;
             WARN(names[q] << (effects ? " + reverb + delay" : "") << ": 256 voices use " << elapsed / real_time * 100.0
                           << " percent of one core, " << elapsed / blocks / 256.0 * 1e6 << " us per voice-block");
-#if !ENGINE_SANITIZER_ADDRESS && !ENGINE_SANITIZER_THREAD
-            CHECK(elapsed < real_time / 2.0);  // a loose bound: half of real time for 256 voices; sanitizers run slower
+            // The claim of the ordinary run is the work, which does not depend on the machine: every voice is mixed in
+            // every block. The time bound is the soak form's (a Debug tree or a loaded machine is slower than real
+            // time).
+            CHECK(mixer.Stats().voices_mixed == 256);
+            CHECK(mixer.Stats().blocks >= blocks);
+#if defined(NDEBUG) && !ENGINE_SANITIZER_ADDRESS && !ENGINE_SANITIZER_THREAD  // a Debug tree is not real time
+            if (test_support::Soak())
+            {
+                CHECK(elapsed < real_time / 2.0);  // a loose bound: half of real time for 256 voices
+            }
 #endif
         }
     }

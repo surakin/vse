@@ -692,6 +692,12 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
         set_tests_properties(engine_c_script_sample${suffix} PROPERTIES TIMEOUT 1800)
       endif()
       engine_label_tests(engine_c_script_sample${suffix})
+      # The full 600 frames (the ordinary run stops at 320, tests/support/soak.h).
+      add_test(NAME "engine_c_script_sample${suffix} [soak]" COMMAND script_sample${suffix})
+      set_tests_properties("engine_c_script_sample${suffix} [soak]" PROPERTIES LABELS "engine_library;${flavor_label}"
+        ENVIRONMENT ENGINE_TEST_SOAK=1 PASS_REGULAR_EXPRESSION "script_sample: ok" TIMEOUT 1800)
+      engine_label_tests("engine_c_script_sample${suffix} [soak]")
+      engine_soak_tests("engine_c_script_sample${suffix} [soak]")
     endif()
     add_test(NAME engine_c_physics_sample${suffix} COMMAND physics_sample${suffix})
     set_tests_properties(engine_c_physics_sample${suffix} PROPERTIES LABELS "engine_library;${flavor_label}" PASS_REGULAR_EXPRESSION "physics_sample: ok" TIMEOUT 300)

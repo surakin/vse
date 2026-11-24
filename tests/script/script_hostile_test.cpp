@@ -120,7 +120,11 @@ TEST_CASE(
     const u64 limit_ns = static_cast<u64>(test_support::SoakCount(10, 60)) * 1000000000ull;
     const u64 start = os::MonotonicTimeNanos();
     u64 ticks = 0;
-    while (os::MonotonicTimeNanos() - start < limit_ns)
+    // The time budget asks for ticks; a slow machine (two cores, a sanitizer, a loaded Mac) gets fewer in it, so the
+    // loop also runs until the checks' minimum of 3 ticks has happened: what is claimed below does not depend on the
+    // machine's speed.
+    constexpr u64 kMinTicks = 3;
+    while (os::MonotonicTimeNanos() - start < limit_ns || ticks < kMinTicks)
     {
         runtime.Tick(&world, 0.016, &scheduler);
         ++ticks;

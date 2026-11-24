@@ -282,14 +282,25 @@ TEST_CASE("LastSaveStatus can be read while another thread saves", "[settings][r
                 reads.FetchAdd(1);
             }
         });
+    // The saves start once the reader is running (a latch, not luck: on a busy machine the reader may start late), and
+    // end once it has read while they ran.
+    while (reads.Load() == 0)
+    {
+        ThisThread::Yield();
+    }
+    const int before = reads.Load();
     for (int i = 0; i < 50; ++i)
     {
         settings.Set(id, Value::FromInt(2 + i));
         settings.Save();
     }
+    while (reads.Load() == before)
+    {
+        ThisThread::Yield();
+    }
     stop.Store(true);
     reader.Join();
-    CHECK(reads.Load() > 0);
+    CHECK(reads.Load() > before);
 }
 
 TEST_CASE(

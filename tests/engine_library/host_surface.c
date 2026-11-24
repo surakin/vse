@@ -92,7 +92,9 @@ static void WaitForSize(Display* display, Window window, unsigned width, unsigne
    program, and is not counted.) */
 static int g_opens_from_program = 0;
 
-Display* XOpenDisplay(const char* name)
+/* Not inlined: the check below reads its own return address, and an optimizing build inlines this definition into the
+   host's call, which makes that address the caller of main (in libc) and the open uncounted. */
+__attribute__((noinline)) Display* XOpenDisplay(const char* name)
 {
     Display* (*real)(const char*) = (Display * (*)(const char*)) dlsym(RTLD_NEXT, "XOpenDisplay");
     Dl_info caller;

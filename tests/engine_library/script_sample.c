@@ -4,13 +4,20 @@
    partitions the world runs (1, 2, 4, 8): the program runs the whole scenario for each and compares. A second part
    has three host threads call into their own worlds (script_call, script_task_run) while another thread runs frames. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "host_os.h"
 #include "engine/engine_c.h"
 
 #define ENTITY_COUNT 1000
-#define FRAME_COUNT 600
+/* The frames a scenario runs: the ordinary run stops soon after the script's step 300 (its 'halfway' event) and the
+   soak form (ENGINE_TEST_SOAK=1, a ctest labelled soak) runs the full 600; the sanitizer flavors are slow, so the short
+   form is what they run day to day (tests/support/soak.h's rule). */
+#define FRAME_COUNT_SHORT 320
+#define FRAME_COUNT_SOAK 600
+static uint64_t g_frame_count = FRAME_COUNT_SHORT;
+#define FRAME_COUNT g_frame_count
 
 static int g_failures = 0;
 static const engine_api* g_api = NULL;
@@ -462,7 +469,7 @@ static uint64_t RunScenario(const char* partitions, int with_threads)
     memset(&frame, 0, sizeof(frame));
     frame.struct_size = sizeof(frame);
     frame.delta_seconds = 1.0 / 60.0;
-    for (i = 0; i < FRAME_COUNT; ++i)
+    for (i = 0; (uint64_t)i < FRAME_COUNT; ++i)
     {
         if (i == 100)
         {
@@ -508,19 +515,26 @@ static uint64_t RunScenario(const char* partitions, int with_threads)
 
 int main(void)
 {
-    static const char* const kPartitions[] = {"1", "2", "4", "8"};
+    /* The ordinary run compares one partition with four (the thread-count independence the sample proves); the soak
+       form runs 1, 2, 4 and 8. */
+    static const char* const kPartitions[] = {"1", "4", "2", "8"};
+    const int scenarios = g_frame_count == FRAME_COUNT_SOAK ? 4 : 2;
     uint64_t first = 0;
     int i;
 
     host_quiet_failures();
+    if (getenv("ENGINE_TEST_SOAK") != NULL && getenv("ENGINE_TEST_SOAK")[0] == '1')
+    {
+        g_frame_count = FRAME_COUNT_SOAK;
+    }
     if (engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &g_api) != ENGINE_OK)
     {
         printf("script_sample: no function table\n");
         return 2;
     }
-    for (i = 0; i < 4; ++i)
+    for (i = 0; i < scenarios; ++i)
     {
-        const uint64_t hash = RunScenario(kPartitions[i], i == 2);
+        const uint64_t hash = RunScenario(kPartitions[i], i == 1);
         printf("script_sample: partitions %s: state hash %016llx\n", kPartitions[i], (unsigned long long)hash);
         if (i == 0)
         {

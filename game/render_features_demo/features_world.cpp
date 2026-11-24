@@ -307,7 +307,8 @@ const char* FeaturesWorld::BuildMeshes()
         }
     }
     keep(ToMesh(cards, &tree_meshes_[kMeshLeaves]));
-    keep(Reshape(sphere_lo, Vec3(1.5f, 1.2f, 1.5f), Vec3(0.0f, 0.0f, 0.0f), &tree_meshes_[kMeshLeavesLow]));
+    // The blob stays inside the cards' box (x and z within 1, y from -0.9 to 1.5): a coarser level may not be larger.
+    keep(Reshape(sphere_lo, Vec3(0.95f, 0.9f, 0.95f), Vec3(0.0f, 0.3f, 0.0f), &tree_meshes_[kMeshLeavesLow]));
     // 6 the stand-in for a whole far tree: a box for the trunk and a box for the crown.
     Geometry standin;
     AddBox(&standin, Vec3(0.0f, 2.6f, 0.0f), Vec3(0.25f, 2.6f, 0.25f));
@@ -476,7 +477,9 @@ bool FeaturesWorld::Build(const WorldOptions& options, jobs::Scheduler* schedule
     {
         return false;
     }
-    rocks_ = InstanceSet::Create(InstanceSetDesc{true, options.rocks == 0 ? 1u : options.rocks, 4.0, 8.0f});
+    // The rocks are sparse (400 over 2 km): a coarse key cell keeps neighbours in one chunk instead of opening a chunk
+    // each.
+    rocks_ = InstanceSet::Create(InstanceSetDesc{true, options.rocks == 0 ? 1u : options.rocks, 64.0, 8.0f});
     if (options.rocks != 0)
     {
         ScatterRule rule;

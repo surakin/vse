@@ -1,0 +1,8 @@
+# ThreadSanitizer suppression for the script tests: libgcc's unwinder registry.
+#
+# LuaJIT registers the unwind frames of the code it generates (`__register_frame`), and several states of the tests do it from
+# several threads at once. libgcc keeps those frames in a B-tree whose nodes are protected by version locks it reads and
+# validates itself (unwind-dw2-btree.h: `btree_insert` and the optimistic lock coupling around it). `libgcc_s` is not built with
+# ThreadSanitizer, so the sanitizer sees the memmove inside a node insert but not the lock that orders it. The race is in the
+# system library's protocol, not in our code: only this one function is listed, a race anywhere else is still reported.
+race:btree_insert

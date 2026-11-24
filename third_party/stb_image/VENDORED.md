@@ -27,5 +27,5 @@ abort), and the decoder is exercised by a fuzz-style test of mutated and truncat
 ## How it is built (`CMakeLists.txt`)
 
 One static C library per flavor (`stb_jpeg`, `stb_jpeg_asan`, `stb_jpeg_tsan`): `STBI_ONLY_JPEG` (no other format), `STBI_NO_STDIO` (**no `fopen`**: all file
-access goes through `io::`), `STBI_NO_SIMD`, `STBI_NO_LINEAR`, `STBI_NO_HDR`, `STBI_MAX_DIMENSIONS=16384`. Only `engine/asset_import/image_decode.cpp`
+access goes through `io::`), `STBI_NO_SIMD`, `STBI_NO_LINEAR`, `STBI_NO_HDR`, `STBI_MAX_DIMENSIONS=16384`; compiled with `-fwrapv` (not on MSVC, where integer overflow wraps) because the integer IDCT of a corrupt file overflows `int` (`stbi__idct_block`, lines 2563 and 2576 of v2.32: found by UBSan in `asset_tests_asan "[gltf]"`), so the wrap is defined and the same at every optimization level. Only `engine/asset_import/image_decode.cpp`
 includes `stb_image.h`.

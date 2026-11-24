@@ -42,7 +42,7 @@ include(Catch)
 function(engine_add_audio_tests target audio_lib suffix label)
   add_executable(${target} ${AUDIO_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${audio_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint)
+  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/asset_mint ${CMAKE_SOURCE_DIR}/tests/support)
   target_compile_definitions(${target} PRIVATE ENGINE_AUDIO_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp"
                                               ENGINE_AUDIO_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
                                               ENGINE_AUDIO_TMP="${CMAKE_CURRENT_BINARY_DIR}")
@@ -50,6 +50,11 @@ function(engine_add_audio_tests target audio_lib suffix label)
     engine_asan_runtime(${target})
   endif()
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
+  # The time bound of the voice-cost test (tests/support/soak.h): the plain flavor only.
+  if(label STREQUAL "audio")
+    engine_soak_catch_test(${target} "Snapshot: the cost of a voice at each quality, with and without effects"
+      SOURCE tests/audio/snapshot_test.cpp)
+  endif()
 endfunction()
 
 engine_add_audio_tests(audio_tests audio "" "audio")

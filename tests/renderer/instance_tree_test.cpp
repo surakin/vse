@@ -665,7 +665,7 @@ TEST_CASE("Instance tree: two marks far apart in one root recompose their own su
     CHECK(tree->Validate());
 }
 
-TEST_CASE("Instance tree: a coarser level or a stand-in larger than the node's own box is refused", "[instance_tree]")
+TEST_CASE("Instance tree: a coarser level larger than the node's own box is refused", "[instance_tree]")
 {
     Vector<TreeMeshInfo> meshes = TrMeshes();  // mesh 0 is the smallest, mesh 2 the largest
     InstanceTreeBuilder builder(Span<const TreeMeshInfo>(meshes.Data(), meshes.Size()));
@@ -682,12 +682,11 @@ TEST_CASE("Instance tree: a coarser level or a stand-in larger than the node's o
     d.lod.mesh[0] = 2;
     d.lod.mesh[1] = 0;
     CHECK(builder.AddRoot(d, &id) == TreeStatus::Ok);
-    d.lod.level_count = 1;
-    d.lod.standin_mesh = 0;
-    d.lod.standin_distance = 50.0f;
+    // A stand-in replaces the whole subtree and is judged by the subtree's box: a larger one is accepted.
     d.mesh = 0;
-    d.lod.mesh[0] = 0;
-    meshes.Clear();
+    d.lod.level_count = 1;
+    d.lod.standin_mesh = 2;
+    d.lod.standin_distance = 50.0f;
     CHECK(builder.AddRoot(d, &id) == TreeStatus::Ok);
 }
 

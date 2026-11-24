@@ -44,7 +44,7 @@ Transform TreeLocalTransform(const Vec3d& position, const Quaternion& rotation, 
     return t;
 }
 
-// A coarser level or a stand-in is culled by the node's own box (level 0), so its mesh must fit inside it, with a
+// A coarser level is culled by the node's own box (level 0), so its mesh must fit inside it, with a
 // small tolerance for a simplified mesh whose box differs in the last digits.
 bool FitsLevelZero(const TreeMeshInfo& coarse, const TreeMeshInfo& own)
 {
@@ -78,9 +78,9 @@ bool LodValid(const TreeLod& lod, Span<const TreeMeshInfo> meshes, u32 own_mesh)
     {
         return false;
     }
-    if (lod.standin_mesh != kTreeNoMesh &&
-        (lod.standin_mesh >= mesh_count || !(lod.standin_distance > 0.0f) ||
-         (own_mesh < mesh_count && !FitsLevelZero(meshes[lod.standin_mesh], meshes[own_mesh]))))
+    // A stand-in replaces the node's whole subtree and is judged by the subtree's box (its children are added after the
+    // node, so the builder cannot check it here); only a coarser level is held to the node's own box.
+    if (lod.standin_mesh != kTreeNoMesh && (lod.standin_mesh >= mesh_count || !(lod.standin_distance > 0.0f)))
     {
         return false;
     }

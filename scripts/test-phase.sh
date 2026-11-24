@@ -273,10 +273,13 @@ fi
 # (a name with asan or tsan as a word). A warning, not a failure: timing depends on the machine's load. The fix is a short form
 # for the ordinary run, or the `soak` label for a test whose length is its point (docs/guide/building-and-testing.md, "Long tests").
 long_test_warning() {
-    local junit="$1" names
+    local junit="$1" names long
     [ -f "$junit" ] || return 0
     # The soak names go to awk in a file, not with -v: macOS's awk refuses a newline in a -v value, and -v also expands backslashes.
-    names="$junit.soak"
+    # The two scratch files are this run's own (mktemp), not beside the JUnit file: two runs on the same file (the ctests of the
+    # script run side by side under ctest -j) would delete each other's.
+    names="$(mktemp "${TMPDIR:-/tmp}/test-phase-soak.XXXXXX")" || return 0
+    long="$(mktemp "${TMPDIR:-/tmp}/test-phase-long.XXXXXX")" || { rm -f "$names"; return 0; }
     ctest --test-dir "$build" -N -L '^soak$' 2>/dev/null | sed -n 's/^ *Test *#[0-9]*: //p' > "$names" || true
     awk '
         FNR == NR { skip[$0] = 1; next }
@@ -286,12 +289,12 @@ long_test_warning() {
             gsub(/&quot;/, "\"", name); gsub(/&apos;/, "\047", name); gsub(/&lt;/, "<", name); gsub(/&gt;/, ">", name); gsub(/&amp;/, "\\&", name)
             limit = (name ~ /(^|[^a-z])(asan|tsan)([^a-z]|$)/) ? 60 : 30
             if (!(name in skip) && t + 0 > limit) printf "%8.1f s  %s\n", t, name
-        }' "$names" "$junit" | sort -rn > "$junit.long" || true
-    if [ -s "$junit.long" ]; then
+        }' "$names" "$junit" | sort -rn > "$long" || true
+    if [ -s "$long" ]; then
         echo "test-phase: WARNING: these tests ran over 30 s (60 s for a sanitizer test) without the soak label; give each a short form or the label (docs/guide/building-and-testing.md, \"Long tests\"):"
-        cat "$junit.long"
+        cat "$long"
     fi
-    rm -f "$junit.long" "$names"
+    rm -f "$long" "$names"
 }
 if [ -n "$report_long" ]; then
     long_test_warning "$report_long"
