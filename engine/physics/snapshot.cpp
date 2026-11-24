@@ -14,7 +14,7 @@ namespace
 {
 
 constexpr u32 kMagic = 0x4e534850u;  // "PHSN"
-constexpr u32 kVersion = 4;
+constexpr u32 kVersion = 5;          // 5: the content hash of each collider's height field follows the triggers
 constexpr usize kMaxSlots = 1u << 24;
 
 // ---- pools -----------------------------------------------------------------------------------------------------
@@ -500,6 +500,27 @@ void PhysicsWorld::Snapshot(bytes::ByteWriter* writer) const
     {
         WriteTrigger(out, triggers_touching_[i]);
     }
+    // The height fields the colliders name, by content: a world with another map under the same id refuses the
+    // snapshot.
+    u32 fields = 0;
+    for (u32 slot = 0; slot < colliders_.Slots(); ++slot)
+    {
+        const u32 generation = colliders_.LiveGeneration(slot);
+        fields += generation != 0 && colliders_.Find(slot, generation)->value.shape.kind == ShapeKind::HeightField ? 1u
+                                                                                                                   : 0u;
+    }
+    out.Count(fields);
+    for (u32 slot = 0; slot < colliders_.Slots(); ++slot)
+    {
+        const u32 generation = colliders_.LiveGeneration(slot);
+        if (generation == 0 || colliders_.Find(slot, generation)->value.shape.kind != ShapeKind::HeightField)
+        {
+            continue;
+        }
+        const HeightField* field = height_fields_.Find(colliders_.Find(slot, generation)->value.shape.height_field);
+        out.U32(slot);
+        out.U64(field != nullptr ? field->ContentHash() : 0);
+    }
 }
 
 SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
@@ -563,6 +584,14 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
         TriggerEvent record;
         ReadTrigger(in, &record);
         next.triggers_touching_.Push(record);
+    }
+    Vector<u32> field_slots;
+    Vector<u64> field_hashes;
+    const usize field_count = in.Count(in.Remaining() / 12);
+    for (usize i = 0; i < field_count && in.Ok(); ++i)
+    {
+        field_slots.Push(in.U32());
+        field_hashes.Push(in.U64());
     }
     if (!in.Ok())
     {
@@ -647,6 +676,21 @@ SnapshotStatus PhysicsWorld::Restore(ByteSpan data)
     if (library_missing)
     {
         return SnapshotStatus::LibraryMismatch;
+    }
+    for (usize i = 0; i < field_slots.Size(); ++i)
+    {
+        const u32 generation = field_slots[i] < next.colliders_.Slots() ? next.colliders_.LiveGeneration(field_slots[i])
+                                                                        : 0;
+        const ColliderRecord* record = generation != 0 ? next.colliders_.Find(field_slots[i], generation) : nullptr;
+        if (record == nullptr || record->value.shape.kind != ShapeKind::HeightField)
+        {
+            return SnapshotStatus::Corrupt;
+        }
+        const HeightField* field = height_fields_.Find(record->value.shape.height_field);
+        if (field == nullptr || field->ContentHash() != field_hashes[i])
+        {
+            return SnapshotStatus::LibraryMismatch;  // the same id names another map here
+        }
     }
     // The mass, the centre of mass and the inertia are not stored: they follow from the settings and the shape, so they
     // are made again here (with the libraries of this world), exactly as `RecomputeMass` made them the first time.

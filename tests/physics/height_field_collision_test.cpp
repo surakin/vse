@@ -184,7 +184,8 @@ TEST_CASE("Height field contact: a sphere comes to rest in a bowl", "[physics][h
     CHECK(Abs(body->position.x) < 0.6f);
     CHECK(Abs(body->position.z) < 0.6f);
     CHECK(body->linear_velocity.Length() < 0.3f);
-    CHECK(static_cast<f32>(body->position.y) > bowl->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.05f);
+    CHECK(static_cast<f32>(body->position.y) >
+          bowl->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.05f);
 }
 
 TEST_CASE("Height field contact: nothing falls through a field of 64 by 64 random bumps in ten seconds",
@@ -219,14 +220,16 @@ TEST_CASE("Height field contact: nothing falls through a field of 64 by 64 rando
             {
                 const Body* body = world.Find(bodies[k]);
                 REQUIRE(body != nullptr);
-                REQUIRE(static_cast<f32>(body->position.y) > field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.1f);
+                REQUIRE(static_cast<f32>(body->position.y) >
+                        field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.1f);
             }
         }
     }
     for (usize k = 0; k < bodies.Size(); ++k)
     {
         const Body* body = world.Find(bodies[k]);
-        CHECK(static_cast<f32>(body->position.y) > field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.1f);
+        CHECK(static_cast<f32>(body->position.y) >
+              field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.1f);
     }
 }
 
@@ -253,7 +256,8 @@ TEST_CASE("Height field contact: a fast small sphere does not tunnel through the
     }
     const Body* body = world.Find(bullet);
     REQUIRE(body != nullptr);
-    CHECK(static_cast<f32>(body->position.y) > field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.05f);
+    CHECK(static_cast<f32>(body->position.y) >
+          field->HeightAt(static_cast<f32>(body->position.x), static_cast<f32>(body->position.z)) - 0.05f);
 }
 
 TEST_CASE("Height field character: walks up a ramp, stops at the slope limit, crosses a diagonal smoothly",
@@ -278,7 +282,8 @@ TEST_CASE("Height field character: walks up a ramp, stops at the slope limit, cr
         CHECK(body->position.x > -15.0f + 7.0f);
         CHECK(walker.State().on_ground);
         // The capsule's centre sits half its height above the surface (to the slope's cosine).
-        CHECK(FNear(static_cast<f32>(body->position.y) - ramp->HeightAt(static_cast<f32>(body->position.x), 0.0f), 0.9f, 0.25f));
+        CHECK(FNear(static_cast<f32>(body->position.y) - ramp->HeightAt(static_cast<f32>(body->position.x), 0.0f), 0.9f,
+                    0.25f));
     }
     {
         // A ramp steeper than the limit (a normal.y of 0.64 is about 50 degrees): it does not climb it.
@@ -395,4 +400,79 @@ TEST_CASE("Terrain queries: the ground under a point, the ray at the terrain onl
     CHECK(FNear(hit.distance, 12.5f, 1e-3f));
     CHECK_FALSE(TerrainRayCast(world, Vec3(25.0f, 30.0f, 10.0f), Vec3(0.0f, -1.0f, 0.0f), 10.0f, filter, &hit));
     CHECK_FALSE(TerrainRayCast(world, Vec3(25.0f, 30.0f, 10.0f), Vec3(0.0f, 0.0f, 0.0f), 100.0f, filter, &hit));
+}
+
+TEST_CASE("Terrain queries: the answer is the same through the query index and by scanning every collider",
+          "[physics][heightfield][query]")
+{
+    const HeightFieldConstPtr field = TiltedField(0.3f);
+    auto build = [&](PhysicsWorld& world)
+    {
+        const u32 library_id = world.HeightFields().Add(field);
+        for (u32 i = 0; i < 40; ++i)
+        {
+            BodyDesc desc;
+            desc.settings.type = BodyType::Static;
+            desc.position = Vec3(20.0f + 50.0f * static_cast<f32>(i % 8), 0.0f,
+                                 10.0f + 30.0f * static_cast<f32>(i / 8));
+            const BodyId id = world.CreateBody(desc);
+            Collider collider;
+            collider.shape = Shape::MakeHeightField(library_id, field->Extent());
+            REQUIRE(world.AddCollider(id, collider) == BodyStatus::Ok);
+            BodyDesc box_desc;
+            box_desc.settings.type = BodyType::Static;
+            box_desc.position = Vec3(5.0f * static_cast<f32>(i), 3.0f, 5.0f * static_cast<f32>(i));
+            const BodyId box = world.CreateBody(box_desc);
+            Collider box_collider;
+            box_collider.shape = Shape::MakeBox(Vec3(1.0f, 1.0f, 1.0f));
+            REQUIRE(world.AddCollider(box, box_collider) == BodyStatus::Ok);
+        }
+    };
+    PhysicsWorld indexed;
+    PhysicsWorld scanned;
+    scanned.SetQueryIndexEnabled(false);
+    indexed.SetQueryIndexEnabled(true);
+    build(indexed);
+    build(scanned);
+    const PhysicsQueryFilter filter;
+    Rng rng(5);
+    u32 found = 0;
+    for (u32 i = 0; i < 400; ++i)
+    {
+        const f64 x = static_cast<f64>(rng.Range(-20.0f, 400.0f));
+        const f64 z = static_cast<f64>(rng.Range(-20.0f, 160.0f));
+        f64 a = 0.0;
+        f64 b = 0.0;
+        Vec3 na;
+        Vec3 nb;
+        const bool ha = TerrainHeight(indexed, x, z, filter, &a, &na);
+        const bool hb = TerrainHeight(scanned, x, z, filter, &b, &nb);
+        REQUIRE(ha == hb);
+        if (ha)
+        {
+            ++found;
+            CHECK(a == b);
+            CHECK(na.x == nb.x);
+        }
+    }
+    CHECK(found > 50);
+}
+
+TEST_CASE("Height field contact: a sphere put 5 m under flat ground comes out on top",
+          "[physics][heightfield][collision]")
+{
+    PhysicsWorld world;
+    // flat at 10 m (range 0 to 20, samples at half): the field's bound reaches 10 m below the body that holds it
+    const HeightFieldConstPtr flat = FieldOf(33, 33, 20.0f, 1.0f, [](u32, u32) { return 32768u; });
+    AddField(world, flat);
+    const BodyId ball = AddDynamic(world, Shape::MakeSphere(0.5f), Vec3(2.0f, 5.0f, 3.0f));
+    for (u32 i = 0; i < 240; ++i)
+    {
+        world.Step();
+    }
+    const Body* body = world.Find(ball);
+    REQUIRE(body != nullptr);
+    INFO("y " << body->position.y << " v " << body->linear_velocity.y);
+    CHECK(FNear(static_cast<f32>(body->position.y), 10.0f + 0.5f, 0.1f));
+    CHECK(body->linear_velocity.Length() < 0.2f);
 }

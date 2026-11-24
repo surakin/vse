@@ -721,8 +721,8 @@ public:
     /// restored from a snapshot continues bit for bit as the original did.
     ///
     /// Every value is checked (counts against the bytes left, ids against slots, numbers for being finite, shapes
-    /// against the libraries, chains of colliders against their bodies, the configuration against `SetStepConfig`), so
-    /// truncated, corrupt or hostile bytes are refused without a crash.
+    /// against the libraries (a height field also by its content hash), chains of colliders against their bodies, the
+    /// configuration against `SetStepConfig`), so truncated, corrupt or hostile bytes are refused without a crash.
     ///
     /// - Param data: the bytes `Snapshot` wrote.
     /// - Returns: `Ok`, or why not; on a refusal the world is unchanged.

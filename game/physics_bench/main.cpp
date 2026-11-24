@@ -23,6 +23,7 @@
 #include "os/console.h"
 #include "os/os.h"
 #include "physics/character.h"
+#include "physics/height_field.h"
 #include "physics/query.h"
 #include "physics/world.h"
 
@@ -269,6 +270,55 @@ void SceneRays()
                     static_cast<double>(rays) / seconds, hits);
 }
 
+// 200,000 ground-height queries over 100 height-field colliders (a 10 by 10 grid of 33 by 33 maps).
+void SceneTerrain()
+{
+    PhysicsWorld world;
+    Configure(world);
+    world.SetQueryIndexEnabled(true);
+    Vector<u16> samples;
+    for (u32 i = 0; i < 33u * 33u; ++i)
+    {
+        samples.Push(static_cast<u16>((i * 977u) % 65535u));
+    }
+    Validation v = Validation::Ok;
+    const HeightFieldConstPtr field = HeightField::CreateFromSamples(Span<const u16>(samples.Data(), samples.Size()),
+                                                                     33, 33, 0.0f, 4.0f, 1.0f, &v);
+    if (!field)
+    {
+        out::PrintError("terrain: the field was refused\n");
+        return;
+    }
+    const u32 id = world.HeightFields().Add(field);
+    for (u32 i = 0; i < 100; ++i)
+    {
+        BodyDesc desc;
+        desc.settings.type = BodyType::Static;
+        desc.position = Vec3(16.0f + 32.0f * static_cast<f32>(i % 10), 0.0f, 16.0f + 32.0f * static_cast<f32>(i / 10));
+        const BodyId body = world.CreateBody(desc);
+        Collider collider;
+        collider.shape = Shape::MakeHeightField(id, field->Extent());
+        world.AddCollider(body, collider);
+    }
+    Rng rng;
+    const u32 calls = 200000;
+    u32 hits = 0;
+    PhysicsQueryFilter filter;
+    const u64 start = os::MonotonicTimeNanos();
+    for (u32 i = 0; i < calls; ++i)
+    {
+        f64 height = 0.0;
+        if (TerrainHeight(world, static_cast<f64>(rng.Next() * 320.0f), static_cast<f64>(rng.Next() * 320.0f), filter,
+                          &height, nullptr))
+        {
+            ++hits;
+        }
+    }
+    const double seconds = static_cast<double>(os::MonotonicTimeNanos() - start) / 1.0e9;
+    out::PrintError("terrain: %u TerrainHeight calls over 100 colliders in %.3f s = %.0f calls/s (%u hits)\n", calls,
+                    seconds, static_cast<double>(calls) / seconds, hits);
+}
+
 void SceneCharacters()
 {
     const u32 counts[] = {100, 500, 2000};
@@ -505,6 +555,10 @@ int main(int argc, char** argv)
     if (all || CStrCompare(scene, "rays") == 0)
     {
         SceneRays();
+    }
+    if (all || CStrCompare(scene, "terrain") == 0)
+    {
+        SceneTerrain();
     }
     if (all || CStrCompare(scene, "characters") == 0)
     {

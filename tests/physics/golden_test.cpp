@@ -336,8 +336,8 @@ const Golden kGolden[] = {
      {0xf32ac67e71d9d8d6ull, 0x71c057fd725e0876ull, 0x6fd9f285fb2f4438ull, 0x5d66f0fe40230e0full, 0xd39ed26d1454a5eeull,
       0x7afa3b741a404e8dull}},
     {GoldenScene::Terrain,
-     {0x4df3f9a705311ba0ull, 0xbc80819d9471c5c7ull, 0xd47138999adb17ecull, 0x9b0d169b45148be8ull, 0x1ef91c1e5cd662b0ull,
-      0x447cc3f9738ad539ull}},
+     {0x52490b69790309b7ull, 0xff036341ab2009ffull, 0x0feac03280d10afeull, 0x46996d9db39cf863ull, 0x11f4d859c3f78c2aull,
+      0x05a98b51b05d1e36ull}},
 };
 // GOLDEN-END
 

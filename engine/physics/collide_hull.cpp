@@ -926,6 +926,7 @@ struct MeshTriangles
 {
     // Whether the surface has solid ground below it only (a height field): a body is always pushed out upward.
     static constexpr bool kSolidBelow = false;
+    static bool Surface(const TriangleMesh&, f32, f32, f32*) { return false; }
     static u32 Query(const TriangleMesh& mesh, const Aabb& box, Vector<u32>* out) { return mesh.QueryBox(box, out); }
     static void Corners(const TriangleMesh& mesh, u32 t, Vec3* a, Vec3* b, Vec3* c)
     {
@@ -945,6 +946,17 @@ struct MeshTriangles
 struct FieldTriangles
 {
     static constexpr bool kSolidBelow = true;
+    // The height of the surface under a point of the field's space, false when the point is off the map.
+    static bool Surface(const HeightField& field, f32 x, f32 z, f32* height)
+    {
+        const Aabb& b = field.Bounds();
+        if (x < b.min.x || x > b.max.x || z < b.min.z || z > b.max.z)
+        {
+            return false;
+        }
+        *height = field.HeightAt(x, z);
+        return true;
+    }
     // At most this many triangles are asked for: the pair tests 256 of them, so a huge shape over a huge map does not
     // list the whole map.
     static constexpr u32 kMaxListed = 1024;
@@ -980,6 +992,28 @@ bool TrianglesPair(const Object& source, const Pose& mesh_pose, const Shape& oth
     const Vec3 local_half(Abs(rot.col[0].x) * half.x + Abs(rot.col[0].y) * half.y + Abs(rot.col[0].z) * half.z,
                           Abs(rot.col[1].x) * half.x + Abs(rot.col[1].y) * half.y + Abs(rot.col[1].z) * half.z,
                           Abs(rot.col[2].x) * half.x + Abs(rot.col[2].y) * half.y + Abs(rot.col[2].z) * half.z);
+    // A body whose centre is under the surface of a height field (put there by a teleport, or let through by a fast
+    // fall) may have no triangle in its box: the ground is solid below, so it is lifted out through the surface
+    // straight above it. A body resting on the ground has its centre above it.
+    if constexpr (Triangles::kSolidBelow)
+    {
+        f32 surface = 0.0f;
+        if (Triangles::Surface(source, local_centre.x, local_centre.z, &surface) && local_centre.y < surface)
+        {
+            const Vec3 up = rot.col[1];
+            const Vec3 low = Support(cb, Negate(up));
+            const Vec3 pb = low - up * cb.radius;
+            const Vec3 ground = mesh_pose.position + rot * Vec3(local_centre.x, surface, local_centre.z);
+            const f32 depth = (ground - pb).Dot(up);
+            out->normal = up;
+            out->count = 1;
+            out->points[0].position_b = pb;
+            out->points[0].position_a = pb + up * depth;
+            out->points[0].depth = depth;
+            out->points[0].feature_id = 0x5011d000u;
+            return true;
+        }
+    }
     Vector<u32> triangles;
     Triangles::Query(source, Aabb::FromMinMax(local_centre - local_half, local_centre + local_half), &triangles);
 

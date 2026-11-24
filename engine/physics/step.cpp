@@ -374,6 +374,26 @@ void PhysicsWorld::Step()
             {
                 WakeIsland(w.bb);
             }
+            // A contact deeper than a tenth of a metre is being pushed apart (a body teleported into the ground comes
+            // out at the push velocity, which the relaxation leaves no speed of): neither body sleeps meanwhile.
+            f32 deepest = 0.0f;
+            for (u32 p = 0; p < input.manifold.count; ++p)
+            {
+                deepest = FMax(deepest, input.manifold.points[p].depth);
+            }
+            if (deepest > 0.1f)
+            {
+                if (w.ba->settings.type == BodyType::Dynamic)
+                {
+                    edges.Push(w.ba->id.index);
+                    edges.Push(w.ba->id.index);
+                }
+                if (w.bb->settings.type == BodyType::Dynamic)
+                {
+                    edges.Push(w.bb->id.index);
+                    edges.Push(w.bb->id.index);
+                }
+            }
             if (both_dynamic)
             {
                 edges.Push(w.ba->id.index);

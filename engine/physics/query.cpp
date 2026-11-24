@@ -633,32 +633,34 @@ bool TerrainHeight(const PhysicsWorld& world, f64 x, f64 z, const PhysicsQueryFi
     bool found = false;
     f64 best = 0.0;
     Vec3 best_normal = Vec3(0.0f, 1.0f, 0.0f);
-    ForEachCollider(world, filter,
-                    [&](ColliderId id, const ColliderRecord& record, const Body& body)
-                    {
-                        if (record.value.shape.kind != ShapeKind::HeightField)
-                        {
-                            return;
-                        }
-                        const Aabbd box = ColliderBounds(body, record.value);
-                        if (x < box.min.x || x > box.max.x || z < box.min.z || z > box.max.z)
-                        {
-                            return;
-                        }
-                        const Vec3d origin(x, box.max.y + 1.0, z);
-                        PhysicsHit h;
-                        if (RayOne(libs, id, record, body, origin, Vec3(0.0f, -1.0f, 0.0f),
-                                   static_cast<f32>(box.max.y - box.min.y + 2.0), &h))
-                        {
-                            const f64 y = origin.y - static_cast<f64>(h.distance);
-                            if (!found || y > best)
-                            {  // the highest ground where maps overlap
-                                found = true;
-                                best = y;
-                                best_normal = h.normal;
-                            }
-                        }
-                    });
+    ForEachCandidate(
+        world, filter,
+        [&](const Aabbd& box) { return !(x < box.min.x || x > box.max.x || z < box.min.z || z > box.max.z); },
+        [&](ColliderId id, const ColliderRecord& record, const Body& body)
+        {
+            if (record.value.shape.kind != ShapeKind::HeightField)
+            {
+                return;
+            }
+            const Aabbd box = ColliderBounds(body, record.value);
+            if (x < box.min.x || x > box.max.x || z < box.min.z || z > box.max.z)
+            {
+                return;
+            }
+            const Vec3d origin(x, box.max.y + 1.0, z);
+            PhysicsHit h;
+            if (RayOne(libs, id, record, body, origin, Vec3(0.0f, -1.0f, 0.0f),
+                       static_cast<f32>(box.max.y - box.min.y + 2.0), &h))
+            {
+                const f64 y = origin.y - static_cast<f64>(h.distance);
+                if (!found || y > best)
+                {  // the highest ground where maps overlap
+                    found = true;
+                    best = y;
+                    best_normal = h.normal;
+                }
+            }
+        });
     if (found)
     {
         if (height != nullptr)

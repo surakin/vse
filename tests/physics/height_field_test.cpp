@@ -305,6 +305,35 @@ TEST_CASE("HeightField: random rays agree with every triangle tested one by one"
     CHECK(hits > 100);
 }
 
+TEST_CASE("HeightField: grazing rays agree with every triangle at an altitude of 50 km",
+          "[physics][heightfield][random]")
+{
+    // The surface is 5e4 metres up: a float there has a step of about 4 mm, so the ray's height must be compared with
+    // a slack in proportion to it (the block skip would otherwise pass over a cell the ray touches).
+    const HeightFieldConstPtr field = MakeField(41, 37, 50000.0f, 50010.0f, 1.5f, Rough);
+    Rng rng(11);
+    u32 hits = 0;
+    for (u32 i = 0; i < 400; ++i)
+    {
+        const Vec3 o(rng.Range(-40.0f, 40.0f), rng.Range(50004.0f, 50014.0f), rng.Range(-40.0f, 40.0f));
+        const Vec3 target(rng.Range(-30.0f, 30.0f), rng.Range(50000.0f, 50010.0f), rng.Range(-27.0f, 27.0f));
+        const Vec3 d = target - o;
+        f32 expect_t = 0.0f;
+        u32 expect_tri = 0;
+        const bool expect = BruteRay(*field, o, d, 1.5f, &expect_t, &expect_tri);
+        f32 t = 0.0f;
+        u32 tri = 0;
+        const bool got = field->RayCast(o, d, 1.5f, &t, &tri);
+        REQUIRE(got == expect);
+        if (expect)
+        {
+            ++hits;
+            CHECK(HfNear(t, expect_t, 1e-3f));
+        }
+    }
+    CHECK(hits > 50);
+}
+
 TEST_CASE("HeightField: a box query returns every triangle the box can touch, in order", "[physics][heightfield]")
 {
     const HeightFieldConstPtr field = MakeField(41, 37, -30.0f, 50.0f, 1.5f, Rough);
@@ -520,6 +549,22 @@ TEST_CASE("Height field: a body resting on it stays, and a snapshot holds the sh
     // A world without the field refuses a snapshot that names it.
     PhysicsWorld other;
     CHECK(other.Restore(ByteSpan(bytes.Data(), bytes.Size())) == SnapshotStatus::LibraryMismatch);
+    // A world whose library holds another map of the same size under the same id refuses it as well.
+    {
+        const HeightFieldConstPtr again = MakeField(33, 33, 0.0f, 4.0f, 1.0f, [](u32, u32) { return 16384u; });
+        CHECK(again->ContentHash() == field->ContentHash());
+        const HeightFieldConstPtr different = MakeField(33, 33, 0.0f, 4.0f, 1.0f, [](u32, u32) { return 16385u; });
+        CHECK(again->ContentHash() != different->ContentHash());
+        PhysicsWorld wrong;
+        const u32 wrong_id = wrong.HeightFields().Add(different);
+        BodyDesc g;
+        g.settings.type = BodyType::Static;
+        const BodyId gid = wrong.CreateBody(g);
+        Collider c;
+        c.shape = Shape::MakeHeightField(wrong_id, different->Extent());
+        REQUIRE(wrong.AddCollider(gid, c) == BodyStatus::Ok);
+        CHECK(wrong.Restore(ByteSpan(bytes.Data(), bytes.Size())) == SnapshotStatus::LibraryMismatch);
+    }
 }
 
 TEST_CASE("HeightField: a cell size below a millimetre is refused", "[physics][heightfield]")

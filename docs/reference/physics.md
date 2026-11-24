@@ -9946,7 +9946,7 @@ SnapshotStatus Restore(ByteSpan data);
 
 Replaces the world's state by a snapshot's: the bodies, colliders, joints, contact cache and configuration of the world are dropped and the snapshot's put in their place. The libraries and the scheduler stay. A run restored from a snapshot continues bit for bit as the original did.
 
-Every value is checked (counts against the bytes left, ids against slots, numbers for being finite, shapes against the libraries, chains of colliders against their bodies, the configuration against `SetStepConfig`), so truncated, corrupt or hostile bytes are refused without a crash.
+Every value is checked (counts against the bytes left, ids against slots, numbers for being finite, shapes against the libraries (a height field also by its content hash), chains of colliders against their bodies, the configuration against `SetStepConfig`), so truncated, corrupt or hostile bytes are refused without a crash.
 
 | Field | Value |
 |---|---|

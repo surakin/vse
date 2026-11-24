@@ -417,13 +417,16 @@ bool HeightField::RayCast(const Vec3& origin, const Vec3& direction, f32 max_t, 
         next_z = ((step_z_pos ? static_cast<f32>(iz + 1) : static_cast<f32>(iz)) - gz) / dgz;
         cell_t_z = 1.0f / Abs(dgz);
     }
-    constexpr f32 kSlack = 1e-3f;
+    // The slack covers the rounding of the ray's height: a few units in the last place of the largest height involved,
+    // so it is the same fraction of the numbers at 5e4 metres as at 5.
     auto ray_y = [&](f32 a, f32 b, f32* lo, f32* hi)
     {
         const f32 ya = origin.y + direction.y * a;
         const f32 yb = origin.y + direction.y * b;
-        *lo = Min(ya, yb) - kSlack;
-        *hi = Max(ya, yb) + kSlack;
+        const f32 scale = Max(Max(Abs(ya), Abs(yb)), Max(Abs(bounds_.min.y), Abs(bounds_.max.y)));
+        const f32 slack = Max(1e-3f, 1.2e-7f * 16.0f * scale);
+        *lo = Min(ya, yb) - slack;
+        *hi = Max(ya, yb) + slack;
     };
     u32 block_x = 0xFFFFFFFFu;
     u32 block_z = 0xFFFFFFFFu;
