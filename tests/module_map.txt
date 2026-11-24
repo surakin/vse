@@ -103,6 +103,7 @@ game/physics_bench   25
 game/audio_bench     26
 game/physics_demo    25
 game/render_features_demo    28
+game/render_features_bench   28
 game/spatial_demo   18
 game/storage_demo   19
 game/asset_demo     22

@@ -34,7 +34,7 @@ the pages in the order below; each builds on the ones before it. The generated [
 ## Drawing
 
 15. [rhi](rhi.md) and [rhi-shaders](rhi-shaders.md): the graphics abstraction and shaders.
-16. [renderer](renderer.md) and [render-settings](render-settings.md): the render graph, materials, and what can change at run time; [instancing](instancing.md): many copies of one mesh in chunks.
+16. [renderer](renderer.md) and [render-settings](render-settings.md): the render graph, materials, and what can change at run time; [instancing](instancing.md): many copies of one mesh in chunks; [render-features-demo](render-features-demo.md): the terrain, sky, instances and hierarchies together, and their costs.
 17. [text](text.md): fonts and text layout. [ui](ui.md): the widget toolkit.
 
 ## Game objects

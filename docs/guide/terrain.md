@@ -27,6 +27,10 @@ a body that has sunk below the surface is pushed back up (the field has no under
 A C host adds a height map (`resource_add` of a minted blob, or `height_map_create` from samples), sets `ENGINE_COMPONENT_TERRAIN` on an entity, optionally with `ENGINE_TERRAIN_COLLIDER`, and reads the ground with `terrain_height` ([The C API](engine-library.md), "Terrain"). Scripts read the ground of the colliders through `terrain.height`, `terrain.normal`
 and `terrain.raycast` ([Scripting](scripting.md), "Physics").
 
+## Cost
+
+Measured with `render_features_bench` (a Release build): choosing the tiles of an 8192 x 8192 map for a camera 120 m above it looking along the ground takes 0.004 ms and draws 126 tiles (one draw each); the quadtree of the map is built in 1 ms from its block pyramid. The sky pass costs 0.07 ms a frame at 1920 x 1080 for the procedural sky and 0.14 ms for the cube map sky (the whole frame of the demo's scene with 20,000 trees is about 1.4 ms on an RTX 3060).
+
 ## Limits
 
 - A terrain's placement is a translation and a turn about y; a scale or a tilt is not drawn, and a collider made from one is refused.

@@ -45,6 +45,8 @@ Edits never repack chunks: a chunk emptied by removals is reused, but one left w
 
 A record is 40 bytes; with the id table entry and the back reference a set costs about 60 bytes an instance without data and 80 with (`MemoryBytes()` reports the reserved bytes). Moving an instance within its chunk refits at most 256 records.
 
+Measured with `render_features_bench` (a Release build with Clang on a 16-core, 32-thread CPU): a set of 1,000,000 instances over 4 km by 4 km holds 104.7 MiB (about 110 bytes an instance, the reserved chunk room included) and is made in 114 ms. Culling it for a camera that sees about a third of it takes 1.23 ms on one thread, 0.66 ms on 2, 0.52 ms on 4, 0.32 ms on 8 and 0.21 ms on 16; the visible list is the same at every thread count. A tree node is about 219 bytes (a node of 100,000 in 16,666 trees), so the demo's forest of 1,200,000 nodes holds about 250 MiB. Moving 1% of 100,000 nodes and recomposing the 4,002 nodes that depend on them takes 0.18 ms on one thread; the work is too small for more threads to help (0.13 to 0.31 ms at 2 to 16).
+
 ## Drawing a set
 
 An `InstancedObject` (`renderer/render_scene.h`) puts a set in a `RenderScene`: the set, one mesh, one material and the set's own transform (a position, a rotation and a uniform scale; the instances are in the set's space, so moving it moves them all). `AddInstanced`, `SetInstanced`, `RemoveInstanced` and `FindInstanced` work like the object ones, with generation-checked `InstancedId`s, and `RenderSceneDesc::max_instanced` is the capacity. The scene shares the set and borrows the mesh; the set must not be edited while a frame is being prepared.

@@ -35,6 +35,7 @@ include-dir game/renderer_demo
 include-dir game/physics_demo
 include-dir game/script_demo
 include-dir game/model_viewer
+include-dir game/render_features_demo
 include-dir game/ui_demo
 include-dir shaders
 include-dir tools/docgen/src
@@ -209,6 +210,7 @@ module game/physics_bench/ game/physics_bench 14
 module game/audio_bench/ game/audio_bench 14
 module game/physics_demo/ game/physics_demo 14
 module game/render_features_demo/ game/render_features_demo 14
+module game/render_features_bench/ game/render_features_bench 14
 module game/script_demo/ game/script_demo 14
 module game/script_bench/ game/script_bench 14
 module game/container_bench/ game/container_bench 14
@@ -344,7 +346,9 @@ target physics_bench game/physics_bench
 target audio_bench game/audio_bench
 target physics_demo_lib game/physics_demo
 target physics_demo game/physics_demo
+target render_features_lib game/render_features_demo
 target render_features_demo game/render_features_demo
+target render_features_bench game/render_features_bench
 target script_demo game/script_demo
 target script_bench game/script_bench
 target container_bench game/container_bench

@@ -467,10 +467,15 @@ testopt:script_stress_large                    27   # only in a Release or RelWi
 testopt:physics_bench_large                     25   # only in a Release or RelWithDebInfo build: the stress run, 50000 bodies and a million steps, state checked (Phase 25 Day 413)
 testopt:audio_bench_large                       26   # only in a Release or RelWithDebInfo build: two million blocks of a looping scene with random parameter changes, output checked (ten million by hand) (Phase 26 Day 442)
 test:physics_demo_screenshot                    25   # random shapes falling onto a floor through the ECS, drawn offscreen
-test:render_features_demo_hash_1                    28   # the terrain scene's physics hash after 300 steps at 1 threads
-test:render_features_demo_hash_2                    28   # the terrain scene's physics hash after 300 steps at 2 threads
-test:render_features_demo_hash_4                    28   # the terrain scene's physics hash after 300 steps at 4 threads
-test:render_features_demo_hash_16                    28   # the terrain scene's physics hash after 300 steps at 16 threads
+test:render_features_demo_hash_1                    28   # the terrain scene's physics hash and visible-instance hash after 300 steps at 1 threads
+test:render_features_demo_hash_2                    28   # the terrain scene's physics hash and visible-instance hash after 300 steps at 2 threads
+test:render_features_demo_hash_4                    28   # the terrain scene's physics hash and visible-instance hash after 300 steps at 4 threads
+test:render_features_demo_hash_16                    28   # the terrain scene's physics hash and visible-instance hash after 300 steps at 16 threads
+testopt:render_features_bench_check               28   # only in a Release or RelWithDebInfo build: the render features' costs against generous bounds, results equal at 1 and 16 threads (Phase 28 Day 504)
+test:render_features_screenshot                      28   # the demo's frame compared with the committed reference image
+test:render_features_window_*                        28   # the demo in a window on each display backend, with validation (and device resets)
+test:render_features_bad_sky                         28   # the demo's usage errors
+test:render_features_reset_needs_window              28   # the demo's usage errors
 test:script_demo_screenshot                     27   # Phase 27 Day 475: the scripted game drawn offscreen with its overlay
 test:script_demo_window_*                       27   # Phase 27 Day 475: the scripted game in a window, 1,000 frames with validation
 test:engine_c_offscreen*                          24   # a C program with no window system makes off-screen surfaces, draws a world on them, resizes, reads the pictures back and destroys them with a read-back waiting (Phase 24 Day 378)

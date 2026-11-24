@@ -54,6 +54,7 @@ add_subdirectory(rhi_bench)
 add_subdirectory(renderer_demo)
 add_subdirectory(physics_demo)
 add_subdirectory(render_features_demo)  # Phase 28 Day 493
+add_subdirectory(render_features_bench)  # Phase 28 Day 504
 add_subdirectory(renderer_bench)
 add_subdirectory(ecs_bench)
 add_subdirectory(physics_bench)  # Phase 25 Day 412
