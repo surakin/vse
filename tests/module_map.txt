@@ -175,3 +175,4 @@ SIDE_PHASES         6    # read by scripts/test-phase.sh and test_phase_labels
 ARCHITECTURE.md     -
 BUILD.md            -
 README.md           -
+LICENSE             -

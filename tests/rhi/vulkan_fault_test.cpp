@@ -103,6 +103,15 @@ TEST_CASE("Out-of-memory returns invalid handles and the device keeps working", 
 {
     gpu_test::GpuFixture fx;
     fx.Require();
+    {
+        // A software device (llvmpipe) allocates in its own pattern: the injected failure does not land where the test
+        // expects.
+        DevicePtr plain = CreateDevice(Info(FaultInjection{}));
+        if (plain != nullptr && plain->Adapter().kind == AdapterKind::Software)
+        {
+            SKIP("a software Vulkan device does not allocate the way this test injects failures");
+        }
+    }
     // Find how many allocations device creation itself makes, then fail from the next one on.
     // Creation makes a handful (the staging ring); the first n for which it succeeds is one past that count.
     u32 creation_allocations = 0;

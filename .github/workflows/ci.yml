@@ -67,7 +67,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            clang cmake ninja-build pkg-config binutils gdb lldb \
+            clang cmake ninja-build pkg-config binutils elfutils gdb lldb \
             libwayland-dev libxkbcommon-dev libx11-dev libxcursor-dev libxi-dev libxfixes-dev \
             libvulkan-dev mesa-vulkan-drivers
 

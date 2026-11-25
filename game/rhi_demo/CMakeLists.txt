@@ -24,7 +24,9 @@ if(APPLE)
   # A Mac without a Metal 3 GPU (a VM, an older Mac): auto finds no backend and says why, which skips as no GPU does elsewhere.
   string(APPEND RHI_NO_GPU "|backend is not built for macOS|this Mac has no Metal device|no Metal device of the Mac2 family")
 endif()
-set(RHI_NEEDS_DEVICE_MEMORY "${RHI_NO_GPU}")
+# A software Vulkan device (llvmpipe, lavapipe: the log says "(cpu)") allocates in its own pattern, so the "fail allocation N" tests
+# cannot tell what they injected: they skip there.
+set(RHI_NEEDS_DEVICE_MEMORY "${RHI_NO_GPU}|\\(cpu\\) is suitable")
 rhi_demo_expect(rhi_demo_device_loss_screenshot 3 "the GPU device was lost" "${RHI_NO_GPU}"
   --screenshot ${RHI_DEMO_SHOT} --frames 5 --inject-device-loss 3)
 # A lost device also leaves a trace of where it was noticed (an ensure, once), and the frame still ends as lost (exit 3).

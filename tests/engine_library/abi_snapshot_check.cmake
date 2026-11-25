@@ -6,6 +6,7 @@
 #     regenerate the snapshot (the target `engine_abi_snapshot_update`).
 #   - anything else (a removed or changed line, a lower or equal minor, another major): fail, naming the lines.
 # Arguments: -DGENERATOR=<program> -DSNAPSHOT=<file>.
+cmake_minimum_required(VERSION 3.20)  # IN_LIST is an operator only with policy CMP0057 NEW (CMake 3.28 defaults to OLD in a -P script)
 execute_process(COMMAND "${GENERATOR}" OUTPUT_VARIABLE generated RESULT_VARIABLE rc)
 if(NOT rc EQUAL 0)
   message(FATAL_ERROR "abi_snapshot: the generator failed (${rc})")

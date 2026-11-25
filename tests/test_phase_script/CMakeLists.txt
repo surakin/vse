@@ -204,7 +204,9 @@ foreach(case "plain|--flavor;plain;--jobs;7|--parallel 7 --target engine_tests_p
   list(GET parts 5 expect)
   add_test(NAME test_phase_script_build_plan_${name}
     COMMAND ${BASH_PROGRAM} ${TEST_PHASE_SCRIPT} --dry-run --build-dir ${CMAKE_BINARY_DIR} 0 ${args})  # phase 0 has every flavor
-  set_tests_properties(test_phase_script_build_plan_${name} PROPERTIES PASS_REGULAR_EXPRESSION "would build: [^\n]* ${expect}")
+  # A tree that never built the flavor (a plain-only tree, such as CI's) has no tests of it: the script says so and the test skips.
+  set_tests_properties(test_phase_script_build_plan_${name} PROPERTIES PASS_REGULAR_EXPRESSION "would build: [^\n]* ${expect}"
+    SKIP_REGULAR_EXPRESSION "contains no tests; nothing ran")
   list(APPEND PHASE_SCRIPT_TESTS test_phase_script_build_plan_${name})
 endforeach()
 # The long-test warning after a run (Day 3): over 30 s plain or 60 s sanitized, without the soak label. The fixture's soak test

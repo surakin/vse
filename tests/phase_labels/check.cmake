@@ -9,6 +9,7 @@
 # (clang-cl has no ASan flavor yet, Phase 13 Day 150) is not demanded.
 # CHECK_UNUSED also fails on a map line that matches no test or file. Both are for the real build, not the fixtures.
 # CURRENT_PHASE_FILE (with SIDE_PHASES_FILE) fails on a map phase above the current phase that is not a side phase (Phase 21 Day 286).
+cmake_minimum_required(VERSION 3.20)  # IN_LIST is an operator only with policy CMP0057 NEW (CMake 3.28 defaults to OLD in a -P script)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/EnginePhaseMap.cmake)
 
 # Every test of the build, read from one `ctest -N -V` listing (maintenance "shorter test runs", Day 4: one listing per phase and
@@ -22,10 +23,16 @@ endif()
 string(REPLACE ";" "," listing "${listing}")  # a name with ';' would split into several list elements
 string(REPLACE "\n" ";" listing_lines "${listing}")
 set(all_tests "")
+set(unbuilt_flavors "")
 set(pending_labels "")
 foreach(line IN LISTS listing_lines)
   if(line MATCHES "^Labels: (.*)$")
     string(REPLACE " " ";" pending_labels "${CMAKE_MATCH_1}")
+  elseif(line MATCHES "^ *Test +#([0-9]+): (.*)_(asan|tsan)_NOT_BUILT(-[0-9a-f]+)?$")
+    # Catch2's stand-in for a sanitizer flavor's executable that was never built (a plain-only tree): not a test, and the flavor is
+    # not built in this tree, so it is not asked for its tests below.
+    list(APPEND unbuilt_flavors ${CMAKE_MATCH_3})
+    set(pending_labels "")
   elseif(line MATCHES "^ *Test +#([0-9]+): (.*)$")
     list(APPEND all_tests "${CMAKE_MATCH_1}: ${CMAKE_MATCH_2}")
     set(labels_${CMAKE_MATCH_1} "${pending_labels}")
@@ -99,6 +106,10 @@ if(CHECK_FLAVORS)
     string(REPLACE "," ";" built "${BUILT_FLAVORS}")
   else()
     set(built plain asan tsan)
+  endif()
+  if(unbuilt_flavors)
+    list(REMOVE_DUPLICATES unbuilt_flavors)
+    list(REMOVE_ITEM built ${unbuilt_flavors})
   endif()
   file(STRINGS "${MAP}" flavor_lines REGEX "^flavors[ \t]")
   set(keys "")

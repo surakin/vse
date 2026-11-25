@@ -1,6 +1,7 @@
 # Checks that the texture files committed under assets/ are exactly what renderer_demo_mint writes, and that minting twice gives
 # the same bytes (minting is deterministic). Run as:
 #   cmake -DMINT=<renderer_demo_mint> -DASSETS=<assets dir> -DWORK=<scratch dir> -P check_assets.cmake
+cmake_minimum_required(VERSION 3.20)  # IN_LIST is an operator only with policy CMP0057 NEW (CMake 3.28 defaults to OLD in a -P script)
 file(REMOVE_RECURSE ${WORK})
 file(MAKE_DIRECTORY ${WORK}/a ${WORK}/b)
 foreach(run a b)

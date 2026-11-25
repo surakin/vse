@@ -8,6 +8,7 @@
 # failing (the instance-index semantic is a known Phase 13 gap). The Metal source is built with the Metal target define, and on
 # a Mac METAL_MINT (tools/metal_mint, Phase 21 Day 299) compiles every key's Metal source with the driver and loads the result.
 # See README.md, "Other targets".
+cmake_minimum_required(VERSION 3.20)  # IN_LIST is an operator only with policy CMP0057 NEW (CMake 3.28 defaults to OLD in a -P script)
 include(${SHADER_DIR}/names.cmake)
 # Shaders known not to compile to a target, with the reason; the test fails if one of these starts to compile (remove it from
 # the list) or if any other shader does not. Empty since Phase 21 Day 299 (fill.comp and saxpy.comp take their element count as

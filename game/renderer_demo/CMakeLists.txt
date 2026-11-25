@@ -34,7 +34,8 @@ if(APPLE)
   # A Mac without a Metal 3 GPU (a VM, an older Mac): auto finds no backend and says why, which skips as no GPU does elsewhere.
   string(APPEND RENDERER_NO_GPU "|backend is not built for macOS|this Mac has no Metal device|no Metal device of the Mac2 family")
 endif()
-set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}")
+# A software Vulkan device allocates in its own pattern (see game/rhi_demo/CMakeLists.txt): the injected-failure test skips there.
+set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}|\\(cpu\\) is suitable")
 # A normal offscreen run writes the picture and says how much it drew.
 renderer_demo_expect(renderer_demo_screenshot 0 "wrote .*renderer_demo_screenshot.ppm \\(540 objects, [0-9]+ point lights" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --validation)
