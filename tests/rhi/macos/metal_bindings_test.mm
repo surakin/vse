@@ -106,7 +106,7 @@ TEST_CASE("A minted Metal library carries its slot table into the shader descrip
 TEST_CASE("Metal slots come from the library's table matched against the layouts", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_bindings_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const BindGroupLayoutHandle layout = FragmentLayout(*device);
     REQUIRE(layout.IsValid());
     MetalStageSlots slots;
@@ -131,7 +131,7 @@ TEST_CASE("Metal slots come from the library's table matched against the layouts
 TEST_CASE("A pipeline layout that disagrees with the library's slots is rejected with the reason", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_bindings_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalStageSlots slots;
     char error[256] = {};
     // The layout lacks the texture the shader samples.
@@ -203,7 +203,7 @@ TEST_CASE("The Metal binder skips slots that already hold the resource, and star
           "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_bindings_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalDevice& metal = AsMetal(*device);
     const BindGroupLayoutHandle layout = FragmentLayout(*device);
     const Resources r = MakeResources(*device);
@@ -293,7 +293,7 @@ TEST_CASE("A slot table listed out of binding order maps sorted and binds every 
     // The binder finds a group's resource in a stage's refs by a binary search, so MapStageSlots must sort them by
     // (set, binding) whatever order the library's table lists them in.
     DevicePtr device = CreateDevice(MetalInfo("metal_bindings_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalDevice& metal = AsMetal(*device);
     const BindGroupLayoutHandle layout = FragmentLayout(*device);
     const Resources r = MakeResources(*device);
@@ -347,7 +347,7 @@ TEST_CASE("A slot table listed out of binding order maps sorted and binds every 
 TEST_CASE("Equal Metal sampler descriptions share one sampler until the last is destroyed", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_bindings_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     SamplerDesc d;
     d.min_filter = FilterMode::Nearest;
     d.address_u = AddressMode::ClampToBorder;
@@ -377,7 +377,7 @@ TEST_CASE("Metal bind groups validate their resources, hold them by handle, and 
           "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_bindings_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalDevice& metal = AsMetal(*device);
     const BindGroupLayoutHandle layout = FragmentLayout(*device);
     Resources r = MakeResources(*device);

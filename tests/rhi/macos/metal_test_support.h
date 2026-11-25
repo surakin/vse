@@ -24,6 +24,36 @@ inline DeviceCreateInfo MetalInfo(const char* application = "metal_test")
     return info;
 }
 
+// True when this Mac has a Metal device the backend accepts (the Mac2 family and Metal 3). A virtual machine, as on a
+// hosted runner, has none: the tests that need a device skip there, like the Vulkan ones with no driver.
+inline bool MetalPresent()
+{
+    AdapterList adapters;
+    if (!EnumerateAdapters(MetalInfo("metal_present"), &adapters))
+    {
+        return false;
+    }
+    for (u32 i = 0; i < adapters.count; ++i)
+    {
+        if (adapters.items[i].suitable)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// REQUIRE for the first device a test makes: skips instead of failing when the Mac has no usable Metal device.
+#define METAL_REQUIRE_DEVICE(device)                                                                                   \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(device) && !::vse::rhi::metal::test::MetalPresent())                                                     \
+        {                                                                                                              \
+            SKIP("no Metal device of the Mac2 family supports Metal 3 here");                                          \
+        }                                                                                                              \
+        REQUIRE(device);                                                                                               \
+    } while (false)
+
 // A shader of `stage` from a minted blob set's Metal library (with its entry and slot table).
 inline ShaderHandle MetalShader(Device& device, const ShaderBlobSet& set, ShaderStage stage)
 {

@@ -213,6 +213,7 @@ TEST_CASE("air absorption: the voice's low-pass rounds a step by the coefficient
 
 TEST_CASE("doppler: the flyby renders the committed hash (a same-build regression check)", "[audio][doppler][hash]")
 {
+    AUDIO_SKIP_WITHOUT_COMMITTED_HASH();
     DpRig rig;
     rig.world.Create(AudioListener(), DpAt(0, 0, 0));
     const ecs::Entity e = rig.world.Create(DpSource(DpClip(48000, true)), DpAt(-60.0f, 0, 8.0f));

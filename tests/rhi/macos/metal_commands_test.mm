@@ -144,7 +144,7 @@ using namespace metal_commands_test;
 TEST_CASE("A Metal pass clears and draws, and a strip restarts at the all-ones index", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     // Two red triangles in a strip with a restart between: the top-left and bottom-right corners (y down: the
     // projection's flip, ENGINE_CLIP).
     const f32 vertices[6][5] = {{-1, -1, 1, 0, 0}, {0, -1, 1, 0, 0}, {-1, 0, 1, 0, 0},
@@ -196,7 +196,7 @@ TEST_CASE("A Metal pass clears and draws, and a strip restarts at the all-ones i
 TEST_CASE("A Metal 16-bit index draw may start at an odd index", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const f32 vertices[3][5] = {{-1, -1, 1, 0, 0}, {0, -1, 1, 0, 0}, {-1, 0, 1, 0, 0}};
     const u16 indices[4] = {7, 0, 1, 2};  // index 0 is out of range: drawn, it would show
     const BufferHandle vb = Buffer(*device, sizeof(vertices), BufferUsage::Vertex | BufferUsage::CopyDst);
@@ -238,7 +238,7 @@ TEST_CASE("Metal dispatches at the minted threadgroup, and state is applied agai
           "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const BufferHandle out = Buffer(*device, 256 * 4,
                                     BufferUsage::Storage | BufferUsage::CopySrc | BufferUsage::CopyDst);
     const BufferHandle copy = Buffer(*device, 256 * 4, BufferUsage::CopyDst | BufferUsage::CopySrc);
@@ -285,7 +285,7 @@ TEST_CASE("Metal dispatches at the minted threadgroup, and state is applied agai
 TEST_CASE("Metal lists recorded on two threads run in the order they are submitted", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     Array<u32, 64> source = {};
     for (u32 i = 0; i < 64; ++i)
     {
@@ -330,7 +330,7 @@ TEST_CASE("Metal lists recorded on two threads run in the order they are submitt
 TEST_CASE("Metal generates mips by blit, and debug labels stay balanced across encoder splits", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     TextureDesc td;
     td.width = 8;
     td.height = 8;
@@ -381,7 +381,7 @@ TEST_CASE("Metal generates mips by blit, and debug labels stay balanced across e
 TEST_CASE("A Metal list that failed while recording is refused, and nothing of its batch runs", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const BufferHandle a = Buffer(*device, 256, BufferUsage::CopySrc | BufferUsage::CopyDst);
     const BufferHandle gone = Buffer(*device, 256, BufferUsage::CopySrc | BufferUsage::CopyDst);
     device->DestroyBuffer(gone);
@@ -402,7 +402,7 @@ TEST_CASE("A Metal list that failed while recording is refused, and nothing of i
 TEST_CASE("A compute pipeline bound before a Metal pass is still bound after it", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const BufferHandle out = Buffer(*device, 256 * 4, BufferUsage::Storage | BufferUsage::CopySrc);
     Fill fill(*device, out);
     const TextureHandle target = Target(*device);
@@ -436,7 +436,7 @@ TEST_CASE("A pass that binds a graphics pipeline and groups leaves the compute p
     // The end-of-phase review (Day 312): compute and graphics shared one bound state, so a pass's pipeline and groups
     // replaced the compute ones; Vulkan and Direct3D 12 keep a bind point each.
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const BufferHandle out = Buffer(*device, 256 * 4, BufferUsage::Storage | BufferUsage::CopySrc);
     const BufferHandle other = Buffer(*device, 256 * 4, BufferUsage::Storage | BufferUsage::CopySrc);
     Fill fill(*device, out);
@@ -481,7 +481,7 @@ TEST_CASE("A failed Metal list still pairs its passes and labels, and seventeen 
           "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const BufferHandle a = Buffer(*device, 256, BufferUsage::CopySrc | BufferUsage::CopyDst);
     const BufferHandle gone = Buffer(*device, 256, BufferUsage::CopySrc | BufferUsage::CopyDst);
     device->DestroyBuffer(gone);

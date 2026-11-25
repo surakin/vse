@@ -226,10 +226,11 @@ struct Rig
 #endif
         info.callbacks = &callbacks;
         const engine_status created = api->surface_create(engine, &info, &surface);
-        if (ENGINE_PLATFORM_MACOS)
+        if (ENGINE_PLATFORM_MACOS && created != ENGINE_ERROR_UNSUPPORTED)
         {
-            REQUIRE(created ==
-                    ENGINE_OK);  // every Mac has Metal: a refused Cocoa surface is a defect, not a reason to skip
+            // A refused Cocoa surface is a defect, not a reason to skip: only "unsupported" (a Mac with no Metal 3 GPU
+            // of the Mac2 family, such as a virtual machine) is.
+            REQUIRE(created == ENGINE_OK);
         }
         if (created != ENGINE_OK)
         {

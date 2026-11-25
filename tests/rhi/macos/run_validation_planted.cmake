@@ -4,6 +4,11 @@
 # the validation variables come from the test's ENVIRONMENT.
 execute_process(COMMAND "${PROGRAM}" RESULT_VARIABLE result OUTPUT_VARIABLE out ERROR_VARIABLE err)
 message("${out}${err}")
+if("${out}${err}" MATCHES "no Metal device")
+  # A Mac with no Metal 3 GPU of the Mac2 family (a virtual machine): nothing to validate. The test's SKIP_REGULAR_EXPRESSION reads this.
+  message("metal_validation_planted: skipped: no Metal device")
+  return()
+endif()
 if(result STREQUAL "0")
   message(FATAL_ERROR "metal_validation_planted exited 0: the planted call was not caught")
 endif()

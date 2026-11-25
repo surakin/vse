@@ -423,6 +423,7 @@ u64 SnHash(const Vector<f32>& samples)
 TEST_CASE("Snapshot: the buses scene renders the committed hash and its per-block levels, at any callback size",
           "[audio][snapshot][scene]")
 {
+    AUDIO_SKIP_WITHOUT_COMMITTED_HASH();
     SnScene a;
     SnTopology(a);
     const Vector<f32> whole = SnRun(a, 0, 60);
@@ -478,6 +479,7 @@ TEST_CASE("Snapshot: the buses scene renders the committed hash and its per-bloc
 
 TEST_CASE("Snapshot: a thousand voices render the committed hash", "[audio][snapshot][scene]")
 {
+    AUDIO_SKIP_WITHOUT_COMMITTED_HASH();
     const AudioClipPtr tone = SnClip("tone", 4000, SnTone, 100, 3900);
     Mixer mixer;
     MixerConfig config;

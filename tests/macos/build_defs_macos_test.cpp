@@ -15,10 +15,9 @@ TEST_CASE("build_defs.h selects macOS on the macOS build", "[build_defs][macos]"
     CHECK(ENGINE_PLATFORM_ANDROID == 0);
 }
 
-TEST_CASE("build_defs.h selects x86-64 and Clang with Apple clang", "[build_defs][macos]")
+TEST_CASE("build_defs.h selects the processor and Clang with Apple clang", "[build_defs][macos]")
 {
-    CHECK(ENGINE_ARCH_X64 == 1);  // the macOS build is x86-64 only until the arm64 compile check (Phase 21 Day 311)
-    CHECK(ENGINE_ARCH_ARM64 == 0);
+    CHECK(ENGINE_ARCH_X64 + ENGINE_ARCH_ARM64 == 1);  // exactly one: x86-64 (Intel Mac) or arm64 (Apple silicon)
     CHECK(ENGINE_COMPILER_CLANG == 1);
     CHECK(ENGINE_COMPILER_GCC == 0);
     CHECK(ENGINE_COMPILER_MSVC == 0);

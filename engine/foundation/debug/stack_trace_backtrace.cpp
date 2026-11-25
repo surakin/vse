@@ -5,6 +5,8 @@
 #include "debug/failure_hooks.h"
 
 #include "debug/module_list.h"
+#include "build_defs.h"
+#include "debug/compiler.h"
 
 #include <backtrace.h>
 
@@ -13,6 +15,10 @@
 #include <cxxabi.h>
 #include "sync/mutex.h"
 #include "cstr/mem_ops.h"
+
+#if ENGINE_PLATFORM_MACOS && ENGINE_ARCH_ARM64
+#include <pthread.h>
+#endif
 
 namespace vse::debug
 {
@@ -241,9 +247,66 @@ void ReloadDebugModules()
     g_trace_state.Store(created, MemoryOrder::Release);  // the old state stays allocated: a reader may be using it
 }
 
-bool CaptureStackTrace(StackTrace& trace, u32 skip_frames)
+#if ENGINE_PLATFORM_MACOS && ENGINE_ARCH_ARM64
+namespace
+{
+
+// The frame-pointer walk. Apple's arm64 ABI requires every frame to keep the frame pointer (x29) pointing at a pair
+// {caller's x29, return address}, so the chain can be followed without unwind tables. The unwinder libbacktrace calls
+// (`_Unwind_Backtrace`) returned no frame at all on Apple silicon (a hosted runner, the first arm64 run), so the
+// capture does not use it there. Each link is checked to lie inside the current thread's stack, to be aligned and to
+// move up, so a corrupt chain ends the walk instead of faulting. Signal-safe: no allocation, no lock.
+
+// SIGNAL-SAFE-BEGIN
+ENGINE_NOINLINE void WalkFramePointers(StackTrace& trace, u32 skip_frames)
+{
+    const pthread_t self = ::pthread_self();
+    const uintptr_t high = reinterpret_cast<uintptr_t>(::pthread_get_stackaddr_np(self));
+    const uintptr_t low = high - static_cast<uintptr_t>(::pthread_get_stacksize_np(self));
+    uintptr_t fp = reinterpret_cast<uintptr_t>(__builtin_frame_address(0));
+    // The first link's return address is in CaptureStackTrace, which is skipped like the library's own frame.
+    u32 skipped = 0;
+    const u32 to_skip = skip_frames + 1;
+    while (fp >= low && fp + 2 * sizeof(uintptr_t) <= high && (fp & 0xF) == 0)
+    {
+        const uintptr_t* link = reinterpret_cast<const uintptr_t*>(fp);
+        const uintptr_t next = link[0];
+        const uintptr_t pc = link[1];
+        if (pc == 0)
+        {
+            break;
+        }
+        if (skipped < to_skip)
+        {
+            ++skipped;
+        }
+        else
+        {
+            CaptureContext ctx{&trace};
+            if (CaptureFrame(&ctx, pc) != 0)
+            {
+                break;
+            }
+        }
+        if (next <= fp)
+        {
+            break;
+        }
+        fp = next;
+    }
+}
+// SIGNAL-SAFE-END
+
+}  // namespace
+#endif
+
+ENGINE_NOINLINE bool CaptureStackTrace(StackTrace& trace, u32 skip_frames)
 {
     trace = StackTrace();
+#if ENGINE_PLATFORM_MACOS && ENGINE_ARCH_ARM64
+    WalkFramePointers(trace, skip_frames);
+    return trace.count > 0;
+#else
     backtrace_state* state = State();
     if (state == nullptr)
     {
@@ -253,6 +316,7 @@ bool CaptureStackTrace(StackTrace& trace, u32 skip_frames)
     // One more frame to skip: this function itself.
     backtrace_simple(state, static_cast<int>(skip_frames) + 1, &CaptureFrame, &TraceError, &ctx);
     return trace.count > 0;
+#endif
 }
 
 usize ResolveStackTrace(const StackTrace& trace, FrameInfo* out, usize capacity)

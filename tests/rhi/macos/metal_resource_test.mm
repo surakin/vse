@@ -154,7 +154,7 @@ TEST_CASE(
     "[rhi][metal][gpu]")
 {
     DevicePtr device = MakeMetal();
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalDevice& metal = AsMetal(*device);
     CHECK(metal.ManagedStorage() == !metal.Mtl().hasUnifiedMemory);
     CHECK(metal.StorageModeFor(MemoryLocation::GpuOnly) == MTLStorageModePrivate);
@@ -229,7 +229,7 @@ TEST_CASE(
 TEST_CASE("Metal buffers round-trip through uploads, mappings and readbacks", "[rhi][metal][gpu]")
 {
     DevicePtr device = MakeMetal();
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     BufferRoundTrips(*device);
     CHECK(device->Resources().buffers == 0);
 }
@@ -238,7 +238,7 @@ TEST_CASE("The forced Managed storage mode gives the same bytes on every buffer 
 {
     ForcedManaged forced;
     DevicePtr device = MakeMetal("metal_resource_test managed");
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     REQUIRE(AsMetal(*device).ManagedStorage());
     BufferRoundTrips(*device);
     CHECK(device->Resources().buffers == 0);
@@ -247,7 +247,7 @@ TEST_CASE("The forced Managed storage mode gives the same bytes on every buffer 
 TEST_CASE("Every Metal texture format round-trips a level through upload and readback", "[rhi][metal][gpu]")
 {
     DevicePtr device = MakeMetal();
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     u32 tried = 0;
     for (usize f = 1; f < static_cast<usize>(Format::Count); ++f)
     {
@@ -303,7 +303,7 @@ TEST_CASE("A Metal texture upload honours the caller's row pitch, and array laye
           "[rhi][metal][gpu]")
 {
     DevicePtr device = MakeMetal();
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     TextureDesc td;
     td.width = 13;
     td.height = 7;
@@ -355,7 +355,7 @@ TEST_CASE("A Metal texture upload honours the caller's row pitch, and array laye
 TEST_CASE("A texture larger than one staging chunk uploads in bands", "[rhi][metal][gpu]")
 {
     DevicePtr device = MakeMetal();
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     TextureDesc td;
     td.width = 2048;
     td.height = 2600;  // 2048 x 4 x 2600 = 21 MB: two bands
@@ -375,7 +375,7 @@ TEST_CASE("A texture larger than one staging chunk uploads in bands", "[rhi][met
 TEST_CASE("Destroyed Metal resources go when their frames finish, and the counts return to zero", "[rhi][metal][gpu]")
 {
     DevicePtr device = MakeMetal();
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const ResourceCounts before = device->Resources();
     CHECK(before.internal_objects == 1);  // the staging ring
     CHECK(before.device_memory_bytes >= (64ull << 20));
@@ -419,7 +419,7 @@ TEST_CASE("An injected Metal allocation failure gives invalid handles, and a lea
     DeviceCreateInfo info = MetalInfo("metal_resource_test faults");
     info.faults.fail_allocations_from = 3;  // the staging ring is the first allocation
     DevicePtr device = CreateDevice(info);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const bool was = LogRhi.Enabled();
     LogRhi.SetEnabled(false);
     const BufferHandle ok = MakeBuffer(*device, 256, BufferUsage::Vertex, MemoryLocation::GpuOnly);

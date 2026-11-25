@@ -27,7 +27,8 @@ A failed job uploads `<build>/Testing/Temporary/`. No sanitizer flavors, no wind
 - [x] `KNOWN-ISSUES.md`: the workflow has not run; what a hosted runner cannot cover
 - [x] First run on GitHub (Linux 88 failures: fixed except the hinge hash; macOS had no runner; see `KNOWN-ISSUES.md`)
 - [x] Second and third runs: Linux down to the hinge hash (constant not compared on a runner), Windows failures fixed except the two crash-report tests (see `KNOWN-ISSUES.md`)
-- [ ] Fourth run: Windows crash-report tests, macOS arm64
+- [x] macOS arm64 failures of the fourth run: fixes written (see `KNOWN-ISSUES.md`), unrun on arm64
+- [ ] Fifth run: Windows crash-report tests, macOS arm64
 - [ ] (original) First run on GitHub, and the fixes it needs (the images' compilers, the Vulkan SDK action, tests that need a GPU, tests that fail on arm64): recorded in `KNOWN-ISSUES.md` as they appear
 
 **Done:** the workflow file parses as YAML and uses only presets and scripts that exist. It has not run: the first push to GitHub is the first test.

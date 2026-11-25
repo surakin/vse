@@ -6,6 +6,11 @@
 execute_process(COMMAND "${PROGRAM}" "Resets in a loop on a real device*" RESULT_VARIABLE result OUTPUT_VARIABLE out
                 ERROR_VARIABLE err)
 set(all "${out}${err}")
+if(NOT all MATCHES "test thread" AND all MATCHES "skipped|no Metal device|Metal device of the Mac2 family")
+  # A Mac with no Metal 3 GPU of the Mac2 family (a virtual machine): the reset loop skipped itself. The test's SKIP_REGULAR_EXPRESSION reads this.
+  message("metal_autorelease_pools: skipped: no Metal device")
+  return()
+endif()
 if(NOT result STREQUAL "0")
   message(FATAL_ERROR "the reset loop failed (${result}):\n${all}")
 endif()

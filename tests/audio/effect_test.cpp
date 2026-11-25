@@ -517,6 +517,7 @@ TEST_CASE("Inserts: a reverb tail keeps ringing after the voice has ended", "[au
 
 TEST_CASE("Inserts: the echo and the reverb scenes render the committed hashes", "[audio][effect][hash]")
 {
+    AUDIO_SKIP_WITHOUT_COMMITTED_HASH();
     u64 hashes[2] = {};
     for (u32 scene = 0; scene < 2; ++scene)
     {

@@ -118,6 +118,7 @@ TEST_CASE("vorbis decode: the reference table of per-block levels", "[audio][vor
 
 TEST_CASE("vorbis decode: the decode hash of each fixture is the same-build baseline", "[audio][vorbis][decode][hash]")
 {
+    AUDIO_SKIP_WITHOUT_COMMITTED_HASH();
     // A regression check for one build (Clang, Linux): it changes with the compiler, the libvorbis version or the
     // fixtures, and is then re-taken (the cross-build check is the RMS table above).
     const char* names[] = {"sine_mono.ogg", "noise_mono.ogg", "stereo_mix.ogg", "transient_mix.ogg", "surround51.ogg"};

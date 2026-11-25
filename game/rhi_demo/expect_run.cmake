@@ -17,6 +17,15 @@ if(cmd_text MATCHES "--rhi (vulkan|dx12)( |$)")
     cmake_language(EXIT 77)
   endif()
 endif()
+# A Mac with no Metal 3 GPU of the Mac2 family (a virtual machine, as on a hosted runner; an older Mac): the engine says so, and
+# every program that picks Metal ends the same way. Skipped like a missing Vulkan device.
+if(all MATCHES "no Metal device of the Mac2 family|this Mac has no Metal device")
+  if("$ENV{ENGINE_RHI_REQUIRE_GPU}" MATCHES "^1")
+    message(FATAL_ERROR "no Metal device, but ENGINE_RHI_REQUIRE_GPU is set:\n${all}")
+  endif()
+  message(STATUS "skipped: no Metal device")
+  cmake_language(EXIT 77)
+endif()
 if(SKIP_IF_OUT AND all MATCHES "${SKIP_IF_OUT}")
   if("$ENV{ENGINE_RHI_REQUIRE_GPU}" MATCHES "^1") # same rule as gpu_test::GpuRequired
     message(FATAL_ERROR "no Vulkan device, but ENGINE_RHI_REQUIRE_GPU is set:\n${all}")

@@ -122,7 +122,7 @@ TEST_CASE("On Metal a render graph's writing pass and the pass that samples it a
           "[rhi][metal][gpu][graph]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_graph_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     Scene scene;
     REQUIRE(scene.Create(device.Get()));
     TransientPool pool(device.Get(), TransientPoolDesc{});

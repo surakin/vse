@@ -440,7 +440,7 @@ TEST_CASE("The Metal pipeline cache file's header refuses another format, adapte
 TEST_CASE("Every committed shader forms a Metal pipeline with the layouts its reflection gives", "[rhi][metal][gpu]")
 {
     DevicePtr device = MakePipelineDevice(nullptr, false);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     Everything all;
     const u32 count = all.Make(*device);
     CHECK(count >= 30);
@@ -489,7 +489,7 @@ TEST_CASE("Equal Metal depth-stencil descriptions share one state, and compute p
           "[rhi][metal][gpu]")
 {
     DevicePtr device = MakePipelineDevice(nullptr, false);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalDevice& metal = AsMetal(*device);
     id<MTLDepthStencilState> a = metal.DepthStencilState(true, true, CompareOp::Less);
     CHECK(a != nil);
@@ -528,7 +528,7 @@ TEST_CASE("Equal Metal depth-stencil descriptions share one state, and compute p
 TEST_CASE("Metal refuses SPIR-V, wrong stages and a layout that lacks a shader's binding", "[rhi][metal][gpu]")
 {
     DevicePtr device = MakePipelineDevice(nullptr, false);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const bool was = LogRhi.Enabled();
     LogRhi.SetEnabled(false);
     ShaderDesc spirv;
@@ -584,7 +584,7 @@ TEST_CASE("The Metal pipeline cache round-trips, and a damaged or foreign file i
     u32 count = 0;
     {
         DevicePtr device = MakePipelineDevice(native.CStr());
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         MetalDevice& metal = AsMetal(*device);
         REQUIRE(metal.PipelineCache().GetStats().enabled);
         CHECK_FALSE(metal.PipelineCache().GetStats().loaded);
@@ -599,7 +599,7 @@ TEST_CASE("The Metal pipeline cache round-trips, and a damaged or foreign file i
     REQUIRE(ReadAll(path, &saved));
     {
         DevicePtr device = MakePipelineDevice(native.CStr());
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         MetalDevice& metal = AsMetal(*device);
         CHECK(metal.PipelineCache().GetStats().loaded);
         Everything all;
@@ -634,7 +634,7 @@ TEST_CASE("The Metal pipeline cache round-trips, and a damaged or foreign file i
         LogRhi.SetEnabled(false);
         DevicePtr device = MakePipelineDevice(native.CStr());
         LogRhi.SetEnabled(was);
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         MetalDevice& metal = AsMetal(*device);
         CHECK(metal.PipelineCache().GetStats().discarded);
         CHECK_FALSE(metal.PipelineCache().GetStats().loaded);
@@ -658,7 +658,7 @@ TEST_CASE("The Metal pipeline cache creates its directory when it is not there y
     char path[640] = {};
     {
         DevicePtr device = MakePipelineDevice(nested);
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         MetalDevice& metal = AsMetal(*device);
         REQUIRE(metal.PipelineCache().GetStats().enabled);
         FormatTo(path, sizeof(path), "%s", metal.PipelineCache().Path());
@@ -685,7 +685,7 @@ TEST_CASE("When Metal will not serialize the archive, a fresh one of the run's p
     u32 count = 0;
     {
         DevicePtr device = MakePipelineDevice(native.CStr());
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         MetalDevice& metal = AsMetal(*device);
         Everything all;
         count = all.Make(*device);
@@ -696,7 +696,7 @@ TEST_CASE("When Metal will not serialize the archive, a fresh one of the run's p
     }
     {
         DevicePtr device = MakePipelineDevice(native.CStr());
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         MetalDevice& metal = AsMetal(*device);
         CHECK(metal.PipelineCache().GetStats().loaded);
         Everything all;
@@ -716,7 +716,7 @@ TEST_CASE("While Metal's shader validation is on the pipeline archive is off, an
     io_test::TempDir dir;
     const engine_test::Text native = dir.Native();
     DevicePtr device = MakePipelineDevice(native.CStr());
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalDevice& metal = AsMetal(*device);
     CHECK_FALSE(metal.PipelineCache().GetStats().enabled);  // asked for, left off (Metal stops inside it otherwise)
     Everything all;

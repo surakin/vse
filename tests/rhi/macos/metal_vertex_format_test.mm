@@ -37,7 +37,7 @@ using namespace metal_vertex_format_test;
 TEST_CASE("Metal: packed float-class vertex formats decode to the expected color", "[rhi][metal][gpu][vertexformat]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_vertex_format_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     // (1.0, 0.5, 0.0) in each format.
     const Case cases[] = {
         {VertexFormat::Float16x2, {0x3C00, 0x3800, 0, 0}, {255, 128, 0}},

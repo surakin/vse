@@ -6,7 +6,13 @@
 # CMAKE_OSX_DEPLOYMENT_TARGET; arm64 cross-built on an Intel Mac, compile-only).
 cmake_minimum_required(VERSION 3.20)
 
-option(ENGINE_LUAJIT_JIT "Build LuaJIT with its JIT compiler (OFF: interpreter only, LUAJIT_DISABLE_JIT; Phase 27 Day 470)" ON)
+# The JIT is off by default on Apple silicon: the first run of the arm64 build (a hosted runner) ended the one test that uses a JIT state in a
+# segmentation fault, every interpreter-only state passing (KNOWN-ISSUES.md). Ask for it with -DENGINE_LUAJIT_JIT=ON once it is checked there.
+set(_engine_luajit_jit_default ON)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+  set(_engine_luajit_jit_default OFF)
+endif()
+option(ENGINE_LUAJIT_JIT "Build LuaJIT with its JIT compiler (OFF: interpreter only, LUAJIT_DISABLE_JIT; Phase 27 Day 470)" ${_engine_luajit_jit_default})
 
 # The target processor: CMAKE_OSX_ARCHITECTURES on macOS (one architecture per tree; CMAKE_SYSTEM_PROCESSOR is the host's there), else the system's.
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")

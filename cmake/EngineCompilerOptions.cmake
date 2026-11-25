@@ -41,6 +41,12 @@ if(NOT ENGINE_MSVC_LIKE)
   # engine/foundation/CMakeLists.txt). Apple clang has no LeakSanitizer: the asan flavor there is ASan and UBSan only, and a test must not
   # ask for detect_leaks=1, which aborts the process on macOS (KNOWN-ISSUES.md).
   set(ENGINE_PRODUCTION_COMPILE_OPTIONS -fno-exceptions -fno-rtti -fno-stack-protector)
+  if(APPLE)
+    # With -fno-exceptions, Apple clang for arm64 emits no unwind information (x86-64 does). A test's assert handler throws through
+    # engine frames, and libbacktrace's unwinder walks them: without the tables the throw ends in std::terminate and the walk
+    # finds no frame (first arm64 run, hosted runner). Asked for explicitly, the same on both processors.
+    list(APPEND ENGINE_PRODUCTION_COMPILE_OPTIONS -fasynchronous-unwind-tables)
+  endif()
   # GCC contracts a * b + c to a fused multiply-add by default (-ffp-contract=fast) and Clang does with `on` (Day 385 spike 2: the two give different
   # hashes, and so do builds with and without -march=native). Off in both, for C and C++ (and Objective-C) alike.
   set(ENGINE_FP_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX,OBJC,OBJCXX>:-ffp-contract=off>" "$<$<COMPILE_LANGUAGE:C,CXX,OBJC,OBJCXX>:-fno-fast-math>")

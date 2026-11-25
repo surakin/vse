@@ -181,6 +181,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
            -P ${CMAKE_CURRENT_SOURCE_DIR}/macos/run_validation_planted.cmake)
   set_tests_properties(metal_validation_planted PROPERTIES
     ENVIRONMENT "MTL_DEBUG_LAYER=1;MTL_DEBUG_LAYER_ERROR_MODE=assert"
+    SKIP_REGULAR_EXPRESSION "skipped: no Metal device"
     PASS_REGULAR_EXPRESSION "stopped by Metal's validation"
     FAIL_REGULAR_EXPRESSION "the planted call was not caught|validation is off")
   engine_label_tests(metal_validation_planted)
@@ -193,6 +194,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
            -P ${CMAKE_CURRENT_SOURCE_DIR}/macos/run_autorelease_pools.cmake)
   set_tests_properties(metal_autorelease_pools PROPERTIES
     ENVIRONMENT "OBJC_DEBUG_MISSING_POOLS=YES;ENGINE_RHI_PRINT_TEST_THREAD=1;ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/metal_autorelease_pools;ENGINE_TEST_SOAK=1"
+    SKIP_REGULAR_EXPRESSION "skipped: no Metal device"
     PASS_REGULAR_EXPRESSION "no Metal object autoreleased without a pool")
   engine_label_tests(metal_autorelease_pools)
 endif()

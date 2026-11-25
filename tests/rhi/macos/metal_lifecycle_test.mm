@@ -174,7 +174,7 @@ TEST_CASE("A lost Metal device ignores later submissions and is destroyed withou
 {
     DeviceCreateInfo info = MetalInfo("metal_lifecycle_test");
     DevicePtr device = CreateDevice(info);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     BufferDesc bd;
     bd.size = 1024;
     bd.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;

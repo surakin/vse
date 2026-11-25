@@ -107,7 +107,7 @@ TEST_CASE("A Metal device is created and destroyed on every suitable adapter, wi
         info.adapter = adapters.items[i].id;
         info.validation = ValidationSetting::On;
         DevicePtr device = CreateDevice(info);
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         ++made;
         CHECK(StringView(device->BackendName()) == "metal");
         CHECK(StringView(device->Adapter().id) == StringView(adapters.items[i].id));
@@ -163,7 +163,7 @@ TEST_CASE("The Metal timeline counts the signals, frames wait for their fences, 
     DeviceCreateInfo info = MetalInfo("metal_device_test");
     info.frames_in_flight = 2;
     DevicePtr device = CreateDevice(info);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalDevice& metal = AsMetal(*device);
     CHECK(metal.FramesInFlight() == 2);
     CHECK(device->WaitFence(0, 0));  // 0 is always reached
@@ -201,7 +201,7 @@ TEST_CASE("A lost Metal device answers waits at once and ignores submissions; st
     info.faults.strikes_left = &strikes;
     {
         DevicePtr device = CreateDevice(info);
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         const bool was = LogRhi.Enabled();
         LogRhi.SetEnabled(false);
         device->InjectDeviceLoss();
@@ -231,7 +231,7 @@ TEST_CASE("A frame lost at a set number marks the device lost at that BeginFrame
     DeviceCreateInfo info = MetalInfo("metal_device_test");
     info.faults.lose_device_at_frame = 3;
     DevicePtr device = CreateDevice(info);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     const bool was = LogRhi.Enabled();
     LogRhi.SetEnabled(false);
     for (int f = 1; f <= 4; ++f)
@@ -274,7 +274,7 @@ TEST_CASE("Metal pixel formats: depth is never a color target, sRGB never storag
 TEST_CASE("Metal generates mips only for filterable color formats", "[rhi][metal][gpu]")
 {
     DevicePtr device = CreateDevice(MetalInfo("metal_device_test"));
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     CHECK(device->CanGenerateMips(Format::RGBA8_UNorm));
     CHECK(device->CanGenerateMips(Format::RGBA16_Float));
     CHECK_FALSE(device->CanGenerateMips(Format::R32_UInt));  // integers are not filterable
@@ -292,7 +292,7 @@ TEST_CASE("A Metal device destroyed right after its signals outlives none of the
     for (int round = 0; round < 20; ++round)
     {
         DevicePtr device = CreateDevice(MetalInfo("metal_device_test"));
-        REQUIRE(device);
+        METAL_REQUIRE_DEVICE(device);
         MetalDevice& metal = AsMetal(*device);
         device->BeginFrame();
         {

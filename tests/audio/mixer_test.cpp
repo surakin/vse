@@ -552,6 +552,7 @@ u64 MxReferenceSceneHash(ResamplerQuality quality)
 TEST_CASE("Mixer: the reference scene renders the committed hash (a same-build regression check)",
           "[audio][mixer][hash]")
 {
+    AUDIO_SKIP_WITHOUT_COMMITTED_HASH();
     // The hash of the 40-block scene at each quality, committed on Linux with Clang (-ffp-contract=off; GCC could not
     // link the tests, see KNOWN-ISSUES.md). A compiler change that moves the bits re-commits these values; across
     // machines the tolerance check is used.

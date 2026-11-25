@@ -632,7 +632,14 @@ int main(void)
     const int wants_layer_before = WantsLayer(window);
     engine_surface_info info = InfoOf(window, NULL);
     engine_handle surface = {0};
-    CHECK_STATUS(g_api->surface_create(engine, &info, &surface), ENGINE_OK);
+    const engine_status created = g_api->surface_create(engine, &info, &surface);
+    if (created == ENGINE_ERROR_UNSUPPORTED)
+    {
+        /* No Metal 3 GPU of the Mac2 family (a virtual machine, an older Mac): nothing to present with. */
+        printf("host_cocoa: skipped: no Metal device can present to this view\n");
+        return 0;
+    }
+    CHECK_STATUS(created, ENGINE_OK);
     if (surface.value == 0)
     {
         printf("host_cocoa: no surface\n");

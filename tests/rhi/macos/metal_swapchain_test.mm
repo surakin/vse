@@ -89,7 +89,7 @@ TEST_CASE("A Metal swapchain presents into a Cocoa window, holds no drawable bet
     DeviceCreateInfo info = MetalInfo("metal_swapchain_test");
     info.window = &window;
     DevicePtr device = CreateDevice(info);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     MetalDevice& metal = AsMetal(*device);
     SwapchainDesc desc;
     Swapchain* swapchain = device->CreateSwapchain(desc);
@@ -178,7 +178,7 @@ TEST_CASE("A minimized window's Metal swapchain acquires nothing", "[rhi][metal]
     DeviceCreateInfo info = MetalInfo("metal_swapchain_test");
     info.window = &window;
     DevicePtr device = CreateDevice(info);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     Swapchain* swapchain = device->CreateSwapchain(SwapchainDesc{});
     REQUIRE(swapchain != nullptr);
     NSView* view = (__bridge NSView*)window.GetNativeInfo().display;
@@ -208,7 +208,7 @@ TEST_CASE("After an explicit Resize, a Metal swapchain follows the window again 
     info.window = &window;
     info.faults.lose_device_at_present = 3;
     DevicePtr device = CreateDevice(info);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     Swapchain* swapchain = device->CreateSwapchain(SwapchainDesc{});
     REQUIRE(swapchain != nullptr);
     CHECK(swapchain->Resize(200, 100) == SwapchainStatus::Ok);
@@ -247,7 +247,7 @@ TEST_CASE("A Metal swapchain image reads back what was rendered to it, byte for 
     DeviceCreateInfo info = MetalInfo("metal_swapchain_test");
     info.window = &window;
     DevicePtr device = CreateDevice(info);
-    REQUIRE(device);
+    METAL_REQUIRE_DEVICE(device);
     SwapchainDesc desc;
     desc.format = Format::BGRA8_UNorm;  // no sRGB encoding: the same bytes as the offscreen target
     Swapchain* swapchain = device->CreateSwapchain(desc);

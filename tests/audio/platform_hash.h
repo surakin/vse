@@ -22,4 +22,16 @@ constexpr u64 PlatformHash(u64 linux_value, u64 windows_value)
     return PlatformHash(linux_value, windows_value, linux_value);
 }
 
+/// Skips the running test on a build that has no committed hash: the values above were taken on x86-64 machines, and
+/// Apple silicon computes other bits (libm and the processor's own rounding), so none is committed for it yet. The
+/// determinism checks of such a test (the same bits twice) run on every platform in the tests that have them.
+#define AUDIO_SKIP_WITHOUT_COMMITTED_HASH()                                                                            \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (ENGINE_PLATFORM_MACOS && ENGINE_ARCH_ARM64)                                                                \
+        {                                                                                                              \
+            SKIP("no hash is committed for macOS on arm64 (the committed ones are the x86-64 builds')");               \
+        }                                                                                                              \
+    } while (false)
+
 }  // namespace vse::audio::testing
