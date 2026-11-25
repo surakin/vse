@@ -254,7 +254,8 @@ Atomic<int> g_slow_calls{0};
 Status ResolveTestSlowCounting(StringView, u16 port, AddressFamily, EndpointSet* out)
 {
     g_slow_calls.FetchAdd(1);
-    ThisThread::SleepForMilliseconds(120);
+    ThisThread::SleepForMilliseconds(
+        400);  // long enough that a stalled hosted runner still has it running when the others time out
     out->Add(Endpoint(Address::V4(10, 0, 0, 3), port));
     return Status::Success();
 }
@@ -296,7 +297,8 @@ TEST_CASE("A name with a zero byte is refused, and abandoned requests that have 
     }
     ResolveTestWait(*scheduler, first);
     CHECK(first.result.status.Ok());
-    ThisThread::SleepForMilliseconds(500);  // time enough for the thread to have run all three, had it not skipped them
+    ThisThread::SleepForMilliseconds(
+        1300);  // time enough for the thread to have run all three, had it not skipped them
     resolver.Shutdown();
     CHECK(g_slow_calls.Load() == 1);
 }
