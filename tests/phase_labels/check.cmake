@@ -28,10 +28,10 @@ set(pending_labels "")
 foreach(line IN LISTS listing_lines)
   if(line MATCHES "^Labels: (.*)$")
     string(REPLACE " " ";" pending_labels "${CMAKE_MATCH_1}")
-  elseif(line MATCHES "^ *Test +#([0-9]+): (.*)_(asan|tsan)_NOT_BUILT(-[0-9a-f]+)?$")
+  elseif(line MATCHES "^ *Test +#([0-9]+): .*_(asan|tsan)[a-z_]*_NOT_BUILT(-[0-9a-f]+)?$")
     # Catch2's stand-in for a sanitizer flavor's executable that was never built (a plain-only tree): not a test, and the flavor is
     # not built in this tree, so it is not asked for its tests below.
-    list(APPEND unbuilt_flavors ${CMAKE_MATCH_3})
+    list(APPEND unbuilt_flavors ${CMAKE_MATCH_2})
     set(pending_labels "")
   elseif(line MATCHES "^ *Test +#([0-9]+): (.*)$")
     list(APPEND all_tests "${CMAKE_MATCH_1}: ${CMAKE_MATCH_2}")

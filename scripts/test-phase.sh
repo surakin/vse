@@ -374,7 +374,7 @@ if [ "$soak" = auto ] && [ "$mode" != all ]; then
 fi
 [ -z "$exclude" ] || flavor_sel+=(-LE "^(${exclude})\$")
 # A plain run leaves out the stand-ins Catch2 registers for the sanitizer executables a plain-only tree never built (they carry no labels).
-[ "$flavor" != plain ] || flavor_sel+=(-E '_(asan|tsan)_NOT_BUILT')
+[ "$flavor" != plain ] || flavor_sel+=(-E '_(asan|tsan)[a-z_]*_NOT_BUILT')
 
 # A phase and a sanitizer flavor are two -L options, which ctest combines with AND only from CMake 3.29 on; an older ctest uses
 # just the last one and would run every phase of the flavor while this script reports a scoped run. Refuse instead.

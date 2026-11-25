@@ -210,7 +210,14 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         {
             WARN("memory drift not checked: Metal's validation layer is on (see metal_autorelease_pools)");
         }
-        if (!Sanitized() && !metal_validation && early_low != 0 && late_low != 0)
+        // A software device (llvmpipe) keeps its render targets and caches in the process: the drift is its
+        // allocator's, not a leak (the object counts and the registry, checked at every reset, still hold).
+        const bool software = rig.host.GetDevice()->Adapter().kind == rhi::AdapterKind::Software;
+        if (software)
+        {
+            WARN("memory drift not checked: the device is a software implementation");
+        }
+        if (!Sanitized() && !metal_validation && !software && early_low != 0 && late_low != 0)
         {
             i64 allowed_kib = 8 * 1024;
 #if ENGINE_PLATFORM_WINDOWS
