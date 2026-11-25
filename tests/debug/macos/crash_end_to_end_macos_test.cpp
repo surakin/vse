@@ -203,6 +203,10 @@ TEST_CASE("macOS: an illegal instruction, a divide by zero, a bus error and an a
     for (const Case& c : cases)
     {
         INFO(c.child);
+        if (ENGINE_ARCH_ARM64 && CStrCompare(c.child, "dt_mac_divide_by_zero") == 0)
+        {
+            continue;  // an integer division by zero does not trap on arm64: it gives 0, so there is no fault to report
+        }
         TempDir dir;
         const ChildResult r = RunCrashChild(c.child, dir.Path());
         CheckReportAndDump(r, dir.Path(), c.reason);

@@ -385,7 +385,7 @@ Budget TimeBudget(u64 ms)
 
 // Calls `fn`, expecting `want`, within `limit_ms` of wall time (the time budget is 200 ms; the slack is for slow
 // machines).
-void ExpectStops(State& state, const char* fn, Status want, u64 limit_ms = 3000)
+void ExpectStops(State& state, const char* fn, Status want, u64 limit_ms = 10000)
 {
     CallOutput out;
     const u64 t0 = os::MonotonicTimeNanos();

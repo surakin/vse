@@ -88,6 +88,7 @@ using namespace metal_lifecycle_test;
 TEST_CASE("A hundred Metal device resets keep the counts and memory, change the epoch, and leave nothing behind",
           "[rhi][metal][gpu][reset][archive]")
 {
+    METAL_SKIP_WITHOUT_DEVICE();
     if (ShaderValidationOn())
     {
         SKIP("the pipeline archive is off while MTL_SHADER_VALIDATION is set (its ctest runs without it)");
@@ -145,6 +146,7 @@ TEST_CASE("A hundred Metal device resets keep the counts and memory, change the 
 
 TEST_CASE("A Metal handle from a destroyed device is not valid on the next one", "[rhi][metal][gpu][reset]")
 {
+    METAL_SKIP_WITHOUT_DEVICE();
     DeviceCreateInfo info = MetalInfo("metal_lifecycle_test");
     BufferHandle stale;
     {

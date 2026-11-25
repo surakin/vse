@@ -43,6 +43,17 @@ inline bool MetalPresent()
     return false;
 }
 
+// Skips the running test when this Mac has no usable Metal device (for a test whose first step is not a device
+// creation).
+#define METAL_SKIP_WITHOUT_DEVICE()                                                                                    \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!::vse::rhi::metal::test::MetalPresent())                                                                  \
+        {                                                                                                              \
+            SKIP("no Metal device of the Mac2 family supports Metal 3 here");                                          \
+        }                                                                                                              \
+    } while (false)
+
 // REQUIRE for the first device a test makes: skips instead of failing when the Mac has no usable Metal device.
 #define METAL_REQUIRE_DEVICE(device)                                                                                   \
     do                                                                                                                 \

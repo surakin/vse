@@ -283,7 +283,7 @@ ENGINE_NOINLINE void WalkFramePointers(StackTrace& trace, u32 skip_frames)
         else
         {
             CaptureContext ctx{&trace};
-            if (CaptureFrame(&ctx, pc) != 0)
+            if (CaptureFrame(&ctx, pc - 1) != 0)  // the call's own address, as the library's unwinder reports it
             {
                 break;
             }

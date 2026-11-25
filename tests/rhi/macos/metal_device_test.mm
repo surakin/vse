@@ -31,6 +31,7 @@ using namespace vse::rhi::metal::test;
 
 TEST_CASE("The metal backend is registered, takes Metal libraries, and is what Auto picks on macOS", "[rhi][metal]")
 {
+    METAL_SKIP_WITHOUT_DEVICE();
     RegisterCompiledBackends();
     const BackendDescriptor* d = FindBackend(Backend::Metal);
     REQUIRE(d != nullptr);
@@ -50,6 +51,7 @@ TEST_CASE("The metal backend is registered, takes Metal libraries, and is what A
 TEST_CASE("Metal lists every device with a hex registry id, the same on every enumeration, and creates no queue",
           "[rhi][metal][gpu]")
 {
+    METAL_SKIP_WITHOUT_DEVICE();
     AdapterList first;
     REQUIRE(EnumerateAdapters(MetalInfo("metal_device_test"), &first));
     REQUIRE(first.count >= 1);
@@ -93,6 +95,7 @@ TEST_CASE("Metal lists every device with a hex registry id, the same on every en
 TEST_CASE("A Metal device is created and destroyed on every suitable adapter, with its capabilities and nothing alive",
           "[rhi][metal][gpu]")
 {
+    METAL_SKIP_WITHOUT_DEVICE();
     AdapterList adapters;
     REQUIRE(EnumerateAdapters(MetalInfo("metal_device_test"), &adapters));
     u32 made = 0;
