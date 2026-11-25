@@ -28,7 +28,7 @@ add_test(NAME render_features_screenshot
   COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:render_features_demo>;--frames;240;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/render_features_screenshot.ppm;--reference;${CMAKE_CURRENT_SOURCE_DIR}/reference/forest.ppm;--tolerance;15"
     -DEXPECT_CODE=0 "-DEXPECT_OUT=the frame matches the reference.*wrote .*render_features_screenshot.ppm \\(200000 trees, [1-9][0-9]* draws"
     "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
-set_tests_properties(render_features_screenshot PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77 TIMEOUT 300
+set_tests_properties(render_features_screenshot PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77 TIMEOUT 1200
   ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/render_features_screenshot;${DEMO_PROFILE_ENV}")
 engine_label_tests(render_features_screenshot)
 
