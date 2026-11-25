@@ -10,7 +10,7 @@ Not a numbered phase, no day files. Ordered by the user (2026-11-25), who chose:
 |---|---|---|
 | Linux x86-64 | `ubuntu-24.04` (apt: clang, cmake, ninja, the Wayland/X11/Vulkan headers, lavapipe) | `linux` |
 | Windows x64 | `windows-2025` (MSVC of the image, the Vulkan SDK from `humbletim/setup-vulkan-sdk`) | `windows-msvc` |
-| macOS arm64 | `macos-15` (`continue-on-error` until arm64 passes, the user, 2026-11-25) | `macos-clang` with `-DCMAKE_OSX_ARCHITECTURES=arm64` |
+| macOS arm64 | `macos-15` | `macos-clang` with `-DCMAKE_OSX_ARCHITECTURES=arm64` |
 
 A failed job uploads `<build>/Testing/Temporary/`. No sanitizer flavors, no window tests (`--no-display`): the runners have no GPU and no desktop session.
 

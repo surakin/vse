@@ -118,6 +118,21 @@ jobs:
         shell: bash
         run: scripts/test-phase.sh --all --no-display
 
+      # engine_c_acceptance_scene ends in a segmentation fault on the runner's software adapter and the test has no crash handler:
+      # run it again under the debugger and print the stack at the fault (KNOWN-ISSUES.md). Remove this step with the fault.
+      - name: Stack of the acceptance scene fault
+        if: failure()
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $cdb = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64" -Filter cdb.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          $exe = Get-ChildItem -Path build-msvc -Recurse -Filter host_acceptance_scene.exe | Select-Object -First 1
+          if (-not $cdb) { Write-Host "no cdb on this image"; exit 0 }
+          if (-not $exe) { Write-Host "no host_acceptance_scene.exe"; exit 0 }
+          Write-Host "cdb: $($cdb.FullName)"
+          Write-Host "exe: $($exe.FullName)"
+          & $cdb.FullName -g -G -c "k 40; q" $exe.FullName 2>&1 | Select-Object -Last 120
+
       - name: Keep the test log of a failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -130,9 +145,6 @@ jobs:
     name: macOS arm64 (Apple clang, plain)
     runs-on: macos-15
     timeout-minutes: 360
-    # Allowed to fail while the engine's arm64 macOS code, never run before, is brought up (KNOWN-ISSUES.md): the job still runs
-    # and reports, but a red macOS job does not fail the workflow. Remove this line when it passes.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

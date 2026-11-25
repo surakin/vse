@@ -251,24 +251,56 @@ void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info)
     if (info.trace != nullptr && sink.write != nullptr)
     {
         // One frame at a time, written as soon as it is resolved, so a fault while resolving frame N leaves frames 0 to
-        // N-1 written.
+        // N-1 written. A frame is one piece (number and text together): on Windows every piece costs a helper thread
+        // per destination, and a stack overflow report of hundreds of frames spent its whole time budget on them.
+        // Frames at the same address in a row (a runaway recursion) are written once, followed by how many times they
+        // repeat.
+        u32 repeats = 0;
         for (u32 i = 0; i < info.trace->count; ++i)
         {
+            if (i > 0 && info.trace->frames[i] == info.trace->frames[i - 1])
+            {
+                ++repeats;
+                continue;
+            }
+            if (repeats > 0)
+            {
+                LineWriter w(sink);
+                w.Text("    (the frame above repeats ").Decimal(repeats).Text(" more times)").EndLine();
+                repeats = 0;
+            }
             StackTrace one;
             one.frames[0] = info.trace->frames[i];
             one.count = 1;
-            char text[2048];
-            const usize length = FormatStackTrace(one, text, sizeof(text));
+            char text[2048 + 16];
+            // The formatted line starts "#0"; this frame is number i. Room is left in front of it for the number.
+            const usize length = FormatStackTrace(one, text + 16, sizeof(text) - 16);
             if (length <= 2)
             {
                 continue;
             }
-            // The formatted line starts "#0"; this frame is number i.
+            char number[16];
+            usize digits = 0;
+            for (u32 n = i;; n /= 10)
             {
-                LineWriter w(sink);
-                w.Text("#").Decimal(i);
-            }  // (flushed here, before the rest of the line)
-            sink.write(sink.context, text + 2, length - 2);
+                number[digits++] = static_cast<char>('0' + (n % 10));
+                if (n < 10)
+                {
+                    break;
+                }
+            }
+            const usize start = 17 - digits;  // "#" and the digits end where the text after "#0" begins (text + 18)
+            text[start] = '#';
+            for (usize d = 0; d < digits; ++d)
+            {
+                text[start + 1 + d] = number[digits - 1 - d];
+            }
+            sink.write(sink.context, text + start, 1 + digits + (length - 2));
+        }
+        if (repeats > 0)
+        {
+            LineWriter w(sink);
+            w.Text("    (the frame above repeats ").Decimal(repeats).Text(" more times)").EndLine();
         }
     }
     WriteCrashContext(sink);

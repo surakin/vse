@@ -477,6 +477,34 @@ TEST_CASE("A crash report has every section, in order", "[crashreport][debug]")
     }
 }
 
+TEST_CASE("A run of frames at one address is written once, with its count, and later frames keep their numbers",
+          "[crashreport][debug]")
+{
+    InitDebugFacilities();
+    StackTrace trace;
+    const u64 first = reinterpret_cast<u64>(&InitDebugFacilities);
+    const u64 loop = reinterpret_cast<u64>(&CaptureStackTrace);
+    const u64 last = reinterpret_cast<u64>(&ResetLogRingForTesting);
+    trace.frames[0] = first;
+    for (u32 i = 1; i <= 40; ++i)
+    {
+        trace.frames[i] = loop;  // frames 1 to 40: a runaway recursion
+    }
+    trace.frames[41] = last;
+    trace.count = 42;
+    CrashReportInfo info;
+    info.reason = CrashReason::StackOverflow;
+    info.trace = &trace;
+    Collected report;
+    WriteCrashReport(SinkFor(&report), info);
+    CHECK(Has(report.text, "\n#0  0x"));
+    CHECK(Has(report.text, "\n#1  0x"));
+    CHECK_FALSE(Has(report.text, "\n#2  0x"));
+    CHECK_FALSE(Has(report.text, "\n#40  0x"));
+    CHECK(Has(report.text, "(the frame above repeats 39 more times)\n"));
+    CHECK(Has(report.text, "\n#41  0x"));  // numbered by its place in the trace, not by the lines written
+}
+
 TEST_CASE("A report for an assertion names the message instead of an address", "[crashreport][debug]")
 {
     CrashReportInfo info;
