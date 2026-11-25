@@ -143,15 +143,23 @@ Job ReactorTestSleep(Reactor* reactor, u64 nanos, WaitOptions options, WaitOutco
     out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
+// Waits for the outcome, but not forever: a wake-up that never comes ends the wait after 60 seconds and the caller's
+// checks fail on the unfinished outcome (a hosted Windows runner once stayed in this wait for twenty minutes).
 bool WaitDone(Scheduler& scheduler, WaitOutcome& out)
 {
     struct Probe
     {
         WaitOutcome* out;
-    } probe{&out};
-    scheduler.HelpUntil([](void* u) { return static_cast<Probe*>(u)->out->done.Load(MemoryOrder::Acquire) != 0; },
-                        &probe);
-    return true;
+        u64 deadline;
+    } probe{&out, os::MonotonicTimeNanos() + 60ull * 1000 * 1000 * 1000};
+    scheduler.HelpUntil(
+        [](void* u)
+        {
+            const Probe* p = static_cast<Probe*>(u);
+            return p->out->done.Load(MemoryOrder::Acquire) != 0 || os::MonotonicTimeNanos() > p->deadline;
+        },
+        &probe);
+    return out.done.Load(MemoryOrder::Acquire) != 0;
 }
 
 bool NotDoneYet(const WaitOutcome& out)

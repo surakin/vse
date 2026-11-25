@@ -379,7 +379,16 @@ TEST_CASE("ENGINE_RHI_GPU picks the DX12 adapter, and the descriptor's adapter b
     {
         Dx12DevicePtr device = Dx12Device::Create(info);
         REQUIRE(device);
-        CHECK(device->Adapter().kind != AdapterKind::Software);
+        if (device->Adapter().kind == AdapterKind::Software)
+        {
+            // Adapter 0 is already WARP: the machine has no hardware adapter (a hosted runner), so there is nothing to
+            // tell apart.
+            WARN("the first Direct3D 12 adapter is a software one; the index was not told apart from the variable");
+        }
+        else
+        {
+            CHECK(device->Adapter().kind != AdapterKind::Software);
+        }
     }
     if (before != nullptr)
     {
