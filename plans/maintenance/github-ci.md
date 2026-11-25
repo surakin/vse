@@ -4,7 +4,7 @@ Not a numbered phase, no day files. Ordered by the user (2026-11-25), who chose:
 
 ## What
 
-`.github/workflows/ci.yml`: on a push to `main`, a pull request or a manual run, three jobs configure, build and run `scripts/test-phase.sh --all --no-display`:
+`.github/workflows/ci.yml`: on a push to `main` or a pull request that changes code (`engine/`, `game/`, `tools/`, `tests/`, `include/`, `shaders/`, `assets/`, `abi/`, `cmake/`, `third_party/`, the root `CMakeLists.txt`, `CMakePresets.json`, `scripts/test-phase.sh`, the phase files and the workflow itself; never documentation, plans or status files), or on a manual run, three jobs configure, build and run `scripts/test-phase.sh --all --no-display`:
 
 | Job | Runner | Preset |
 |---|---|---|

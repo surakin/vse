@@ -4,10 +4,48 @@ name: CI
 # (Apple silicon, native). Sanitizer flavors and the window ("display") tests are not run here: the hosted runners
 # have no GPU and no desktop session. Prerequisites per platform: BUILD.md. Plan: plans/maintenance/github-ci.md.
 
+# Only a change to code, build files, shaders, assets or this workflow starts a run: documentation, plans and status
+# files do not. A manual run (workflow_dispatch) always works.
 on:
   push:
     branches: [main]
+    paths:
+      - 'engine/**'
+      - 'game/**'
+      - 'tools/**'
+      - 'tests/**'
+      - 'include/**'
+      - 'shaders/**'
+      - 'assets/**'
+      - 'abi/**'
+      - 'cmake/**'
+      - 'third_party/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'scripts/test-phase.sh'
+      - 'CURRENT_PHASE'
+      - 'SIDE_PHASES'
+      - 'UNICODE_VERSION'
+      - '.github/workflows/ci.yml'
   pull_request:
+    paths:
+      - 'engine/**'
+      - 'game/**'
+      - 'tools/**'
+      - 'tests/**'
+      - 'include/**'
+      - 'shaders/**'
+      - 'assets/**'
+      - 'abi/**'
+      - 'cmake/**'
+      - 'third_party/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'scripts/test-phase.sh'
+      - 'CURRENT_PHASE'
+      - 'SIDE_PHASES'
+      - 'UNICODE_VERSION'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
 
 concurrency:
