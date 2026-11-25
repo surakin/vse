@@ -74,3 +74,7 @@ See [Building and testing](docs/guide/building-and-testing.md) for flavors (plai
 
 Read [CLAUDE.md](CLAUDE.md): it states the rules every change follows (warnings are errors, formatting by `scripts/format.sh`, no standard library, module layering
 checked by a gate, a review at the end of each day). Install the pre-commit hook once per machine with `scripts/install-git-hooks.sh`.
+
+## License
+
+VSE is free software under the [GNU General Public License, version 3](LICENSE). The libraries vendored under `third_party/` keep their own licenses.
