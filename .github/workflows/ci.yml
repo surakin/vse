@@ -1,0 +1,110 @@
+name: CI
+
+# Builds the engine and runs every test of the plain flavor on Linux x86-64, Windows x64 (MSVC) and macOS arm64
+# (Apple silicon, native). Sanitizer flavors and the window ("display") tests are not run here: the hosted runners
+# have no GPU and no desktop session. Prerequisites per platform: BUILD.md. Plan: plans/maintenance/github-ci.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux x86-64 (clang, plain)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake ninja-build pkg-config binutils gdb lldb \
+            libwayland-dev libxkbcommon-dev libx11-dev libxcursor-dev libxi-dev libxfixes-dev \
+            libvulkan-dev mesa-vulkan-drivers
+
+      - name: Configure
+        run: cmake --preset linux
+
+      - name: Build and run every test
+        run: scripts/test-phase.sh --all --no-display
+
+      - name: Keep the test log of a failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-test-logs
+          path: build/Testing/Temporary/
+          if-no-files-found: ignore
+
+  windows:
+    name: Windows x64 (MSVC, plain)
+    runs-on: windows-2025
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Vulkan SDK (its headers are needed to build)
+        uses: humbletim/setup-vulkan-sdk@v1.2.1
+        with:
+          vulkan-query-version: latest
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
+      - name: Make sure Ninja is there
+        shell: bash
+        run: ninja --version || choco install ninja -y
+
+      # A plain shell, never a Developer Command Prompt: the toolchain file finds MSVC and the SDK itself.
+      - name: Configure
+        shell: bash
+        run: cmake --preset windows-msvc
+
+      - name: Build and run every test
+        shell: bash
+        run: scripts/test-phase.sh --all --no-display
+
+      - name: Keep the test log of a failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-logs
+          path: build-msvc/Testing/Temporary/
+          if-no-files-found: ignore
+
+  macos:
+    name: macOS arm64 (Apple clang, plain)
+    runs-on: macos-15
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make sure CMake and Ninja are there
+        run: |
+          command -v cmake || brew install cmake
+          command -v ninja || brew install ninja
+
+      # The preset names x86-64; this runner is Apple silicon, so the same preset builds natively for arm64.
+      - name: Configure
+        run: cmake --preset macos-clang -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Build and run every test
+        run: scripts/test-phase.sh --all --no-display
+
+      - name: Keep the test log of a failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-test-logs
+          path: build-macos/Testing/Temporary/
+          if-no-files-found: ignore

@@ -124,6 +124,18 @@ framework.
 There is no LeakSanitizer on macOS (Apple clang): ASan aborts the process when `ASAN_OPTIONS` asks for `detect_leaks=1`, so leak checks stay on Linux;
 `leaks --atExit -- <program>` is the macOS tool. ASan (with UBSan) and TSan both work, so macOS runs all three flavors.
 
+## GitHub Actions (`.github/workflows/ci.yml`)
+
+The hosted runners build and test the plain flavor on all three platforms (`plans/maintenance/github-ci.md`). Nothing is installed by hand; the workflow installs what the platform tables above call required:
+
+| Job | Runner | Installed by the workflow |
+|---|---|---|
+| Linux | `ubuntu-24.04` | `clang`, `cmake`, `ninja-build`, `pkg-config`, the Wayland, xkbcommon, X11 and Vulkan headers, `mesa-vulkan-drivers` (lavapipe, a software Vulkan device), `binutils`, `gdb`, `lldb` |
+| Windows | `windows-2025` | the Vulkan SDK headers and loader (`humbletim/setup-vulkan-sdk`); MSVC, the Windows SDK, CMake, Ninja and Git come with the image |
+| macOS | `macos-15` (Apple silicon, built natively for arm64) | nothing; Apple clang, CMake and Ninja come with the image |
+
+The runners have no GPU and no desktop session, so the window tests (`--no-display`) and the sanitizer flavors are not run there.
+
 ## Android, iOS, consoles: not yet supported
 
 the future Android, iOS and console ports (consoles, gated on dev-kit and NDA access). Each phase adds its section here when it is broken into days.

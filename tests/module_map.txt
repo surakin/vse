@@ -156,6 +156,7 @@ tests/test_phase_script 6
 plans               -
 .gitignore          -
 CLAUDE.md           -
+.github             -   # CI workflows run the tests; no test depends on them
 .clang-format       -   # formatting never changes what a test does
 .clang-format-ignore -
 .clang-tidy         -
