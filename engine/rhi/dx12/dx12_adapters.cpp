@@ -60,7 +60,10 @@ void ReadFacts(IDXGIAdapter1* adapter, AdapterFacts* f)
     f->luid_low = desc.AdapterLuid.LowPart;
     f->luid_high = desc.AdapterLuid.HighPart;
     f->dedicated_video_memory = desc.DedicatedVideoMemory;
-    f->software = (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0;
+    // WARP is Microsoft's (vendor 0x1414); a machine with no GPU driver lists it as an ordinary adapter, without the
+    // software flag ("Microsoft Basic Render Driver").
+    constexpr UINT kMicrosoftVendorId = 0x1414;
+    f->software = (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0 || desc.VendorId == kMicrosoftVendorId;
     LARGE_INTEGER umd{};
     if (SUCCEEDED(adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &umd)))
     {

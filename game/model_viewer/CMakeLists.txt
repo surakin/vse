@@ -20,7 +20,7 @@ function(model_viewer_screenshot name file expect)
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:model_viewer>;${file};--frames;120;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/${name}.ppm"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=${expect}"
-      "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+      "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
   engine_label_tests(${name})
@@ -36,7 +36,7 @@ model_viewer_screenshot(model_viewer_screenshot_gltf ${CMAKE_SOURCE_DIR}/tests/a
 add_test(NAME model_viewer_missing_file COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:model_viewer>;${CMAKE_CURRENT_BINARY_DIR}/no-such.glb"
   -DEXPECT_CODE=1 "-DEXPECT_OUT=no-such.glb cannot be read" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 add_test(NAME model_viewer_not_gltf COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:model_viewer>;${CMAKE_CURRENT_SOURCE_DIR}/main.cpp;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/model_viewer_not_gltf.ppm"
-  -DEXPECT_CODE=1 "-DEXPECT_OUT=main.cpp: " "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+  -DEXPECT_CODE=1 "-DEXPECT_OUT=main.cpp: " "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(model_viewer_not_gltf PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77)
 engine_label_tests(model_viewer_missing_file model_viewer_not_gltf)
 
@@ -45,7 +45,7 @@ function(model_viewer_windowed name backend)
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:model_viewer>;${MODEL_VIEWER_FIXTURES}/robot.glb;--backend;${backend};--set;renderer.validation=on;--frames;300"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=showed robot.glb for 300 frames"
-      "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
+      "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer|failed assertion" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")

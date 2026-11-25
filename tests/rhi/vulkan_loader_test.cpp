@@ -40,7 +40,8 @@ struct EnvGuard
     ~EnvGuard() { test_support::UnsetEnv(kVulkanLibraryEnvVar); }
 };
 
-// Creates a bare Vulkan 1.3 instance (no extensions) for the GPU tests.
+// Creates a bare Vulkan 1.3 instance (no extensions) for the GPU tests; null when the loader has no driver to give it
+// (a machine with a loader and no installable client driver).
 VkInstance MakeInstance(const VkGlobalFns& global)
 {
     VkApplicationInfo app{};
@@ -50,7 +51,12 @@ VkInstance MakeInstance(const VkGlobalFns& global)
     info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     info.pApplicationInfo = &app;
     VkInstance instance = nullptr;
-    REQUIRE(ENGINE_VK_CHECK(global.CreateInstance(&info, nullptr, &instance)) == VkResultClass::Success);
+    const VkResult result = global.CreateInstance(&info, nullptr, &instance);
+    if (result == VK_ERROR_INCOMPATIBLE_DRIVER)
+    {
+        return nullptr;
+    }
+    REQUIRE(ENGINE_VK_CHECK(result) == VkResultClass::Success);
     return instance;
 }
 
@@ -108,6 +114,14 @@ TEST_CASE("Vulkan loader resolves the global and instance tables", "[rhi][vulkan
     LogInstanceCapabilities(global);
 
     VkInstance instance = MakeInstance(global);
+    if (instance == nullptr)
+    {
+        if (GpuRequired())
+        {
+            FAIL("ENGINE_RHI_REQUIRE_GPU=1 but the Vulkan loader has no driver (VK_ERROR_INCOMPATIBLE_DRIVER)");
+        }
+        SKIP("the Vulkan loader has no driver");
+    }
     VkInstanceFns fns;
     CHECK(LoadInstanceFns(loader, instance, &fns));
     CHECK(fns.EnumeratePhysicalDevices != nullptr);

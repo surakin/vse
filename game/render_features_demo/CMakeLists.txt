@@ -27,7 +27,7 @@ endforeach()
 add_test(NAME render_features_screenshot
   COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:render_features_demo>;--frames;240;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/render_features_screenshot.ppm;--reference;${CMAKE_CURRENT_SOURCE_DIR}/reference/forest.ppm;--tolerance;15"
     -DEXPECT_CODE=0 "-DEXPECT_OUT=the frame matches the reference.*wrote .*render_features_screenshot.ppm \\(200000 trees, [1-9][0-9]* draws"
-    "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+    "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(render_features_screenshot PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77 TIMEOUT 300
   ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/render_features_screenshot;${DEMO_PROFILE_ENV}")
 engine_label_tests(render_features_screenshot)
@@ -42,7 +42,7 @@ function(render_features_windowed name backend reset_every)
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:render_features_demo>;--backend;${backend};--set;renderer.validation=on;--frames;1000;--trees;20000${extra}"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=showed the scene for 1000 frames"
-      "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
+      "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer|failed assertion" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77 TIMEOUT 600
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")

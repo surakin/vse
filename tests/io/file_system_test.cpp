@@ -403,7 +403,10 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     REQUIRE(io::SetCurrentDirectory(dir / "real").Ok());
     Path now;
     REQUIRE(io::CurrentDirectory(&now).Ok());
-    CHECK(now == expect.Parent());
+    // The current directory keeps the spelling it was set with (a short 8.3 name stays short); Canonical expands it.
+    Path now_canonical;
+    REQUIRE(io::Canonical(now, &now_canonical).Ok());
+    CHECK(now_canonical == expect.Parent());
     CHECK(io::SetCurrentDirectory(dir / "nope").Is(Error::NotFound));
     REQUIRE(io::SetCurrentDirectory(cwd).Ok());
 }

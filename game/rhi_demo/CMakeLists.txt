@@ -18,7 +18,7 @@ function(rhi_demo_expect name code out skip_re)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/rhi_demo;${DEMO_PROFILE_ENV}")
 endfunction()
-set(RHI_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
+set(RHI_NO_GPU "cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER")
 if(APPLE)
   # macOS: Vulkan asked for by name is not built there (auto is Metal from Phase 21 Day 309; the *_metal tests ask for it by name).
   # A Mac without a Metal 3 GPU (a VM, an older Mac): auto finds no backend and says why, which skips as no GPU does elsewhere.

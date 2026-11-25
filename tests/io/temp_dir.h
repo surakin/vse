@@ -366,11 +366,35 @@ inline bool HardLink(const io::Path& existing, const io::Path& link)
     return CreateHardLinkW(WinPath(link).text, WinPath(existing).text, nullptr) != FALSE;
 }
 
-/// True when the process ignores permissions (root on POSIX; never on Windows, where an administrator still meets
-/// ACLs).
+/// True when the process ignores directory permissions: root on POSIX; on Windows a token that holds SeBackupPrivilege
+/// (an elevated administrator, as on a hosted CI runner), because opening a directory for backup bypasses its ACL. A
+/// plain user, and an administrator who is not elevated, still meet ACLs.
 inline bool RunningAsRoot()
 {
-    return false;
+    LUID backup;
+    if (!LookupPrivilegeValueW(nullptr, L"SeBackupPrivilege", &backup))
+    {
+        return false;
+    }
+    HANDLE token = nullptr;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token))
+    {
+        return false;
+    }
+    alignas(TOKEN_PRIVILEGES) byte buffer[4096];
+    DWORD length = 0;
+    bool held = false;
+    if (GetTokenInformation(token, TokenPrivileges, buffer, sizeof(buffer), &length))
+    {
+        const TOKEN_PRIVILEGES* privileges = reinterpret_cast<const TOKEN_PRIVILEGES*>(buffer);
+        for (DWORD i = 0; i < privileges->PrivilegeCount; ++i)
+        {
+            const LUID& id = privileges->Privileges[i].Luid;
+            held = held || (id.LowPart == backup.LowPart && id.HighPart == backup.HighPart);
+        }
+    }
+    CloseHandle(token);
+    return held;
 }
 
 /// True when `path`'s ACL is protected and every entry allows the current user (what CreatePrivateDirectory promises;

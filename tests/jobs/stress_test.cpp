@@ -608,6 +608,10 @@ TEST_CASE("Throughput scales with participant count", "[jobs][stress][throughput
     {
         SKIP("speedup asserted only with >= 4 allowed logical CPUs (table logged above)");
     }
+    if (os::GetEnvironment("GITHUB_ACTIONS") != nullptr)
+    {
+        SKIP("a hosted CI runner's virtual CPUs share cores: speedup is logged above, not asserted");
+    }
     REQUIRE(ok);  // speedup(N) >= 0.5 * N for N = 2 and 4
 }
 

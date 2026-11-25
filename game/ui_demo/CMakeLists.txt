@@ -22,7 +22,7 @@ function(ui_demo_expect name code out skip_re)
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
   engine_label_tests(${name})
 endfunction()
-set(UI_DEMO_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
+set(UI_DEMO_NO_GPU "cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER")
 if(APPLE)
   # Vulkan by name on macOS (Metal: the *_metal test), and a Mac without a Metal 3 GPU.
   string(APPEND UI_DEMO_NO_GPU "|backend is not built for macOS|this Mac has no Metal device|no Metal device of the Mac2 family")

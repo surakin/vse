@@ -47,7 +47,7 @@ endif()
 add_test(NAME script_demo_screenshot
   COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:script_demo>;--frames;240;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/script_demo_screenshot.ppm"
     -DEXPECT_CODE=0 "-DEXPECT_OUT=wrote .*script_demo_screenshot.ppm \\(2000 bodies, [0-9]+ objects drawn, 240 frames"
-    "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+    "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(script_demo_screenshot PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
   ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/script_demo_screenshot;${DEMO_PROFILE_ENV}")
 engine_label_tests(script_demo_screenshot)
@@ -59,7 +59,7 @@ function(script_demo_windowed name backend frames)
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:script_demo>;--backend;${backend};--set;renderer.validation=on;--audio;null;--frames;${frames}"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=ran ${frames} frames in a window"
-      "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
+      "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer|failed assertion" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")

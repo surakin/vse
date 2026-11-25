@@ -19,7 +19,7 @@ target_link_libraries(physics_demo PRIVATE physics_demo_lib rhi_backends)
 add_test(NAME physics_demo_screenshot
   COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:physics_demo>;--frames;400;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/physics_demo_screenshot.ppm"
     -DEXPECT_CODE=0 "-DEXPECT_OUT=wrote .*physics_demo_screenshot.ppm \\([0-9]+ shapes, [0-9]+ objects drawn, 400 physics steps"
-    "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+    "-DSKIP_IF_OUT=cannot open loader library|no physical devices|no suitable GPU|VK_ERROR_INCOMPATIBLE_DRIVER" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(physics_demo_screenshot PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
   ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/physics_demo_screenshot;${DEMO_PROFILE_ENV}")
 engine_label_tests(physics_demo_screenshot)

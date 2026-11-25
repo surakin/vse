@@ -633,6 +633,11 @@ TEST_CASE("io: Stat describes a file another program holds without sharing its a
 
 TEST_CASE("io: RemoveAll reports a subdirectory it cannot list instead of NotEmpty", "[io][fs][windows]")
 {
+    if (io_test::RunningAsRoot())
+    {
+        SUCCEED("a token with SeBackupPrivilege ignores directory ACLs");
+        return;
+    }
     TempDir dir;
     REQUIRE(io::CreateDirectories(dir / "tree/locked").Ok());
     REQUIRE(io_test::WriteText(dir / "tree/locked/f.txt", "x"));

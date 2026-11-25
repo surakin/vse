@@ -99,6 +99,12 @@ jobs:
           vulkan-components: Vulkan-Headers, Vulkan-Loader
           vulkan-use-cache: true
 
+      # The action installs the SDK inside the checkout (VULKAN_SDK/); git must not see it as changed paths, or the
+      # scripts' --affected tests (which ask git what changed) fail.
+      - name: Keep the SDK out of git's view
+        shell: bash
+        run: echo "VULKAN_SDK/" >> .git/info/exclude
+
       - name: Make sure Ninja is there
         shell: bash
         run: ninja --version || choco install ninja -y
