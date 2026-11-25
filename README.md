@@ -77,4 +77,4 @@ checked by a gate, a review at the end of each day). Install the pre-commit hook
 
 ## License
 
-VSE is free software under the [GNU General Public License, version 3](LICENSE). The libraries vendored under `third_party/` keep their own licenses.
+VSE is free software under the [GNU General Public License, version 3](LICENSE), or (at your option) any later version. The libraries vendored under `third_party/` keep their own licenses.
