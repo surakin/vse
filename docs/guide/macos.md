@@ -13,9 +13,9 @@ run (below).
 
 | I want to | Do this |
 |---|---|
-| build | `cmake --preset macos-clang` then `cmake --build --preset macos-clang` (Apple clang from the Command Line Tools; no Xcode) |
+| build | `cmake --preset macos-clang-x86_64` then `cmake --build --preset macos-clang-x86_64` (Apple clang from the Command Line Tools; no Xcode) |
 | run tests | `scripts/test-phase.sh --affected` (plain, asan and tsan; no LeakSanitizer) |
-| check Apple silicon | `cmake --preset macos-clang-arm64` and build it: compile-only, nothing runs |
+| build for Apple silicon | `cmake --preset macos-clang-arm64` then `cmake --build --preset macos-clang-arm64` (tree `build-macos-arm64`; native on an Apple silicon Mac, compile-only on an Intel one) |
 | pick the graphics API | `auto` is Metal; `--rhi metal\|null` at start (not changeable while running) |
 | turn on GPU validation | `MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert MTL_SHADER_VALIDATION=1` in the environment (`--validation` cannot turn it on) |
 | mint shaders | `cmake --build build-macos --target shaders` with `slangc` v2026.18.2 in `~/tools` |
@@ -25,7 +25,7 @@ run (below).
 ## Source of truth
 
 - `BUILD.md` ("macOS"): the prerequisites, each with the version in use and how to install it.
-- `CMakePresets.json` (`macos-clang`, `macos-clang-arm64`), the macOS branch of the root `CMakeLists.txt`, `cmake/EngineCompilerOptions.cmake`.
+- `CMakePresets.json` (`macos-clang-x86_64`, `macos-clang-arm64`), the macOS branch of the root `CMakeLists.txt`, `cmake/EngineCompilerOptions.cmake`.
 - `docs/superpowers/specs/2026-11-11-macos-port-design.md`: the decisions of the port and the measurements behind them.
 
 ## Prerequisites
@@ -36,15 +36,17 @@ mint shaders. Versions and install lines are in `BUILD.md`. Xcode itself is opti
 
 ## Building
 
-- **The preset** `macos-clang` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3). The configure takes Apple clang
+- **The preset** `macos-clang-x86_64` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3). The configure takes Apple clang
   through `xcrun`, so a MacPorts or Homebrew clang first on `PATH` is not picked up. A Release tree is configured the usual way
   (`-DCMAKE_BUILD_TYPE=Release`); measure only there.
 - **Flavors:** plain, asan (ASan with UBSan) and tsan, as on Linux. Apple clang has no LeakSanitizer (ASan aborts when asked for `detect_leaks=1`);
   `leaks --atExit -- <program>` is the macOS tool.
 - **Both unity modes** build clean, as everywhere (`-DENGINE_UNITY_BUILD=OFF` in a second tree).
-- **Apple silicon, compile-only.** `macos-clang-arm64` (`build-macos-arm64`, `ENGINE_COMPILE_ONLY`) builds every target for arm64 on the Intel Mac:
-  no test discovery, no shader minting (the committed outputs), testing not enabled. Run it in both unity modes on a day that changes macOS
-  code. What it does not cover is in `KNOWN-ISSUES.md`.
+- **Apple silicon.** `macos-clang-arm64` configures `build-macos-arm64` for arm64. On an Apple silicon Mac it builds and runs natively like any
+  tree, and `macos-clang-x86_64` runs there under Rosetta 2. Configured on an Intel Mac, arm64 is compile-only (`ENGINE_COMPILE_ONLY` is set by the
+  configure): every target builds, nothing built runs, there is no test discovery and no shader minting (the committed outputs are used).
+  `scripts/test-phase.sh` defaults to `build-macos-arm64` on an Apple silicon Mac and to `build-macos` otherwise; `--build-dir build-macos` runs
+  the x86-64 tree there. A day that changes macOS code builds both architectures, in both unity modes.
 
 ## Where macOS code goes
 

@@ -526,13 +526,15 @@ Every layer builds and is tested on macOS (x86-64, Apple clang), with the Cocoa 
 Vulkan; [macOS](macos.md) is the platform's page. `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
 Ninja; no Xcode.
 
-- **Preset.** `cmake --preset macos-clang` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
-  `cmake --build --preset macos-clang` and `ctest --preset macos-clang`. The configure takes Apple clang through `xcrun`, so a MacPorts or
+- **Preset.** `cmake --preset macos-clang-x86_64` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
+  `cmake --build --preset macos-clang-x86_64` and `ctest --preset macos-clang-x86_64`. The configure takes Apple clang through `xcrun`, so a MacPorts or
   Homebrew clang first on `PATH` is not picked up, and stops with a message without the Command Line Tools. Everything the Linux build has is
   built, with the Metal backend in place of Vulkan.
-- **Apple silicon, compile-only.** `cmake --preset macos-clang-arm64` configures `build-macos-arm64` for arm64 with `ENGINE_COMPILE_ONLY`:
-  every target builds and nothing built runs, so there is no test discovery and no shader minting (the committed outputs are used). It
-  is how the Intel Mac checks arm64 code paths; run it, unity and `-DENGINE_UNITY_BUILD=OFF`, on every macOS day that changes macOS code.
+- **Apple silicon.** `cmake --preset macos-clang-arm64` configures `build-macos-arm64` for arm64: native, with tests, on an Apple silicon Mac
+  (where `macos-clang-x86_64` runs under Rosetta 2). On an Intel Mac the configure makes it compile-only (`ENGINE_COMPILE_ONLY`): every target
+  builds and nothing built runs, so there is no test discovery and no shader minting (the committed outputs are used). `scripts/test-phase.sh`
+  defaults to `build-macos-arm64` on an Apple silicon Mac (`--build-dir build-macos` for the x86-64 tree). Build both architectures, unity and
+  `-DENGINE_UNITY_BUILD=OFF`, on every macOS day that changes macOS code.
 - **Flavors.** plain, asan (ASan and UBSan) and tsan, as on Linux. Apple clang has no LeakSanitizer: ASan aborts when asked for
   `detect_leaks=1` (`KNOWN-ISSUES.md`), so leak checks run on Linux.
 - **Objective-C++.** `.mm` files (only in macOS directories) compile with ARC and the warnings of every target. `tests/macos` checks that
@@ -592,5 +594,5 @@ flavors: every module's static library whole-archived, a version script as the e
 inside it (`engine_shared_link_probe*`; without the option the three tests are skipped stubs, so the suite has the same flavors in every configuration). A
 sanitized library loads only into a program built with the same sanitizer. With the option OFF nothing changes: no compile command differs. On macOS
 the same targets build `libengine.1.dylib` (and `libengine_asan.1.dylib`, `libengine_tsan.1.dylib`), with an exported-symbols list in place of the version script
-and the install name `@rpath/libengine.1.dylib`; the shared tree is configured with `cmake --preset macos-clang -B build-macos-shared -DENGINE_BUILD_SHARED=ON`.
+and the install name `@rpath/libengine.1.dylib`; the shared tree is configured with `cmake --preset macos-clang-x86_64 -B build-macos-shared -DENGINE_BUILD_SHARED=ON`.
 Windows builds it too. The ctest `engine_shared_option` checks that the option exists and is declared OFF.

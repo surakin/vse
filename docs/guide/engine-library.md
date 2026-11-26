@@ -514,12 +514,12 @@ Direct3D 12 and with Vulkan, forwarding what its window receives through `surfac
 
 ## macOS: the dylib and embedding into an `NSView`
 
-**The library.** `-DENGINE_BUILD_SHARED=ON` on `macos-clang` builds `libengine.1.dylib` (and `libengine_asan.1.dylib`, `libengine_tsan.1.dylib`): every module whole-archived as on
+**The library.** `-DENGINE_BUILD_SHARED=ON` on `macos-clang-x86_64` builds `libengine.1.dylib` (and `libengine_asan.1.dylib`, `libengine_tsan.1.dylib`): every module whole-archived as on
 Linux, hidden symbols, and in place of the version script an exported-symbols list generated from `abi/engine.exports` (`engine_shared.exported_symbols`
 in the build tree: `_engine_get_api`, with the C symbol prefix). Its install name is `@rpath/libengine.1.dylib`, so a host that links it finds it through
 its own rpath (`-Wl,-rpath,@executable_path/../Frameworks` in an application bundle), and a host that loads it with `engine_load` passes the path. `abi_check`
 reads the dylib's defined external symbols with `nm -gU` and strips the prefix (`NM_STYLE=macho`); the gate's own cases include a Mach-O listing and a
-leaked C++ symbol. The arm64 configuration (`macos-clang-arm64`) is meant to compile and link the same library (nothing runs there); it has not been built yet.
+leaked C++ symbol. The arm64 configuration (`macos-clang-arm64`) builds the same library, natively on an Apple silicon Mac.
 
 **Hardened runtime and library validation.** A host signed with the hardened runtime and library validation (an application from the App Store, or any
 notarized application that did not opt out) loads only libraries signed by Apple or by its own team: sign `libengine.1.dylib` with the host's identity

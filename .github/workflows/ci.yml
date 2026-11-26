@@ -153,9 +153,8 @@ jobs:
           command -v cmake || brew install cmake
           command -v ninja || brew install ninja
 
-      # The preset names x86-64; this runner is Apple silicon, so the same preset builds natively for arm64.
       - name: Configure
-        run: cmake --preset macos-clang -DCMAKE_OSX_ARCHITECTURES=arm64
+        run: cmake --preset macos-clang-arm64
 
       - name: Build and run every test
         run: scripts/test-phase.sh --all --no-display
@@ -165,5 +164,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-test-logs
-          path: build-macos/Testing/Temporary/
+          path: build-macos-arm64/Testing/Temporary/
           if-no-files-found: ignore

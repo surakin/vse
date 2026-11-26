@@ -591,8 +591,12 @@ TEST_CASE("The Metal pipeline cache round-trips, and a damaged or foreign file i
         FormatTo(path, sizeof(path), "%s", metal.PipelineCache().Path());
         Everything all;
         count = all.Make(*device);  // Destroy quiesces, which writes the file
-        CHECK(metal.PipelineCacheMisses() == count);
-        CHECK(metal.PipelineCacheHits() == 0);
+        // Metal keys the archive by content, not by label: two pipelines whose functions and state are the same (two
+        // depth-only vertex modules that compile to one function on Apple silicon) are one entry, so the second is a
+        // hit even in an empty archive. Every pipeline is a hit or a miss, and each miss is one addition.
+        CHECK(metal.PipelineCacheMisses() + metal.PipelineCacheHits() == count);
+        CHECK(metal.PipelineCacheMisses() == metal.PipelineCache().GetStats().added);
+        CHECK(metal.PipelineCacheMisses() > count / 2);
         all.Destroy(*device);
         CHECK(metal.PipelineCache().GetStats().saved_bytes > kMetalArchiveHeaderBytes);
     }

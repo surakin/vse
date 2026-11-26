@@ -26,7 +26,7 @@ build/game/hello_window/hello_window
 ```
 
 `hello_window` opens a window and prints keyboard and mouse input for six seconds. Windows and macOS use their own presets (`cmake --preset windows-msvc`,
-`cmake --preset macos-clang`); [Getting started](docs/guide/getting-started.md) has the commands.
+`cmake --preset macos-clang-x86_64`); [Getting started](docs/guide/getting-started.md) has the commands.
 
 Other demos live in `game/`: `rhi_demo` (a lit, textured cube), `renderer_demo` (a lit scene), `ui_demo` (a window built from the engine's widgets), `physics_demo`,
 `net_demo`, `storage_demo`, `spatial_demo`, `script_demo`, `asset_demo`, `audio_bench` (an audio benchmark), and more. Each takes `--help`.

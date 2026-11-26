@@ -158,10 +158,11 @@ Windows x64 builds and runs everything, with the Vulkan and Direct3D 12 backends
 macOS builds and runs everything, with the Cocoa window and the Metal backend (`docs/guide/macos.md`, `BUILD.md`); there is no Vulkan on macOS (MoltenVK is
 third-party, Phase 21 decision 8).
 
-- **Build and test** with Apple clang from the Command Line Tools (no Xcode): `cmake --preset macos-clang` / `cmake --build --preset macos-clang` (tree
-  `build-macos`, x86-64), tests through `scripts/test-phase.sh` (the system's bash 3.2). Flavors are plain, asan and tsan (no LeakSanitizer). A change must
-  build clean in both unity modes there as well, and a day that changes macOS code also builds `macos-clang-arm64` (`build-macos-arm64`, compile-only:
-  nothing runs) in both unity modes. Format with MacPorts' `clang-format` 23.x, never the Command Line Tools' Apple one.
+- **Build and test** with Apple clang from the Command Line Tools (no Xcode): `cmake --preset macos-clang-x86_64` / `cmake --build --preset macos-clang-x86_64` (tree
+  `build-macos`, x86-64; under Rosetta 2 on Apple silicon) and `macos-clang-arm64` (tree `build-macos-arm64`, native on Apple silicon, compile-only when
+  configured on an Intel Mac), tests through `scripts/test-phase.sh` (the system's bash 3.2; it defaults to `build-macos-arm64` on an Apple silicon Mac,
+  `--build-dir build-macos` for the x86-64 tree). Flavors are plain, asan and tsan (no LeakSanitizer). A change must build clean in both unity modes
+  there as well, and a day that changes macOS code builds both architectures in both unity modes. Format with MacPorts' `clang-format` 23.x, never the Command Line Tools' Apple one.
 - **macOS code lives in macOS directories:** Apple's headers and `.mm` files only under `*/macos/` (and `engine/rhi/metal/`); Metal only in
   `engine/rhi/metal/` and `tools/metal_mint/` (the `platform_neutral_check`, `rhi_boundary_check` and `net_access_check` gates enforce it). Objective-C++
   uses ARC, and every backend entry point that calls AppKit or Metal wraps its body in `@autoreleasepool` (callers may have none; `metal_autorelease_pools`).

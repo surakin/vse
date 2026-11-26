@@ -56,9 +56,9 @@ ctest --preset windows-msvc
 **On macOS**, with the Command Line Tools (no Xcode), CMake and Ninja; the graphics backend is Metal. [macOS](macos.md) has the rest.
 
 ```
-cmake --preset macos-clang             # the build tree is build-macos
-cmake --build --preset macos-clang
-ctest --preset macos-clang
+cmake --preset macos-clang-x86_64             # the build tree is build-macos
+cmake --build --preset macos-clang-x86_64
+ctest --preset macos-clang-x86_64
 ```
 
 ## Running your first program

@@ -31,7 +31,8 @@
 #                                  --current/--affected unless phase 1 is selected or engine/foundation changed
 #   --jobs N                       parallel build jobs and tests (default: the number of CPUs; CMAKE_BUILD_PARALLEL_LEVEL, if set, wins for the build)
 #   --build-dir DIR                the CMake build directory (default: build; on Windows build-msvc, the windows-msvc preset's; on
-#                                  macOS build-macos, the macos-clang preset's)
+#                                  macOS build-macos-arm64 on an Apple silicon Mac (the macos-clang-arm64 preset's), else build-macos,
+#                                  the macos-clang-x86_64 preset's; pass --build-dir build-macos for the x86-64 tree there)
 #   --no-build                     do not build first (the build makes only the chosen flavors' targets, engine_tests_<flavor>)
 #   --dry-run                      print what would run and stop
 #   --since REF                    base commit for --affected
@@ -59,7 +60,8 @@ case "$(uname -s)" in
 esac
 case "$platform" in
     windows) build="$root/build-msvc" ;;
-    macos) build="$root/build-macos" ;;
+    macos)
+        if [ "$(uname -m)" = arm64 ]; then build="$root/build-macos-arm64"; else build="$root/build-macos"; fi ;;
     *) build="$root/build" ;;
 esac
 mode=current
@@ -391,7 +393,7 @@ fi
 if [ "$platform" = windows ]; then
     [ -d "$build" ] || die "no build directory at $build (configure first: cmake --preset windows-msvc)"
 elif [ "$platform" = macos ]; then
-    [ -d "$build" ] || die "no build directory at $build (configure first: cmake --preset macos-clang)"
+    [ -d "$build" ] || die "no build directory at $build (configure first: cmake --preset macos-clang-x86_64)"
 else
     [ -d "$build" ] || die "no build directory at $build (configure first: cmake -S . -B build)"
 fi

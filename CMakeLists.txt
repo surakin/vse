@@ -73,9 +73,8 @@ if(APPLE)
   enable_language(OBJC)
 endif()
 
-# Supported targets: x86-64 Linux, x86-64 Windows (Phase 13), and x86-64 macOS (Phase 21, a side phase on the Mac). arm64 macOS has a compile-only
-# configuration (Phase 21 Day 311, preset macos-clang-arm64): everything builds and nothing runs, since the Mac that builds it is Intel. Anything
-# else names the phase that ports it.
+# Supported targets: x86-64 Linux, x86-64 Windows (Phase 13), and x86-64 macOS (Phase 21, a side phase on the Mac). arm64 macOS builds and runs natively
+# on Apple silicon (preset macos-clang-arm64) and is compile-only from an Intel Mac, which cannot run it. Anything else names the phase that ports it.
 option(ENGINE_COMPILE_ONLY "Build every target and run nothing built (no test discovery, no shader minting): a cross-compiled check" OFF)
 # ENGINE_ARCH is the processor the tree builds for (x64 or arm64), the CMake side of build_defs.h's ENGINE_ARCH_*: read it,
 # not CMAKE_SYSTEM_PROCESSOR, which a macOS arm64 tree on an Intel Mac reports as the host's x86_64 (Phase 25 Day 411).
@@ -85,22 +84,24 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_6
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
   set(ENGINE_PLATFORM windows)
   set(ENGINE_ARCH x64)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND (CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64" OR
+       (NOT CMAKE_OSX_ARCHITECTURES AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")))
+  # x86-64: native on an Intel Mac, run under Rosetta 2 on Apple silicon.
   set(ENGINE_PLATFORM macos)
   set(ENGINE_ARCH x64)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND (CMAKE_OSX_ARCHITECTURES STREQUAL "arm64" OR
        (NOT CMAKE_OSX_ARCHITECTURES AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")))
-  # arm64: built and run natively on Apple silicon (not seen yet: no such Mac), compile-only from an Intel Mac (or a CMake under Rosetta).
+  # arm64: built and run natively on Apple silicon, compile-only from an Intel Mac (it cannot run there).
   set(ENGINE_PLATFORM macos)
   set(ENGINE_ARCH arm64)
-  if(NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64" AND NOT ENGINE_COMPILE_ONLY)
-    message(FATAL_ERROR "arm64 macOS on an Intel Mac builds compile-only: configure with -DENGINE_COMPILE_ONLY=ON (preset macos-clang-arm64)")
+  if(NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(ENGINE_COMPILE_ONLY ON CACHE BOOL "" FORCE)
   endif()
   if(ENGINE_COMPILE_ONLY)
     message(STATUS "macOS arm64 (Phase 21 Day 311): compile-only, nothing built is run here")
   endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS on ${CMAKE_SYSTEM_PROCESSOR} (${CMAKE_OSX_ARCHITECTURES}): x86-64 and arm64 (compile-only) are the supported "
+  message(FATAL_ERROR "macOS on ${CMAKE_SYSTEM_PROCESSOR} (${CMAKE_OSX_ARCHITECTURES}): x86-64 and arm64 are the supported "
                       "architectures (plans/phase-21-macos-metal.md)")
 elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in the future Android and iOS port (plans/future/android-ios.md)")

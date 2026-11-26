@@ -37,8 +37,8 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     },
     {
-      "name": "macos-clang",
-      "displayName": "macOS, Apple clang from the Command Line Tools (build-macos/); x86-64, deployment target 13.3",
+      "name": "macos-clang-x86_64",
+      "displayName": "macOS, Apple clang from the Command Line Tools (build-macos/); x86-64 (under Rosetta 2 on Apple silicon), deployment target 13.3",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-macos",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3", "CMAKE_OSX_ARCHITECTURES": "x86_64" },
@@ -46,10 +46,10 @@
     },
     {
       "name": "macos-clang-arm64",
-      "displayName": "macOS arm64, compile-only (build-macos-arm64/): every target for Apple silicon, built on the Intel Mac and never run",
+      "displayName": "macOS arm64 (build-macos-arm64/): native on Apple silicon; compile-only when configured on an Intel Mac",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-macos-arm64",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3", "CMAKE_OSX_ARCHITECTURES": "arm64", "ENGINE_COMPILE_ONLY": "ON" },
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3", "CMAKE_OSX_ARCHITECTURES": "arm64" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
     }
   ],
@@ -58,13 +58,14 @@
     { "name": "linux-nojit", "configurePreset": "linux-nojit" },
     { "name": "windows-msvc", "configurePreset": "windows-msvc" },
     { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl" },
-    { "name": "macos-clang", "configurePreset": "macos-clang" },
+    { "name": "macos-clang-x86_64", "configurePreset": "macos-clang-x86_64" },
     { "name": "macos-clang-arm64", "configurePreset": "macos-clang-arm64" }
   ],
   "testPresets": [
     { "name": "linux", "configurePreset": "linux", "output": { "outputOnFailure": true } },
     { "name": "windows-msvc", "configurePreset": "windows-msvc", "output": { "outputOnFailure": true } },
     { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl", "output": { "outputOnFailure": true } },
-    { "name": "macos-clang", "configurePreset": "macos-clang", "output": { "outputOnFailure": true } }
+    { "name": "macos-clang-x86_64", "configurePreset": "macos-clang-x86_64", "output": { "outputOnFailure": true } },
+    { "name": "macos-clang-arm64", "configurePreset": "macos-clang-arm64", "output": { "outputOnFailure": true } }
   ]
 }
