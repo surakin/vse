@@ -13,6 +13,8 @@
 #include "rhi/rhi_log.h"
 #include "soak.h"
 #include "build_defs.h"
+#include "cstr/cstr.h"
+#include "sync/atomic.h"
 
 #if ENGINE_PLATFORM_MACOS
 #include <pthread.h>  // pthread_self: the thread the Objective-C runtime names in its missing-pool reports
@@ -37,6 +39,58 @@ bool Sanitized()
 #endif
 }
 
+
+// The Direct3D 12 debug layer's GPU-based validation, on the Windows runner's WARP (10.0.26100.33648), reports `Incompatible
+// texture barrier layout` for a mip-generation dispatch in about one full run of three, with the barriers valid and the
+// failing level and texture moving from run to run; it never shows on the PC's WARP (10.0.26100.10068) or on a hardware
+// adapter (KNOWN-ISSUES.md, CI run 9 and the investigation after it). The reset tests count those messages and, on a
+// software adapter only, expect them: any other validation error, and the same message on a hardware adapter, still fails.
+class SoftwareMipLayoutNoise
+{
+public:
+    SoftwareMipLayoutNoise()
+    {
+#if ENGINE_PLATFORM_WINDOWS
+        rhi::dx12::SetDebugMessageCapture(&Capture, this);
+#endif
+    }
+    ~SoftwareMipLayoutNoise()
+    {
+#if ENGINE_PLATFORM_WINDOWS
+        rhi::dx12::SetDebugMessageCapture(nullptr, nullptr);
+#endif
+    }
+    SoftwareMipLayoutNoise(const SoftwareMipLayoutNoise&) = delete;
+    SoftwareMipLayoutNoise& operator=(const SoftwareMipLayoutNoise&) = delete;
+
+    // The messages seen so far.
+    u64 Count() const { return count_.Load(MemoryOrder::Relaxed); }
+
+    // Declares them expected on `validation` when the device is a software one; says so in the test's output.
+    void ExpectOnSoftwareDevice(rhi::Device* device, gpu_test::BackendValidation* validation) const
+    {
+        const u64 seen = Count();
+        if (seen == 0 || device == nullptr || device->Adapter().kind != rhi::AdapterKind::Software)
+        {
+            return;
+        }
+        WARN(seen << " GPU-based validation layout message(s) on a software adapter were not counted (known: the "
+                     "validator's, not the engine's)");
+        validation->ExpectErrors(seen);
+    }
+
+private:
+    static void Capture(void* user, LogVerbosity severity, u32, const char* text)
+    {
+        if (severity == LogVerbosity::Error && CStrFind(text, "GPU-BASED VALIDATION") != nullptr &&
+            CStrFind(text, "Incompatible texture barrier layout") != nullptr)
+        {
+            static_cast<SoftwareMipLayoutNoise*>(user)->count_.FetchAdd(1, MemoryOrder::Relaxed);
+        }
+    }
+
+    Atomic<u64> count_{0};
+};
 }  // namespace
 
 TEST_CASE("The demo picture is identical before and after a device reset and still matches the golden",
@@ -145,6 +199,7 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
     FOR_EACH_GPU_BACKEND(backend)
     {
         gpu_test::BackendValidation validation(backend);
+        SoftwareMipLayoutNoise noise;
         reset_rig::Rig rig;
         if (!rig.Create(backend, 64, 8, false, nullptr, nullptr, /*validation=*/true))
         {
@@ -230,6 +285,7 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
 #endif
             CHECK(drift_kib < allowed_kib);
         }
+        noise.ExpectOnSoftwareDevice(rig.host.GetDevice(), &validation);
         CHECK(rig.R().Stats().resets == static_cast<u64>(iterations));
         CHECK(rig.R().Stats().rollbacks == 0);
         CHECK(rig.host.LeakedObjects() == 0);
@@ -249,6 +305,7 @@ TEST_CASE("Resets that recreate mipmapped textures generate their mips under GPU
     FOR_EACH_GPU_BACKEND(backend)
     {
         gpu_test::BackendValidation validation(backend);
+        SoftwareMipLayoutNoise noise;
         reset_rig::Rig rig;
         if (!rig.Create(backend, 64, 8, false, nullptr, nullptr, /*validation=*/true))
         {
@@ -264,6 +321,7 @@ TEST_CASE("Resets that recreate mipmapped textures generate their mips under GPU
             REQUIRE(rig.Render() == FrameStatus::Ok);
             rig.host.GetDevice()->Quiesce();
         }
+        noise.ExpectOnSoftwareDevice(rig.host.GetDevice(), &validation);
         rig.TearDown();
     }
 }

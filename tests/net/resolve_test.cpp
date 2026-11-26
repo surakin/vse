@@ -55,6 +55,22 @@ Status ResolveTestSlow(StringView, u16 port, AddressFamily, EndpointSet* out)
     return Status::Success();
 }
 
+// A lookup that holds until the test lets it go (at most 10 s, so a failed test cannot hang): the queue test does not depend on
+// how long a stalled runner takes between its steps (CI run 9, macOS: the fixed 200 ms lookup had ended before the third request).
+Atomic<int> g_gate_started{0};
+Atomic<int> g_gate_open{0};
+
+Status ResolveTestGated(StringView, u16 port, AddressFamily, EndpointSet* out)
+{
+    g_gate_started.FetchAdd(1);
+    for (int waited = 0; waited < 10000 && g_gate_open.Load() == 0; ++waited)
+    {
+        ThisThread::SleepForMilliseconds(1);
+    }
+    out->Add(Endpoint(Address::V4(10, 0, 0, 2), port));
+    return Status::Success();
+}
+
 Status ResolveTestEmpty(StringView, u16, AddressFamily, EndpointSet*)
 {
     return Status::Success();  // success with nothing found
@@ -307,18 +323,25 @@ TEST_CASE("The resolver's queue is bounded, and shutdown ends the queued request
 {
     auto scheduler = ResolveTestScheduler(2);
     Reactor reactor(*scheduler);
-    Resolver resolver(&ResolveTestSlow, 1);  // one waiting request besides the one in progress
+    Resolver resolver(&ResolveTestGated, 1);  // one waiting request besides the one in progress
+    g_gate_started.Store(0);
+    g_gate_open.Store(0);
     ResolveOutcome first;
     ResolveOutcome second;
     ResolveOutcome third;
     scheduler->Submit(ResolveTestJob(&reactor, &resolver, "a.example", 1, AddressFamily::None, {}, &first));
-    ThisThread::SleepForMilliseconds(40);  // the thread has taken the first
+    for (int waited = 0; waited < 5000 && g_gate_started.Load() == 0; ++waited)
+    {
+        ThisThread::SleepForMilliseconds(1);  // the thread has taken the first, which then holds
+    }
+    CHECK(g_gate_started.Load() == 1);
     scheduler->Submit(ResolveTestJob(&reactor, &resolver, "b.example", 1, AddressFamily::None, {}, &second));
-    ThisThread::SleepForMilliseconds(20);  // queued
+    ThisThread::SleepForMilliseconds(100);  // queued
     scheduler->Submit(ResolveTestJob(&reactor, &resolver, "c.example", 1, AddressFamily::None, {}, &third));
     ResolveTestWait(*scheduler, third);
     CHECK(third.result.status.Is(ErrorCode::LimitExceeded));
-    resolver.Shutdown();  // waits for the first, ends the second
+    g_gate_open.Store(1);  // the first may finish; Shutdown waits for it and ends the second
+    resolver.Shutdown();
     ResolveTestWait(*scheduler, first);
     ResolveTestWait(*scheduler, second);
     CHECK(first.result.status.Ok());
