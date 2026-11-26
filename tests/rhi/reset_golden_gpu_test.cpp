@@ -167,7 +167,8 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         // change, so one reading can land on a step.
         i64 early_low = 0;
         i64 late_low = 0;
-        i64 baseline_handles = 0;
+        i64 early_handles_low = 0;
+        i64 late_handles_low = 0;
         for (int i = 0; i < iterations; ++i)
         {
             INFO("reset " << i);
@@ -182,24 +183,27 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
             }
             reset_rig::ExpectSameCounts(now, first);
             CHECK(rig.registry.Count() == owners);
-            if (i == 4)
-            {
-                baseline_handles = os::OpenHandleCount();
-            }
             if ((i >= 4 && i < 9) || i >= iterations - 5)
             {
                 const i64 resident = os::ResidentMemoryKiB();
                 i64& low = i < 9 ? early_low : late_low;
                 low = (low == 0 || resident < low) ? resident : low;
+                // The same for the open handles: a device keeps a few (a pool's thread, an event) for a reset or two and
+                // gives them back, so one reading can land on a step (CI run 8, WARP: +8 after 20 resets, -4 after 100).
+                const i64 handles = os::OpenHandleCount();
+                i64& handles_low = i < 9 ? early_handles_low : late_handles_low;
+                handles_low = (handles_low == 0 || handles < handles_low) ? handles : handles_low;
             }
         }
         const i64 drift_kib = late_low - early_low;
-        const i64 handle_drift = os::OpenHandleCount() - baseline_handles;
+        const i64 handle_drift = late_handles_low - early_handles_low;
         WARN("after " << iterations << " resets: lowest resident " << early_low << " KiB over resets 5-9, " << late_low
                       << " KiB over the last five (drift " << drift_kib << " KiB), handle drift " << handle_drift
                       << ", last reset " << rig.R().Stats().last_reset_ms << " ms");
-        // A leak per reset would show about one handle per reset. Direct3D 12's drift over 100 resets ranged from -1 to
-        // 3 on the Radeon 860M (Day 172, five runs, one of them beside other tests), Vulkan's stays at 0.
+        // A leak per reset raises the low point by about one handle per reset. Direct3D 12's drift over 100 resets ranged
+        // from -1 to 3 on the Radeon 860M (Day 172, five runs, one of them beside other tests; one reading against one),
+        // Vulkan's stays at 0. The low points over resets 5-9 and the last five are compared, as memory is: on WARP a
+        // reading lands on a transient step of two or three handles.
         CHECK(handle_drift <= (backend == rhi::Backend::Dx12 ? 4 : 2));
         // Metal's validation layer in assert mode grows the process by 8 to 13 MiB over the 100 resets (Phase 21 Day
         // 325, four runs), in its own completion handlers on Metal's thread; without it the drift is 1.4 to 3.4 MiB.
@@ -231,5 +235,35 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         CHECK(rig.host.LeakedObjects() == 0);
         rig.TearDown();
         CHECK(rig.host.LeakedObjects() == 0);
+    }
+}
+
+// The textures a reset recreates generate their mips again (GpuTexture: level 0 uploaded, then GenerateMips on a list of
+// the device's own). With GPU-based validation on (every other reset here), the validator must see each level in the
+// layout the dispatch needs. CI run 8 (WARP, the 100-reset soak form) reported `Incompatible texture barrier layout:
+// 'normal.rtex', Layout: D3D12_BARRIER_LAYOUT_COMMON` for the mip dispatches; this is the short form of that loop, so a
+// change to the mip barriers is checked without the soak.
+TEST_CASE("Resets that recreate mipmapped textures generate their mips under GPU-based validation clean",
+          "[rhi][gpu][reset]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        gpu_test::BackendValidation validation(backend);
+        reset_rig::Rig rig;
+        if (!rig.Create(backend, 64, 8, false, nullptr, nullptr, /*validation=*/true))
+        {
+            rig.TearDown();
+            SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
+        }
+        REQUIRE(rig.Render() == FrameStatus::Ok);
+        const int kResets = Sanitized() ? 4 : 10;
+        for (int i = 0; i < kResets; ++i)
+        {
+            INFO("reset " << i);
+            REQUIRE(rig.ResetDevice(i % 2 != 0).ok);  // GPU-based validation is on after the odd resets
+            REQUIRE(rig.Render() == FrameStatus::Ok);
+            rig.host.GetDevice()->Quiesce();
+        }
+        rig.TearDown();
     }
 }

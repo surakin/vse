@@ -480,7 +480,10 @@ ulimit -S -c 0 2>/dev/null || true
 junit="$build/Testing/test-phase-$$.xml"
 mkdir -p "$build/Testing"
 rm -f "$junit"
-ctest --test-dir "$build" -j"$jobs" --output-on-failure --output-junit "$junit" ${sel[@]+"${sel[@]}"} || status=$?
+# The full output of the run also goes to a file of its own under Testing/Temporary: the long-test warning below runs `ctest -N`, which
+# rewrites LastTest.log empty, and the CI jobs upload this directory when a test failed (a hosted runner, run 8).
+mkdir -p "$build/Testing/Temporary"
+ctest --test-dir "$build" -j"$jobs" --output-on-failure --output-junit "$junit" --output-log "$build/Testing/Temporary/test-phase-output.log" ${sel[@]+"${sel[@]}"} || status=$?
 elapsed=$((SECONDS - started))
 long_test_warning "$junit"
 rm -f "$junit"

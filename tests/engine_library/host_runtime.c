@@ -14,6 +14,24 @@
 static int g_failures = 0;
 static const engine_api* g_api = NULL;
 
+/* Where the program is, for the watchdog: a hang on a hosted runner (run 8: engine_c_runtime sat until ctest's timeout,
+   its buffered output lost) names its step on stderr and ends the program with the output intact. */
+static const char* volatile g_step = "start";
+#define STEP(name)                                                                                                     \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        g_step = (name);                                                                                               \
+        fprintf(stderr, "host_runtime: step %s\n", (name));                                                            \
+    } while (0)
+
+static void Watchdog(void* user)
+{
+    (void)user;
+    host_sleep_ms(120000);
+    fprintf(stderr, "host_runtime: still running after 120 s, in step '%s'; ending the program\n", g_step);
+    host_exit_now(9);
+}
+
 #define CHECK(condition)                                                                                               \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -685,6 +703,7 @@ int main(void)
 {
     char dump_dir[1024];
     engine_handle engine;
+    host_thread watchdog;
     host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
 
     snprintf(dump_dir, sizeof(dump_dir), "%s.%d", RUNTIME_DUMP_DIR, host_pid());
@@ -702,32 +721,49 @@ int main(void)
     /* a crash in a job leaves a dump (the child starts before any thread of this program exists) */
 #ifndef RUNTIME_NO_CRASH_CHILD /* ThreadSanitizer: the crash handler's dump helper traces the crashed process and      \
                                   never finishes (the Day 345 crash test is plain only too) */
+    STEP("the crash child");
     CHECK(host_run_crash_child(&CrashChild, dump_dir));
     CHECK(host_count_files(dump_dir, ".envelope") >= 1);
 #endif
 
+    /* After the crash child: that one starts before this program has a thread of its own (it ends by its bounded wait). */
+    host_thread_start(&watchdog, &Watchdog, NULL); /* never joined: the program's end ends it */
+    STEP("new engine");
     engine = NewEngine(dump_dir);
+    STEP("world");
     TestWorld(engine);
+    STEP("lights and morphs");
     TestLightsAndMorphs(engine);
+    STEP("budget");
     TestBudget(engine);
+    STEP("jobs");
     TestJobs(engine);
+    STEP("pending counter");
     TestPendingCounter(engine);
+    STEP("too many jobs");
     TestTooManyJobs(engine);
+    STEP("two threads");
     TestTwoThreads(engine);
+    STEP("crash handler restored");
     TestCrashHandlerRestored(engine);
+    STEP("destroy");
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     CHECK_STATUS(g_api->frame(engine, NULL, NULL), ENGINE_ERROR_INVALID_ARGUMENT);
     {
         engine_frame_info info = FrameInfo(0.01, 0);
         CHECK_STATUS(g_api->frame(engine, &info, NULL), ENGINE_ERROR_STALE_HANDLE);
     }
+    STEP("thread detach");
     g_api->thread_detach();
 
     if (g_failures != 0)
     {
         printf("host_runtime: %d check(s) failed\n", g_failures);
+        fflush(stdout);
         return 1;
     }
     printf("host_runtime: ok\n");
+    fflush(stdout);
+    STEP("process exit");
     return 0;
 }

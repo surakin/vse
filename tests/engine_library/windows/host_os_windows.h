@@ -238,15 +238,22 @@ static inline int host_run_crash_child(void (*child)(const char*), const char* a
         return 0;
     }
     SetEnvironmentVariableW(L"HOST_CRASH_CHILD", NULL);
-    WaitForSingleObject(process.hProcess, 60000);
+    if (WaitForSingleObject(process.hProcess, 60000) != WAIT_OBJECT_0)
+    {
+        /* A child that does not end holds the output pipe, so ctest would wait for the whole test's timeout and lose
+           what the program printed (a hosted runner, run 8): end it, say so on stderr, fail the check at once. */
+        fprintf(stderr, "host_os: the crash child did not end within 60 s; it is terminated\n");
+        TerminateProcess(process.hProcess, 0x7fff);
+        WaitForSingleObject(process.hProcess, 10000);
+    }
     GetExitCodeProcess(process.hProcess, &code);
     g_host_child_code = code;
     CloseHandle(process.hThread);
     CloseHandle(process.hProcess);
     if (code != (DWORD)EXCEPTION_ACCESS_VIOLATION && code != 3)
     {
-        printf("host_os: the crash child ended with 0x%08lx, not an access violation or an abort\n",
-               (unsigned long)code);
+        fprintf(stderr, "host_os: the crash child ended with 0x%08lx, not an access violation or an abort\n",
+                (unsigned long)code);
     }
     return code == (DWORD)EXCEPTION_ACCESS_VIOLATION || code == 3;
 }

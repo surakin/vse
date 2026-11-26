@@ -169,7 +169,22 @@ static inline int host_run_crash_child(void (*child)(const char*), const char* a
         child(arg);
         _exit(4);
     }
-    waitpid(pid, &status, 0);
+    {
+        /* Bounded as the Windows side is: a child that does not end is killed and the check fails at once. */
+        int waited_ms = 0;
+        pid_t done = 0;
+        while ((done = waitpid(pid, &status, WNOHANG)) == 0 && waited_ms < 60000)
+        {
+            host_sleep_ms(10);
+            waited_ms += 10;
+        }
+        if (done == 0)
+        {
+            fprintf(stderr, "host_run_crash_child: the child did not end within 60 s; it is killed\n");
+            kill(pid, SIGKILL);
+            waitpid(pid, &status, 0);
+        }
+    }
     g_host_child_status = status;
     if (!ProbeEndedByFault(status))
     {
