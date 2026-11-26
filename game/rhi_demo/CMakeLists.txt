@@ -70,7 +70,7 @@ rhi_demo_expect(rhi_demo_negative_injection 2 "usage" "" --inject-device-loss -1
 
 
 # Without a Vulkan loader the demo reports it and exits 1; it does not crash. Needs no GPU. (Not on macOS, which has no Vulkan.)
-if(NOT APPLE)
+if(ENGINE_HAVE_VULKAN)  # not on macOS, nor in a Windows tree without the Vulkan SDK
   add_test(NAME rhi_demo_no_vulkan
     COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
       ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:rhi_demo>;--screenshot;${RHI_DEMO_SHOT};--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"

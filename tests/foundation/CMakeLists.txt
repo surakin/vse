@@ -43,7 +43,8 @@ set(FOUNDATION_BASE_TEST_SOURCES
 )
 # The GPU driver probe is Vulkan's and not built on macOS (Phase 21 decision 8), so neither is its test; os::LoadLibrary is tested there
 # by tests/macos/os_macos_test.cpp.
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+# The same on Windows without the Vulkan SDK (ENGINE_HAVE_VULKAN off).
+if(ENGINE_HAVE_VULKAN)
   list(APPEND FOUNDATION_BASE_TEST_SOURCES gpu_driver_loading_test.cpp)
 endif()
 

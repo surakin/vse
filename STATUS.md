@@ -458,7 +458,8 @@ What to install first, per platform: `BUILD.md`.
 - **Windows (Phase 13, from Day 148):** from a plain PowerShell or Git Bash (no Developer Command Prompt): `cmake --preset windows-msvc` (or
   `windows-clang-cl`), `cmake --build --preset windows-msvc`, `ctest --preset windows-msvc`. The Windows build grows one layer per day. Scoped runs:
   `scripts/test-phase.sh --affected` (and `--flavor asan`) under Git for Windows' `bash` (default build directory `build-msvc`; no tsan on Windows, and
-  `--flavor all` says so). Non-unity check: `cmake --preset windows-msvc -B build-windows-msvc-nounity -DENGINE_UNITY_BUILD=OFF`. Guide:
+  `--flavor all` says so). Non-unity check: `cmake --preset windows-msvc -B build-windows-msvc-nounity -DENGINE_UNITY_BUILD=OFF`. Without the
+  Vulkan SDK the tree builds Direct3D 12 only (`ENGINE_WINDOWS_VULKAN=AUTO|ON|OFF`, `BUILD.md`; check: `-B build-msvc-novk -DENGINE_WINDOWS_VULKAN=OFF`). Guide:
   `docs/guide/building-and-testing.md`, "Building and testing on Windows".
 
 

@@ -151,7 +151,7 @@ add_test(NAME renderer_demo_crash_after_reset
 set_tests_properties(renderer_demo_crash_after_reset PROPERTIES LABELS "gpu;demo;display;crash" RESOURCE_LOCK display SKIP_RETURN_CODE 77
   ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/renderer_demo_crash_after_reset;${DEMO_PROFILE_ENV}")
 
-if(NOT APPLE)  # macOS has no Vulkan
+if(ENGINE_HAVE_VULKAN)  # not on macOS, nor in a Windows tree without the Vulkan SDK
   add_test(NAME renderer_demo_no_vulkan
     COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
       ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/renderer_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"

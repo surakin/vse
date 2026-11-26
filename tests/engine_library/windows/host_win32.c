@@ -386,6 +386,24 @@ static int ClientIs(HWND hwnd, unsigned width, unsigned height)
     return GetClientRect(hwnd, &r) && (unsigned)(r.right - r.left) == width && (unsigned)(r.bottom - r.top) == height;
 }
 
+/* Whether this library draws with Vulkan: a tree built without the Vulkan SDK has Direct3D 12 only and refuses a Vulkan
+   surface as UNSUPPORTED. */
+static int g_vulkan_built = 1;
+
+static int VulkanBuilt(engine_handle engine, HWND window)
+{
+    engine_surface_info info = InfoOf(window, 400, 240, ENGINE_SURFACE_FLAG_VULKAN);
+    engine_handle probe;
+    engine_status made;
+    memset(&probe, 0, sizeof(probe));
+    made = g_api->surface_create(engine, &info, &probe);
+    if (made == ENGINE_OK)
+    {
+        CHECK_STATUS(g_api->surface_destroy(probe), ENGINE_OK);
+    }
+    return made != ENGINE_ERROR_UNSUPPORTED;
+}
+
 static void TestRendering(engine_handle engine, HWND window, uint32_t api_flag, const char* api_name)
 {
     engine_surface_info info = InfoOf(window, 400, 240, api_flag);
@@ -483,7 +501,9 @@ static void TestRendering(engine_handle engine, HWND window, uint32_t api_flag, 
         engine_buffer_release(&pixels.data);
         /* Another graphics API on rebind is refused: a surface keeps its own. */
         info2.flags = api_flag == ENGINE_SURFACE_FLAG_VULKAN ? ENGINE_SURFACE_FLAG_D3D12 : ENGINE_SURFACE_FLAG_VULKAN;
-        CHECK_STATUS(g_api->surface_rebind(surface, &info2), ENGINE_ERROR_INVALID_ARGUMENT);
+        /* Without Vulkan in the library, the Vulkan flag is refused before the surface is looked at. */
+        CHECK_STATUS(g_api->surface_rebind(surface, &info2),
+                     g_vulkan_built ? ENGINE_ERROR_INVALID_ARGUMENT : ENGINE_ERROR_UNSUPPORTED);
 
         /* A read-back ticket whose surface is destroyed fails with CANCELLED; the engine refuses to go while the
          * surface exists. */
@@ -571,6 +591,14 @@ int main(void)
         if (round == 0)
         {
             TestArguments(engine, window);
+            g_vulkan_built = VulkanBuilt(engine, window);
+        }
+        if (kApis[round] == ENGINE_SURFACE_FLAG_VULKAN && !g_vulkan_built)
+        {
+            printf("host_win32: Vulkan: not in this library (built without the Vulkan SDK): skipped\n");
+            DestroyWindow(window);
+            Pump();
+            break;
         }
         TestRendering(engine, window, kApis[round], kApiNames[round]);
     }
@@ -582,6 +610,6 @@ int main(void)
         printf("host_win32: %d checks failed\n", g_failures);
         return 1;
     }
-    printf("host_win32: ok (Direct3D 12 and Vulkan)\n");
+    printf("host_win32: ok (%s)\n", g_vulkan_built ? "Direct3D 12 and Vulkan" : "Direct3D 12");
     return 0;
 }

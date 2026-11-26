@@ -202,6 +202,8 @@ TEST_CASE("A backend this program never registered fails loudly, never as a miss
     CHECK(ResolveBackend(Backend::Vulkan, reason, sizeof(reason)) == nullptr);
 #if ENGINE_PLATFORM_MACOS
     CHECK(CStrFind(reason, "the vulkan backend is not built for macOS") != nullptr);  // not a registration slip
+#elif !ENGINE_RHI_HAVE_VULKAN
+    CHECK(CStrFind(reason, "the vulkan backend is not built for Windows") != nullptr);  // a tree without the Vulkan SDK
 #else
     CHECK(CStrFind(reason, "the vulkan backend is not registered in this program") != nullptr);
     CHECK(CStrFind(reason, "rhi::RegisterCompiledBackends") != nullptr);
@@ -251,6 +253,14 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
 #else
     CHECK(RegisteredBackendCount() == 2);
 #endif
+#elif ENGINE_PLATFORM_WINDOWS
+    // Windows built without the Vulkan SDK: the null and Direct3D 12 backends only.
+    CHECK(FindBackend(Backend::Vulkan) == nullptr);
+    const BackendDescriptor* dx12 = FindBackend(Backend::Dx12);
+    REQUIRE(dx12 != nullptr);
+    CHECK(dx12->shader_format == ShaderFormat::Dxil);
+    CHECK(dx12->auto_rank > 0);
+    CHECK(RegisteredBackendCount() == 2);
 #else
     // macOS (Phase 21): no Vulkan; the null and Metal backends, Metal what Auto picks (from Day 309).
     CHECK(FindBackend(Backend::Vulkan) == nullptr);

@@ -30,7 +30,7 @@ mistake is starting from the wrong shell.
 
 Install what `BUILD.md` lists as required: Visual Studio Build Tools 2026 with the C++ workload and its AddressSanitizer component (MSVC 14.51,
 Windows SDK 10.0.26100), CMake 3.21 or newer, Ninja on `PATH`, Git for Windows (its `bash` runs the test script), a GPU driver with Direct3D 12
-(feature level 12_0) and Vulkan 1.3, and the Vulkan SDK 1.4 (its headers and validation layers). For the checks: LLVM 23 (`clang-cl`), the
+(feature level 12_0) and Vulkan 1.3, and, for the Vulkan backend, the Vulkan SDK 1.4 (its headers and validation layers). For the checks: LLVM 23 (`clang-cl`), the
 "Graphics Tools" optional feature (the D3D12 debug layer behind `--validation`), and `slangc` exactly v2026.18.2 if you change shaders.
 
 ## How the build finds the compilers
@@ -45,6 +45,7 @@ that names a different MSVC stops the configure. For an unusual install, set any
 | `ENGINE_WINDOWS_SDK_DIR`, `ENGINE_WINDOWS_SDK_VERSION` | the Windows SDK root and version |
 | `ENGINE_LLVM_DIR` | the LLVM installation (`clang-cl`, `lld-link`) |
 | `ENGINE_VULKAN_SDK` | the Vulkan SDK (else `VULKAN_SDK`, else the newest `C:\VulkanSDK\<version>`) |
+| `ENGINE_WINDOWS_VULKAN` | `AUTO` (default: the Vulkan backend when the SDK is found, else Direct3D 12 only), `ON` (a missing SDK is an error) or `OFF` |
 | `ENGINE_SLANGC` | `slangc` (else `PATH`, else `C:\Tools\slang-2026.18.2\bin`); without it the committed minted shaders are used |
 | `ENGINE_DXC` | a `dxc` or its directory, for DXIL minting (else the Windows SDK's) |
 | `ENGINE_NINJA` | Ninja, if it is not on `PATH` |

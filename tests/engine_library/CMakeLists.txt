@@ -305,7 +305,7 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
       endif()
       add_test(NAME engine_c_offscreen${suffix} COMMAND host_offscreen${suffix})
       set_tests_properties(engine_c_offscreen${suffix} PROPERTIES LABELS "engine_library;${flavor_label}" PASS_REGULAR_EXPRESSION "host_offscreen: (ok|skipped)" TIMEOUT 300)
-      if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+      if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND ENGINE_HAVE_VULKAN)  # not in a tree without the Vulkan SDK
         # Day 381: the platform's own API (Direct3D 12) above, and Vulkan here (HOST_SURFACE_API, host_surface_api.h).
         add_test(NAME engine_c_offscreen_vulkan${suffix} COMMAND host_offscreen${suffix})
         set_tests_properties(engine_c_offscreen_vulkan${suffix} PROPERTIES LABELS "engine_library;${flavor_label}" PASS_REGULAR_EXPRESSION "host_offscreen: (ok|skipped)"
@@ -335,7 +335,7 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
       endif()
       add_test(NAME engine_c_acceptance_scene${suffix} COMMAND host_acceptance_scene${suffix})
       set_tests_properties(engine_c_acceptance_scene${suffix} PROPERTIES LABELS "engine_library;${flavor_label}" PASS_REGULAR_EXPRESSION "host_acceptance_scene: (ok|skipped)" TIMEOUT 600)
-      if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+      if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND ENGINE_HAVE_VULKAN)
         # Day 381: Direct3D 12 above (the platform's own), Vulkan here.
         add_test(NAME engine_c_acceptance_scene_vulkan${suffix} COMMAND host_acceptance_scene${suffix})
         set_tests_properties(engine_c_acceptance_scene_vulkan${suffix} PROPERTIES LABELS "engine_library;${flavor_label}"
@@ -470,7 +470,11 @@ if((ENGINE_LIBRARY_HOSTS OR WIN32) AND TARGET engine_c)
     if(scene_window_source AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
       # Day 369: once with Direct3D 12 and once with Vulkan (HOST_SURFACE_API, host_window.h). One window test at a time, holding the desktop (the
       # `display` resource), as the other window tests.
-      foreach(api d3d12 vulkan)
+      set(_host_scene_apis d3d12)
+      if(ENGINE_HAVE_VULKAN)  # a tree without the Vulkan SDK draws with Direct3D 12 only
+        list(APPEND _host_scene_apis vulkan)
+      endif()
+      foreach(api IN LISTS _host_scene_apis)
         add_test(NAME engine_c_scene_${api}${suffix} COMMAND host_scene${suffix})
         add_test(NAME engine_c_walk_around_${api}${suffix} COMMAND walk_around${suffix} --frames 40)
         set_tests_properties(engine_c_scene_${api}${suffix} PROPERTIES PASS_REGULAR_EXPRESSION "host_scene: (ok|skipped)")

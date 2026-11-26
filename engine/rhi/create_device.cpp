@@ -55,7 +55,8 @@ bool BuiltForThisPlatform(Backend backend)
     switch (backend)
     {
     case Backend::Null: return true;
-    case Backend::Vulkan: return ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS;  // not macOS: Phase 21 decision 8
+    // Not macOS (Phase 21 decision 8), nor a Windows tree built without the Vulkan SDK (ENGINE_RHI_VULKAN_IN_BUILD, the RHI's CMake).
+    case Backend::Vulkan: return ENGINE_RHI_VULKAN_IN_BUILD != 0;
     case Backend::Dx12: return ENGINE_PLATFORM_WINDOWS;
     case Backend::Metal: return ENGINE_PLATFORM_MACOS;  // Phase 21 Day 300
     case Backend::Auto: return true;

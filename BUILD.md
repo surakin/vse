@@ -67,6 +67,10 @@ The override variables for unusual installs (cache variables or environment vari
 Day 163, `ENGINE_SLANGC` (`slangc`; else `PATH`, then `C:\Tools\slang-2026.18.2\bin`) and `ENGINE_DXC` (a `dxc` or its directory, whose
 `dxcompiler.dll` and `dxil.dll` mint DXIL; else the Windows SDK's `bin\<version>\x64`, never the first `dxc` on `PATH`).
 
+`ENGINE_WINDOWS_VULKAN` (cache variable: `AUTO`, the default, `ON` or `OFF`) chooses the Vulkan backend. `AUTO` builds it when the Vulkan SDK
+is found and otherwise builds Direct3D 12 only (the configure says which: `Vulkan backend: on` or `off`); `ON` makes a missing SDK an error;
+`OFF` leaves Vulkan out even when the SDK is installed. Without Vulkan, the Vulkan tests are not built and the tests that ask for it by name skip.
+
 | What | Version used | Kind | Notes | Install |
 |---|---|---|---|---|
 | Windows 10 or 11, x64 | Windows 11 build 26300 | Required | | |
@@ -78,7 +82,7 @@ Day 163, `ENGINE_SLANGC` (`slangc`; else `PATH`, then `C:\Tools\slang-2026.18.2\
 | GPU driver with D3D12 (feature level 12_0) and Vulkan 1.3 | AMD 32.0.32015.7029 | Required to run | `vulkan-1.dll` ships with the driver. | vendor driver |
 | LLVM (`clang-cl`, `lld-link`) | 23.1.5 | For checks | The second Windows configuration, which must keep building (Phase 13 rule). Found in `C:\Program Files\LLVM` without being on `PATH`. | `winget install --id LLVM.LLVM -e` |
 | Graphics Tools (optional Windows feature) | | For checks | The D3D12 debug layer (`d3d12SDKLayers.dll`): `--validation` on DX12 and the debug-layer-silent checks. | Settings → System → Optional features → "Graphics Tools", or elevated: `Add-WindowsCapability -Online -Name Tools.Graphics.DirectX~~~~0.0.1.0` |
-| Vulkan SDK | 1.4.363.0 | Required | Its headers (`vulkan/vulkan_core.h`) are needed to build; its validation layers serve `--validation`. The loader is already in the driver. | `winget install --id KhronosGroup.VulkanSDK -e` |
+| Vulkan SDK | 1.4.363.0 | For the Vulkan backend | Its headers (`vulkan/vulkan_core.h`) build the Vulkan backend; its validation layers serve `--validation`. The loader is already in the driver. Without it the tree builds Direct3D 12 only (`ENGINE_WINDOWS_VULKAN`, below). | `winget install --id KhronosGroup.VulkanSDK -e` |
 | `slangc` | **exactly v2026.18.2** | For checks | Same version as Linux, so minted SPIR-V and DXIL match byte for byte. winget's `shader-slang.slang` is older (2026.14.1); use the Windows x86-64 zip from https://github.com/shader-slang/slang/releases/tag/v2026.18.2 and put its `bin` on `PATH`, or set `ENGINE_SLANGC`. | GitHub release |
 | Long paths (`HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`) | off on the developer PC (2026-11-07) | Optional | Lets the manifest's `longPathAware` take effect. The file layer works either way (it adds the `\\?\` prefix past 248 characters; `tests/io/io_windows_test.cpp` checks it with the setting off). The check with it on has not been done. An elevated system change: the developer makes it. | Group Policy "Enable Win32 long paths", or the registry value |
 | Developer Mode | off on the developer PC | Optional | Lets tests create symbolic links without elevation; without it they skip with a reason (Phase 13 Days 151-152: the `Stat`/`Lstat` link checks). | Settings → System → For developers |

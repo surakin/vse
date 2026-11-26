@@ -43,9 +43,11 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     os/windows/os.cpp
     os/windows/utf16.cpp
     os/windows/session.cpp
-    os/gpu_driver_probe.cpp
-    os/windows/vulkan_loader_name.cpp
   )
+  # The GPU driver probe is Vulkan's: only in a tree that builds the Vulkan backend (ENGINE_HAVE_VULKAN, the root CMakeLists.txt).
+  if(ENGINE_HAVE_VULKAN)
+    list(APPEND FOUNDATION_PLATFORM_SOURCES os/gpu_driver_probe.cpp os/windows/vulkan_loader_name.cpp)
+  endif()
   # Day 154: stack traces through DbgHelp, the module list, the crash context; Day 155: the crash hook, death tests, fault injection;
   # Day 156: post-mortem dumps (Windows Error Reporting LocalDumps). libbacktrace is not built on Windows.
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
@@ -250,7 +252,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   endif()
   foreach(suffix "" ${_engine_flavors})
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
-    target_include_directories(foundation_base${suffix} SYSTEM PUBLIC "${ENGINE_VULKAN_HEADERS_DIR}")
+    if(ENGINE_HAVE_VULKAN)
+      target_include_directories(foundation_base${suffix} SYSTEM PUBLIC "${ENGINE_VULKAN_HEADERS_DIR}")
+    endif()
     # WTSQuerySessionInformation (os/windows/session.cpp); user32 for the input desktop.
     target_link_libraries(foundation_base${suffix} PUBLIC wtsapi32 user32 bcrypt)
     engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})

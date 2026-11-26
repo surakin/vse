@@ -150,9 +150,13 @@ TEST_CASE("The dx12 backend is registered, takes DXIL, and is what Auto picks on
     REQUIRE(d != nullptr);
     CHECK(StringView(d->name) == "dx12");
     CHECK(d->shader_format == ShaderFormat::Dxil);
+#if ENGINE_RHI_HAVE_VULKAN  // a tree built without the Vulkan SDK has Direct3D 12 only
     const BackendDescriptor* vulkan = FindBackend(Backend::Vulkan);
     REQUIRE(vulkan != nullptr);
     CHECK(d->auto_rank > vulkan->auto_rank);  // since Phase 13 Day 172
+#else
+    CHECK(FindBackend(Backend::Vulkan) == nullptr);
+#endif
     char why[160] = {};
     const BackendDescriptor* picked = PickAutoBackend(why, sizeof(why));
     INFO(why);

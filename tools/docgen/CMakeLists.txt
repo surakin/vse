@@ -75,7 +75,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND DOCGEN_FLAGS_ARGS --flag "${_system_include}${dir}")
   endforeach()
   set(DOCGEN_LINK_ARGS "")
-  foreach(lib renderer_passes renderer renderer_reflection ui net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_dx12 rhi_vulkan rhi jobs platform foundation_settings foundation_debug foundation_io foundation_base sentry breakpad_client)
+  set(_docgen_vulkan "")
+  if(ENGINE_HAVE_VULKAN)  # a tree without the Vulkan SDK builds Direct3D 12 only (the root CMakeLists.txt)
+    set(_docgen_vulkan rhi_vulkan)
+  endif()
+  foreach(lib renderer_passes renderer renderer_reflection ui net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_dx12 ${_docgen_vulkan} rhi jobs platform foundation_settings foundation_debug foundation_io foundation_base sentry breakpad_client)
     list(APPEND DOCGEN_LINK_ARGS --link $<TARGET_LINKER_FILE:${lib}>)
   endforeach()
   # The system libraries those link beyond CMake's standard ones (engine/foundation, engine/platform, engine/net and sentry's CMakeLists.txt), then
@@ -91,8 +95,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   foreach(dir IN LISTS ENGINE_WINDOWS_LIB_DIRS)
     list(APPEND DOCGEN_LINK_ARGS --link "/LIBPATH:${dir}")
   endforeach()
-  set(DOCGEN_EXTRA_INCLUDES -I ${ENGINE_VULKAN_HEADERS_DIR})
-  set(DOCGEN_SAMPLE_LIBRARIES platform breakpad_client rhi_dx12 rhi_vulkan)  # linked by path, so named here too
+  set(DOCGEN_EXTRA_INCLUDES "")
+  if(ENGINE_HAVE_VULKAN)
+    set(DOCGEN_EXTRA_INCLUDES -I ${ENGINE_VULKAN_HEADERS_DIR})
+  endif()
+  set(DOCGEN_SAMPLE_LIBRARIES platform breakpad_client rhi_dx12 ${_docgen_vulkan})  # linked by path, so named here too
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # macOS (Phase 21 Day 311): Apple clang with the engine's options and macOS definitions, the Metal backend in place of Vulkan, and the
   # frameworks the libraries link (engine/platform, engine/rhi/metal, engine/foundation): the same list a demo's link line has.

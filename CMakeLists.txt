@@ -108,6 +108,40 @@ else()
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR} is not a supported target (x86-64 Linux, x86-64 Windows; consoles: the future console ports)")
 endif()
 
+# ENGINE_HAVE_VULKAN: whether this tree builds the Vulkan backend (rhi_vulkan, ENGINE_RHI_HAVE_VULKAN) and the GPU driver probe. Always on
+# Linux; never on macOS (MoltenVK is third-party); on Windows when the Vulkan SDK's headers are found (ENGINE_VULKAN_SDK, VULKAN_SDK or
+# C:/VulkanSDK/<version>, cmake/toolchains/windows-common.cmake), else the tree builds Direct3D 12 only. ENGINE_WINDOWS_VULKAN=OFF builds
+# without Vulkan even when the SDK is there; ON makes a missing SDK an error.
+if(ENGINE_PLATFORM STREQUAL "linux")
+  set(ENGINE_HAVE_VULKAN ON)
+elseif(ENGINE_PLATFORM STREQUAL "windows")
+  set(ENGINE_WINDOWS_VULKAN "AUTO" CACHE STRING "Build the Vulkan backend on Windows: AUTO (when the SDK is found), ON or OFF")
+  set_property(CACHE ENGINE_WINDOWS_VULKAN PROPERTY STRINGS AUTO ON OFF)
+  if(ENGINE_VULKAN_SDK_DIR AND EXISTS "${ENGINE_VULKAN_SDK_DIR}/Include/vulkan/vulkan_core.h")
+    set(_engine_vulkan_sdk_found ON)
+  else()
+    set(_engine_vulkan_sdk_found OFF)
+  endif()
+  if(ENGINE_WINDOWS_VULKAN STREQUAL "OFF")
+    set(ENGINE_HAVE_VULKAN OFF)
+  elseif(_engine_vulkan_sdk_found)
+    set(ENGINE_HAVE_VULKAN ON)
+  elseif(ENGINE_WINDOWS_VULKAN STREQUAL "ON")
+    message(FATAL_ERROR "ENGINE_WINDOWS_VULKAN=ON but no Vulkan SDK was found (ENGINE_VULKAN_SDK, VULKAN_SDK, C:/VulkanSDK/<version>). See BUILD.md.")
+  elseif(ENGINE_WINDOWS_VULKAN STREQUAL "AUTO")
+    set(ENGINE_HAVE_VULKAN OFF)
+  else()
+    message(FATAL_ERROR "ENGINE_WINDOWS_VULKAN is '${ENGINE_WINDOWS_VULKAN}': AUTO, ON or OFF")
+  endif()
+  if(ENGINE_HAVE_VULKAN)
+    message(STATUS "Vulkan backend: on (SDK ${ENGINE_VULKAN_SDK_DIR})")
+  else()
+    message(STATUS "Vulkan backend: off (no Vulkan SDK found, or ENGINE_WINDOWS_VULKAN=OFF): Direct3D 12 only")
+  endif()
+else()
+  set(ENGINE_HAVE_VULKAN OFF)
+endif()
+
 # Every executable gets a GNU build id (a hash of its contents) so a crash report and a minidump name the exact binary.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_link_options(-Wl,--build-id)
@@ -252,12 +286,12 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   # The Vulkan C headers (os/gpu_driver_probe.h, the Vulkan backend) from the SDK the toolchain file found. Only vulkan/*.h and the
   # vk_video/ headers vulkan_core.h includes are copied into the build tree: the SDK's Include/ also holds slang, shaderc, dxc and
   # glslang, and exposing those would let engine code compile against a shader compiler (PLAN.md assumption #18).
-  if(NOT ENGINE_VULKAN_SDK_DIR OR NOT EXISTS "${ENGINE_VULKAN_SDK_DIR}/Include/vulkan/vulkan_core.h")
-    message(FATAL_ERROR "No Vulkan SDK found (ENGINE_VULKAN_SDK, VULKAN_SDK, C:/VulkanSDK/<version>): its headers are needed to build. See BUILD.md.")
+  # Without the SDK (ENGINE_HAVE_VULKAN off) nothing is copied and nothing Vulkan is built.
+  if(ENGINE_HAVE_VULKAN)
+    set(ENGINE_VULKAN_HEADERS_DIR "${CMAKE_BINARY_DIR}/vulkan_headers")
+    file(COPY "${ENGINE_VULKAN_SDK_DIR}/Include/vulkan" "${ENGINE_VULKAN_SDK_DIR}/Include/vk_video" DESTINATION "${ENGINE_VULKAN_HEADERS_DIR}"
+         FILES_MATCHING PATTERN "*.h")
   endif()
-  set(ENGINE_VULKAN_HEADERS_DIR "${CMAKE_BINARY_DIR}/vulkan_headers")
-  file(COPY "${ENGINE_VULKAN_SDK_DIR}/Include/vulkan" "${ENGINE_VULKAN_SDK_DIR}/Include/vk_video" DESTINATION "${ENGINE_VULKAN_HEADERS_DIR}"
-       FILES_MATCHING PATTERN "*.h")
   include(cmake/EngineTestPhases.cmake)
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
@@ -347,9 +381,9 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/script_api_doc)  # Phase 27 Day 473: docs/reference/script-api.md from the binding registry
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer, the RHI with its Vulkan backend, the renderer, "
-                 "hello_window, the demos and the benchmarks, docgen, crash_extract, shader_mint and the shaders, the gates and their tests. Not yet "
-                 "ported, so not configured: DX12 (Days 164-172). See plans/phase-13-windows-dx12.md.")
+  message(STATUS "Windows: building the foundation, jobs, the platform layer, the RHI with its Direct3D 12 backend (and Vulkan when "
+                 "ENGINE_HAVE_VULKAN), the renderer, the demos and the benchmarks, docgen, crash_extract, shader_mint and the shaders, the gates "
+                 "and their tests. See docs/guide/windows.md.")
   return()
 endif()
 

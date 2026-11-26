@@ -62,8 +62,11 @@ set(RHI_TEST_SOURCES
 
 # The Vulkan backend's own tests: not on macOS, which has no Vulkan (Phase 21 decision 8; the list is in the macOS port spec). The
 # neutral and null-device suites, and the GPU-tagged tests (which skip without a GPU backend until Metal), run there.
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+# Nor on Windows without the Vulkan SDK (ENGINE_HAVE_VULKAN off).
+if(NOT ENGINE_HAVE_VULKAN)
   list(FILTER RHI_TEST_SOURCES EXCLUDE REGEX "/?vulkan_[a-z_]+_test\\.cpp$")
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # The Metal backend's own tests (Phase 21, Days 300-309), Objective-C++ under macos/, linked through rhi_backends (which links rhi_metal).
   list(APPEND RHI_TEST_SOURCES macos/metal_device_test.mm macos/metal_resource_test.mm macos/metal_bindings_test.mm macos/metal_pipeline_test.mm macos/metal_commands_test.mm macos/metal_swapchain_test.mm macos/metal_graph_test.mm macos/metal_lifecycle_test.mm macos/metal_vertex_format_test.mm)
 endif()

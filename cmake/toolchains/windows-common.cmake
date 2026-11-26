@@ -177,7 +177,7 @@ set(CMAKE_MT "${ENGINE_SDK_BIN}/mt.exe")
 
 # --- Vulkan SDK (headers: os/gpu_driver_probe.h and the Vulkan backend include <vulkan/vulkan_core.h>) ------------------------
 # ENGINE_VULKAN_SDK, then VULKAN_SDK (set by the SDK installer, but only in shells started afterwards), then the newest version
-# under C:/VulkanSDK. Not an error here: the targets that need the headers report it (engine/foundation/CMakeLists.txt).
+# under C:/VulkanSDK. Not an error here: without it the tree builds Direct3D 12 only (ENGINE_HAVE_VULKAN, the root CMakeLists.txt).
 _engine_override(ENGINE_VULKAN_SDK ENGINE_VULKAN_SDK_DIR)
 if(NOT ENGINE_VULKAN_SDK_DIR)
   _engine_override(VULKAN_SDK ENGINE_VULKAN_SDK_DIR)

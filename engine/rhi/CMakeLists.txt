@@ -97,9 +97,16 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   target_include_directories(rhi${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
   target_compile_options(rhi${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(rhi${suffix} PUBLIC ${foundation_lib} ${jobs_lib} ${platform_lib})
+  # Whether this tree has the Vulkan backend (ENGINE_HAVE_VULKAN, the root CMakeLists.txt): CreateDevice's "not built" reason (create_device.cpp).
+  if(ENGINE_HAVE_VULKAN)
+    target_compile_definitions(rhi${suffix} PRIVATE ENGINE_RHI_VULKAN_IN_BUILD=1)
+  else()
+    target_compile_definitions(rhi${suffix} PRIVATE ENGINE_RHI_VULKAN_IN_BUILD=0)
+  endif()
 
   # No Vulkan on macOS (Phase 21 decision 8: MoltenVK is third-party): the neutral RHI and the null backend there, Metal from Day 300.
-  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  # Nor on Windows without the Vulkan SDK: Direct3D 12 only (ENGINE_HAVE_VULKAN, the root CMakeLists.txt).
+  if(ENGINE_HAVE_VULKAN)
     add_library(rhi_vulkan${suffix} STATIC ${RHI_VULKAN_SOURCES})
     target_include_directories(rhi_vulkan${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
     target_compile_options(rhi_vulkan${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

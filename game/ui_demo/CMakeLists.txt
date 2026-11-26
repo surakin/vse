@@ -39,7 +39,7 @@ ui_demo_expect(ui_demo_screenshot_script 0 "wrote .*ui_demo_screenshot_script_a.
 # A bad script word fails cleanly (exit 1), a bad scale is a usage error (exit 2), a missing Vulkan loader is reported.
 ui_demo_expect(ui_demo_bad_script 1 "unknown script word|cannot do" "${UI_DEMO_NO_GPU}" --screenshot UI_DEMO_SHOT --script "frame:1 sparkle:now")
 ui_demo_expect(ui_demo_bad_scale 2 "usage" "" --scale 3)
-if(NOT APPLE)  # macOS has no Vulkan
+if(ENGINE_HAVE_VULKAN)  # not on macOS, nor in a Windows tree without the Vulkan SDK
   add_test(NAME ui_demo_no_vulkan
     COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
       ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:ui_demo>;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/ui_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"
