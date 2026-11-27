@@ -10,7 +10,7 @@
 # (crash_extract --resolve, DbgHelp). With the program, its build id is compared with the dump's: a different build gives wrong names, so the
 # script says so and exits 3. Nothing is read from the network: the only symbol path is the store.
 # Exit status: 0 ok, 3 build id mismatch, 64 bad usage, 2 other failure.
-# Environment: ENGINE_CRASH_EXTRACT is the path of the crash_extract tool (default: found under build-msvc or build, or on PATH).
+# Environment: ENGINE_CRASH_EXTRACT is the path of the crash_extract tool (default: found under build/windows-msvc or build, or on PATH).
 param(
     [Parameter(Position = 0)] [string] $Dump,
     [Parameter(Position = 1, ValueFromRemainingArguments = $true)] [string[]] $Rest = @(),
@@ -21,8 +21,8 @@ $ErrorActionPreference = 'Stop'
 function Find-CrashExtract {
     if ($env:ENGINE_CRASH_EXTRACT) { return $env:ENGINE_CRASH_EXTRACT }
     $root = Split-Path -Parent $PSScriptRoot
-    foreach ($candidate in @("$root\build-msvc\tools\crash_extract\crash_extract.exe", "$root\build\tools\crash_extract\crash_extract.exe",
-                              ".\build-msvc\tools\crash_extract\crash_extract.exe", ".\build\tools\crash_extract\crash_extract.exe")) {
+    foreach ($candidate in @("$root\build\windows-msvc\tools\crash_extract\crash_extract.exe", "$root\build\linux\tools\crash_extract\crash_extract.exe",
+                              ".\build\windows-msvc\tools\crash_extract\crash_extract.exe", ".\build\linux\tools\crash_extract\crash_extract.exe")) {
         if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
     }
     $onPath = Get-Command crash_extract.exe -ErrorAction SilentlyContinue

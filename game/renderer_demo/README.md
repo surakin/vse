@@ -9,21 +9,21 @@ Direct3D 12 on Windows and Metal on macOS), chosen when the demo starts: a chang
 ## Build and run
 
 ```
-cmake --build build --target renderer_demo
-./build/game/renderer_demo/renderer_demo                          # a window, until you close it
-./build/game/renderer_demo/renderer_demo --backend x11            # force a display backend (or wayland)
-./build/game/renderer_demo/renderer_demo --frames 1000 --validation   # a bounded run with sync validation
-./build/game/renderer_demo/renderer_demo --screenshot out.ppm     # offscreen, no window: a 640x360 PPM
-./build/game/renderer_demo/renderer_demo --gbuffer normal         # show a G-buffer layer instead of the lit picture
-./build/game/renderer_demo/renderer_demo --objects 2000 --lights 1000
+cmake --build build/linux --target renderer_demo
+./build/linux/game/renderer_demo/renderer_demo                          # a window, until you close it
+./build/linux/game/renderer_demo/renderer_demo --backend x11            # force a display backend (or wayland)
+./build/linux/game/renderer_demo/renderer_demo --frames 1000 --validation   # a bounded run with sync validation
+./build/linux/game/renderer_demo/renderer_demo --screenshot out.ppm     # offscreen, no window: a 640x360 PPM
+./build/linux/game/renderer_demo/renderer_demo --gbuffer normal         # show a G-buffer layer instead of the lit picture
+./build/linux/game/renderer_demo/renderer_demo --objects 2000 --lights 1000
 ```
 
-On Windows (Phase 13), from a terminal in the checkout (`BUILD.md` has the prerequisites; `build-msvc` is configured with the MSVC toolchain file):
+On Windows (Phase 13), from a terminal in the checkout (`BUILD.md` has the prerequisites; `build/windows-msvc` is configured with the MSVC toolchain file):
 
 ```
-cmake --build build-msvc --target renderer_demo
-build-msvc\game\renderer_demo\renderer_demo.exe --frames 1000 --validation
-build-msvc\game\renderer_demo\renderer_demo.exe --help              # printed to the terminal it was started from
+cmake --build build/windows-msvc --target renderer_demo
+build\windows-msvc\game\renderer_demo\renderer_demo.exe --frames 1000 --validation
+build\windows-msvc\game\renderer_demo\renderer_demo.exe --help              # printed to the terminal it was started from
 ```
 
 It is a windowed program (the Windows subsystem, `ENGINE_WINDOWED_PROGRAM`): started from Explorer it opens no console window; started from a
@@ -34,7 +34,7 @@ On macOS (Phase 21), with the `macos-clang-x86_64` preset (`BUILD.md`): the devi
 
 ```
 cmake --build --preset macos-clang-x86_64 --target renderer_demo
-./build-macos/game/renderer_demo/renderer_demo --frames 1000
+./build/macos-clang-x86_64/game/renderer_demo/renderer_demo --frames 1000
 ```
 
 Run Metal's validation with `MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert` (and `MTL_SHADER_VALIDATION=1`) in the environment: `--validation`
@@ -120,8 +120,8 @@ renderer_demo --validation --frames 120 --script "frame:10 set:present_mode=imme
 and a tangent-space normal map of round bumps): no binary file is without a way to regenerate it.
 
 ```
-cmake --build build --target renderer_demo_mint
-./build/game/renderer_demo/renderer_demo_mint game/renderer_demo/assets
+cmake --build build/linux --target renderer_demo_mint
+./build/linux/game/renderer_demo/renderer_demo_mint game/renderer_demo/assets
 ```
 
 Minting is deterministic: the ctest `renderer_demo_assets_current` writes the files twice and compares both with the committed

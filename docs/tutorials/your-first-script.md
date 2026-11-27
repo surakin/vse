@@ -2,7 +2,7 @@
 
 **Goal:** Write a behavior in Lua, attach it to entities from a host program, run frames, call a script function from the host and answer a script's call back into the host.
 
-**You need:** a built tree on Linux x86-64 (LuaJIT is built there; `ENGINE_CAP_SCRIPT` says whether the engine you loaded has scripts). Background: [Why your script runs on many threads](../guide/scripting-and-threads.md). The program of this page is `tests/engine_library/host_script.c`: `cmake --build build --target host_script` builds it and `./build/tests/engine_library/host_script` runs it (no display needed); its script is the string `kScript` near the top. The reference: [Scripting](../guide/scripting.md) and [The Engine as a Loadable Library](../guide/engine-library.md).
+**You need:** a built tree on Linux x86-64 (LuaJIT is built there; `ENGINE_CAP_SCRIPT` says whether the engine you loaded has scripts). Background: [Why your script runs on many threads](../guide/scripting-and-threads.md). The program of this page is `tests/engine_library/host_script.c`: `cmake --build build/linux --target host_script` builds it and `./build/linux/tests/engine_library/host_script` runs it (no display needed); its script is the string `kScript` near the top. The reference: [Scripting](../guide/scripting.md) and [The Engine as a Loadable Library](../guide/engine-library.md).
 
 ## Steps
 

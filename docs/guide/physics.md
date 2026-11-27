@@ -455,7 +455,7 @@ a snapshot taken at that step.
 more of them spawning in the air and falling. Every shape is an entity (`scene::MeshRenderer`, `RigidBody`, `Collider`,
 `ecs::LocalTransform`); one `ecs::Schedule` runs the physics step system, the transform propagation, the camera system
 and the render sync, and `SyncBodies` makes the bodies of the shapes spawned since the last frame. Run
-`build/game/physics_demo/physics_demo` (Space pauses, Left/Right turn the camera) or `--frames 600 --screenshot shot.ppm`
+`build/linux/game/physics_demo/physics_demo` (Space pauses, Left/Right turn the camera) or `--frames 600 --screenshot shot.ppm`
 for an offscreen picture; the ctest `physics_demo_screenshot` runs it headless. It is a program written against the
 engine's modules, not the C API (which is for hosts that embed the engine).
 

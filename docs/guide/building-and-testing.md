@@ -7,6 +7,10 @@ the flavors, how to choose and run tests, what each sanitizer catches, and how t
 
 ## Build targets and flavors
 
+Every preset configures its tree under `build/`, in a directory named like the preset: `build/linux`, `build/linux-nojit`, `build/windows-msvc`,
+`build/windows-clang-cl`, `build/macos-clang-x86_64` and `build/macos-clang-arm64` (`scripts/test-phase.sh` defaults to the one of the machine's
+platform; `--build-dir` names another).
+
 One configure produces three *flavors* of every library and test program, so the same code is checked in three ways:
 
 | Flavor | Target names | Compiled with | Catches |
@@ -15,7 +19,7 @@ One configure produces three *flavors* of every library and test program, so the
 | ASan + UBSan | `*_asan` | AddressSanitizer and UndefinedBehaviorSanitizer | out-of-bounds, use-after-free, leaks, overflow, misaligned and null access |
 | TSan | `*_tsan` | ThreadSanitizer (Linux and macOS; not Windows) | data races |
 
-Useful targets: `cmake --build build` builds everything; `cmake --build build --target ecs_tests` builds one test program; `--target docs` regenerates the reference
+Useful targets: `cmake --build build/linux` builds everything; `cmake --build build/linux --target ecs_tests` builds one test program; `--target docs` regenerates the reference
 pages. Production code is compiled with `-fno-exceptions -fno-rtti` and **warnings as errors**; tests are not (Catch2 uses exceptions), but still build warning-free.
 The Windows build has plain and ASan only (MSVC has no ThreadSanitizer).
 
@@ -48,9 +52,9 @@ narrows the run to what you changed:
 ctest --test-dir build -L '^phase17$'            # every test of one phase (the anchors stop phase1 matching phase17)
 ctest --test-dir build -L '^phase4$' -L gpu      # labels combine: both
 ctest --test-dir build -R 'World:'               # by name (a regular expression)
-build/tests/ecs/ecs_tests "[world]"              # one executable, one Catch2 tag
-build/tests/ecs/ecs_tests "World: create*"       # one executable, by name pattern
-build/tests/ecs/ecs_tests --list-tests           # what is in it
+build/linux/tests/ecs/ecs_tests "[world]"              # one executable, one Catch2 tag
+build/linux/tests/ecs/ecs_tests "World: create*"       # one executable, by name pattern
+build/linux/tests/ecs/ecs_tests --list-tests           # what is in it
 ```
 
 Running the test executable directly is the fastest loop while you work; use `scripts/test-phase.sh` (below) before you commit.
@@ -183,7 +187,7 @@ no `_asan` or `_tsan` object; `--flavor all` builds all three. The build uses `-
   `ENGINE_FLAVOR_EXTRA_FILES` property.
 - The ctest `test_phase_script_flavor_targets` checks that every test's programs are built by its flavor's target. It fails naming the
   test, so a test cannot quietly run a stale binary.
-- `--dry-run` prints the build step it would run (`would build: cmake --build build --parallel 32 --target engine_tests_plain`).
+- `--dry-run` prints the build step it would run (`would build: cmake --build build/linux --parallel 32 --target engine_tests_plain`).
 
 Measured on 2026-11-19 (Linux, 32 CPUs, Unix Makefiles), after touching `engine/renderer/gbuffer.h`:
 
@@ -409,7 +413,7 @@ person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 col
 - **On failure** the test writes the amplified difference to `$TMPDIR/rhi_<pid>_diff_<name>.ppm` (`/tmp` when unset; the process id keeps parallel test runs apart) and
   prints its path.
 - **Regenerating.** Run the test with `ENGINE_RHI_UPDATE_GOLDEN=1` (for example
-  `ENGINE_RHI_UPDATE_GOLDEN=1 ./build/tests/rhi/rhi_tests "[golden]"`). It rewrites the golden instead of comparing and
+  `ENGINE_RHI_UPDATE_GOLDEN=1 ./build/linux/tests/rhi/rhi_tests "[golden]"`). It rewrites the golden instead of comparing and
   warns. Regeneration is deliberate: open the PPM and look at it, check the analytic assertions passed, and only then
   commit it. Never regenerate to make a failing run pass without understanding the difference.
 - **The numbers of a passing run.** `ENGINE_RHI_GOLDEN_REPORT=1` prints one line per comparison, passed or not: the
@@ -429,7 +433,7 @@ Tests that use random data take a **fixed seed**, so a run is repeatable: the sa
 `graph seed 17 (replay: ENGINE_STRESS_SEED=17)`. Re-run that single case with the environment variable set:
 
 ```bash
-ENGINE_STRESS_SEED=17 build/tests/jobs/jobs_tests "[stress]"
+ENGINE_STRESS_SEED=17 build/linux/tests/jobs/jobs_tests "[stress]"
 ```
 
 Randomized tests of other modules (the ECS model tests, for instance) hard-code their seeds in the test; to replay a failure, run the test directly and
@@ -444,7 +448,7 @@ the failure message name the seed or the step, and never seed from the clock.
 target runs everything; `ctest` runs the four checks without regenerating:
 
 ```
-cmake --build build --target docs     # regenerate docs/reference, then run all checks
+cmake --build build/linux --target docs     # regenerate docs/reference, then run all checks
 ctest --test-dir build -L docs        # docs_check, docs_links, docs_samples, docs_lint
 ```
 
@@ -490,11 +494,11 @@ Every layer builds and is tested on Windows x64, with the Vulkan and Direct3D 12
 and `docs/guide/windows.md` is the Windows page (building, the demos, validation, crash dumps, where things live). CMake finds MSVC, the Windows SDK, LLVM's `clang-cl` and the Vulkan SDK
 itself (vswhere, the registry, the default install folders), so any terminal works: no Developer Command Prompt and no `vcvars`.
 
-- **Presets.** `cmake --preset windows-msvc` configures `build-msvc` (MSVC, the primary compiler, plain and ASan flavors);
-  `cmake --preset windows-clang-cl` configures `build-clang-cl`, the second compiler: it builds every day and its full plain suite runs at a
+- **Presets.** `cmake --preset windows-msvc` configures `build/windows-msvc` (MSVC, the primary compiler, plain and ASan flavors);
+  `cmake --preset windows-clang-cl` configures `build/windows-clang-cl`, the second compiler: it builds every day and its full plain suite runs at a
   phase's close (no ASan flavor). Build and test with
   `cmake --build --preset <name>` and `ctest --preset <name>`. On Linux the preset is `linux` (`build`).
-- **`scripts/test-phase.sh` runs under Git for Windows' `bash`.** It finds the platform from `uname -s`, defaults to `build-msvc`, and
+- **`scripts/test-phase.sh` runs under Git for Windows' `bash`.** It finds the platform from `uname -s`, defaults to `build/windows-msvc`, and
   takes the same options as on Linux. `--flavor tsan` stops with a message (MSVC has no ThreadSanitizer), and `--flavor all` runs
   plain and asan and says so: `flavors: all (plain and asan, no tsan on Windows)`. Git Bash rewrites an argument that looks like an
   absolute path, so a `/flag` meant for `cl` or `clang-cl` becomes a file name; a script or test that passes such flags sets
@@ -526,20 +530,20 @@ Every layer builds and is tested on macOS (x86-64, Apple clang), with the Cocoa 
 Vulkan; [macOS](macos.md) is the platform's page. `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
 Ninja; no Xcode.
 
-- **Preset.** `cmake --preset macos-clang-x86_64` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
+- **Preset.** `cmake --preset macos-clang-x86_64` configures `build/macos-clang-x86_64` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
   `cmake --build --preset macos-clang-x86_64` and `ctest --preset macos-clang-x86_64`. The configure takes Apple clang through `xcrun`, so a MacPorts or
   Homebrew clang first on `PATH` is not picked up, and stops with a message without the Command Line Tools. Everything the Linux build has is
   built, with the Metal backend in place of Vulkan.
-- **Apple silicon.** `cmake --preset macos-clang-arm64` configures `build-macos-arm64` for arm64: native, with tests, on an Apple silicon Mac
+- **Apple silicon.** `cmake --preset macos-clang-arm64` configures `build/macos-clang-arm64` for arm64: native, with tests, on an Apple silicon Mac
   (where `macos-clang-x86_64` runs under Rosetta 2). On an Intel Mac the configure makes it compile-only (`ENGINE_COMPILE_ONLY`): every target
   builds and nothing built runs, so there is no test discovery and no shader minting (the committed outputs are used). `scripts/test-phase.sh`
-  defaults to `build-macos-arm64` on an Apple silicon Mac (`--build-dir build-macos` for the x86-64 tree). Build both architectures, unity and
+  defaults to `build/macos-clang-arm64` on an Apple silicon Mac (`--build-dir build/macos-clang-x86_64` for the x86-64 tree). Build both architectures, unity and
   `-DENGINE_UNITY_BUILD=OFF`, on every macOS day that changes macOS code.
 - **Flavors.** plain, asan (ASan and UBSan) and tsan, as on Linux. Apple clang has no LeakSanitizer: ASan aborts when asked for
   `detect_leaks=1` (`KNOWN-ISSUES.md`), so leak checks run on Linux.
 - **Objective-C++.** `.mm` files (only in macOS directories) compile with ARC and the warnings of every target. `tests/macos` checks that
   every neutral foundation header compiles beside AppKit, Metal and QuartzCore in either order (`macos_header_apple_first`, `_last`).
-- **The test script** runs under the system's `/bin/bash` 3.2 (`scripts/test-phase.sh`, defaulting to `build-macos` there), so it keeps to
+- **The test script** runs under the system's `/bin/bash` 3.2 (`scripts/test-phase.sh`, defaulting to `build/macos-clang-x86_64` there), so it keeps to
   what that bash has: no associative arrays, `mapfile` or `${x,,}`. `--flavor all` is plain, asan and tsan. `--affected` adds phase 21 as a
   side phase.
 - **The gates** run here as on Linux and Windows. Rule 7 of `platform_neutral_check` keeps Apple's headers (the frameworks, `<mach/...>`,
@@ -555,7 +559,7 @@ the files you name; `scripts/format.sh --check` changes nothing and lists what i
 those edits): run `scripts/format.sh FILE` and stage what you mean. clang-format also wraps comments at 120 columns; doc-comment labels are list items (`/// - Fails: ...`) so that wrapping leaves them alone. Vendored code, generated code and test fixtures are listed in `.clang-format-ignore`. The installer also tells
 `git blame` to skip the formatting-only commits listed in `.git-blame-ignore-revs`.
 
-clang-tidy is configured in `.clang-tidy` and run by `scripts/tidy.sh` on a separate non-unity build tree (`build-tidy`, which exports `compile_commands.json`). It is not part of the
+clang-tidy is configured in `.clang-tidy` and run by `scripts/tidy.sh` on a separate non-unity build tree (`build/tidy`, which exports `compile_commands.json`). It is not part of the
 commit hook. A finding is fixed, or suppressed on its line with `// NOLINT(check-name): the reason`.
 
 ### What "done" means before you commit
@@ -594,5 +598,5 @@ flavors: every module's static library whole-archived, a version script as the e
 inside it (`engine_shared_link_probe*`; without the option the three tests are skipped stubs, so the suite has the same flavors in every configuration). A
 sanitized library loads only into a program built with the same sanitizer. With the option OFF nothing changes: no compile command differs. On macOS
 the same targets build `libengine.1.dylib` (and `libengine_asan.1.dylib`, `libengine_tsan.1.dylib`), with an exported-symbols list in place of the version script
-and the install name `@rpath/libengine.1.dylib`; the shared tree is configured with `cmake --preset macos-clang-x86_64 -B build-macos-shared -DENGINE_BUILD_SHARED=ON`.
+and the install name `@rpath/libengine.1.dylib`; the shared tree is configured with `cmake --preset macos-clang-x86_64 -B build/macos-shared -DENGINE_BUILD_SHARED=ON`.
 Windows builds it too. The ctest `engine_shared_option` checks that the option exists and is declared OFF.

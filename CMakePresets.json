@@ -4,51 +4,51 @@
   "configurePresets": [
     {
       "name": "linux",
-      "displayName": "Linux (Clang, else the default compiler; build/)",
+      "displayName": "Linux (Clang, else the default compiler; build/linux/)",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
     },
     {
       "name": "linux-nojit",
-      "displayName": "Linux with LuaJIT's JIT compiled out (build-nojit/; the script_nojit flavor, Phase 27 Day 470)",
+      "displayName": "Linux with LuaJIT's JIT compiled out (build/linux-nojit/; the script_nojit flavor, Phase 27 Day 470)",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-nojit",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "ENGINE_LUAJIT_JIT": "OFF" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
     },
     {
       "name": "windows-msvc",
-      "displayName": "Windows, MSVC (build-msvc/); finds Visual Studio and the Windows SDK itself",
+      "displayName": "Windows, MSVC (build/windows-msvc/); finds Visual Studio and the Windows SDK itself",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-msvc",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "${sourceDir}/cmake/toolchains/windows-msvc.cmake",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     },
     {
       "name": "windows-clang-cl",
-      "displayName": "Windows, clang-cl (build-clang-cl/); finds LLVM, Visual Studio and the Windows SDK itself",
+      "displayName": "Windows, clang-cl (build/windows-clang-cl/); finds LLVM, Visual Studio and the Windows SDK itself",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-clang-cl",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "${sourceDir}/cmake/toolchains/windows-clang-cl.cmake",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     },
     {
       "name": "macos-clang-x86_64",
-      "displayName": "macOS, Apple clang from the Command Line Tools (build-macos/); x86-64 (under Rosetta 2 on Apple silicon), deployment target 13.3",
+      "displayName": "macOS, Apple clang from the Command Line Tools (build/macos-clang-x86_64/); x86-64 (under Rosetta 2 on Apple silicon), deployment target 13.3",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-macos",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3", "CMAKE_OSX_ARCHITECTURES": "x86_64" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
     },
     {
       "name": "macos-clang-arm64",
-      "displayName": "macOS arm64 (build-macos-arm64/): native on Apple silicon; compile-only when configured on an Intel Mac",
+      "displayName": "macOS arm64 (build/macos-clang-arm64/): native on Apple silicon; compile-only when configured on an Intel Mac",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-macos-arm64",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3", "CMAKE_OSX_ARCHITECTURES": "arm64" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
     }

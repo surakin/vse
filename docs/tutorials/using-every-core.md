@@ -2,7 +2,7 @@
 
 **Goal:** Run 1,000 scripted entities across several partitions, see that the world ends in the same state at 1, 2, 4 and 8 partitions, and use events and tasks for what a behavior cannot do alone.
 
-**You need:** [Your First Script](your-first-script.md) and [Why your script runs on many threads](../guide/scripting-and-threads.md). The program of this page is `tests/engine_library/script_sample.c` (`cmake --build build --target script_sample`; `./build/tests/engine_library/script_sample`; no display needed). A bigger game is `game/script_demo` (`script_demo --threads 16 --entities 2000 --frames 600`, in a window; `--headless` prints the state hash instead). Reference: [Scripting](../guide/scripting.md), "Partitions", "Events", "Script tasks", "Cost".
+**You need:** [Your First Script](your-first-script.md) and [Why your script runs on many threads](../guide/scripting-and-threads.md). The program of this page is `tests/engine_library/script_sample.c` (`cmake --build build/linux --target script_sample`; `./build/linux/tests/engine_library/script_sample`; no display needed). A bigger game is `game/script_demo` (`script_demo --threads 16 --entities 2000 --frames 600`, in a window; `--headless` prints the state hash instead). Reference: [Scripting](../guide/scripting.md), "Partitions", "Events", "Script tasks", "Cost".
 
 ## Steps
 

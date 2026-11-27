@@ -17,7 +17,7 @@
 # installed, minidump-stackwalk (rust-minidump) for a symbolized trace from Breakpad symbol files. If you pass the program, its
 # build id is compared with the one in the dump; a different build gives wrong symbols, so the script says so and exits 3.
 # Exit status: 0 ok, 3 build id mismatch, 64 bad usage, 66 no tool available, 2 other failure.
-# Environment: ENGINE_CRASH_EXTRACT is the path of the crash_extract tool (default: found in ./build, ./build-macos or on
+# Environment: ENGINE_CRASH_EXTRACT is the path of the crash_extract tool (default: found in ./build, ./build/macos-clang-x86_64 or on
 # PATH).
 set -u
 
@@ -54,8 +54,8 @@ darwin=0
 extract="${ENGINE_CRASH_EXTRACT:-}"
 if [ -z "$extract" ]; then
   here="$(dirname "${BASH_SOURCE[0]}")"
-  for candidate in ./build/tools/crash_extract/crash_extract ./build-macos/tools/crash_extract/crash_extract \
-    "$here/../build/tools/crash_extract/crash_extract" "$here/../build-macos/tools/crash_extract/crash_extract"; do
+  for candidate in ./build/linux/tools/crash_extract/crash_extract ./build/macos-clang-x86_64/tools/crash_extract/crash_extract \
+    "$here/../build/linux/tools/crash_extract/crash_extract" "$here/../build/macos-clang-x86_64/tools/crash_extract/crash_extract"; do
     [ -x "$candidate" ] && extract="$candidate" && break
   done
 fi

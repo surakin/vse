@@ -9,19 +9,19 @@ and shown on a lit quad standing in the 3D scene; clicking it in the viewport go
 ## Build and run
 
 ```
-cmake --build build --target ui_demo
-./build/game/ui_demo/ui_demo                                  # a window, until you close it
-./build/game/ui_demo/ui_demo --backend x11                    # force a display backend (or wayland)
-./build/game/ui_demo/ui_demo --scale 2                        # a 2x display scale (1, 1.25 or 2)
-./build/game/ui_demo/ui_demo --screenshot out.ppm             # offscreen, no window: a 960x600 (logical units) PPM
-./build/game/ui_demo/ui_demo --screenshot out.ppm --script "frame:2 theme:dark frame:4 openmenu:View"
+cmake --build build/linux --target ui_demo
+./build/linux/game/ui_demo/ui_demo                                  # a window, until you close it
+./build/linux/game/ui_demo/ui_demo --backend x11                    # force a display backend (or wayland)
+./build/linux/game/ui_demo/ui_demo --scale 2                        # a 2x display scale (1, 1.25 or 2)
+./build/linux/game/ui_demo/ui_demo --screenshot out.ppm             # offscreen, no window: a 960x600 (logical units) PPM
+./build/linux/game/ui_demo/ui_demo --screenshot out.ppm --script "frame:2 theme:dark frame:4 openmenu:View"
 ```
 
 On macOS (Phase 21), with the `macos-clang-x86_64` preset (`BUILD.md`): the device is Metal (`auto` picks it; there is no Vulkan on macOS).
 
 ```
 cmake --build --preset macos-clang-x86_64 --target ui_demo
-./build-macos/game/ui_demo/ui_demo --frames 1000
+./build/macos-clang-x86_64/game/ui_demo/ui_demo --frames 1000
 ```
 
 Run Metal's validation with `MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert` (and `MTL_SHADER_VALIDATION=1`) in the environment: `--validation`

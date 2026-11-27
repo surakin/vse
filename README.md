@@ -21,8 +21,8 @@ prerequisite per platform with the versions in use.
 
 ```bash
 cmake --preset linux
-cmake --build build
-build/game/hello_window/hello_window
+cmake --build build/linux
+build/linux/game/hello_window/hello_window
 ```
 
 `hello_window` opens a window and prints keyboard and mouse input for six seconds. Windows and macOS use their own presets (`cmake --preset windows-msvc`,

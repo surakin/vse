@@ -8,7 +8,7 @@
 # The PDB is the one the image names, or <name>.pdb next to it. Files are only added; nothing in the store is removed. Keep the store for as
 # long as you keep the builds it belongs to. Prints the build id and the two stored paths.
 # Exit status: 0 stored; 2 failure (no CodeView record, no PDB, a copy failed); 64 bad usage.
-# Environment: ENGINE_CRASH_EXTRACT is the path of the crash_extract tool (default: found under build-msvc or build, or on PATH).
+# Environment: ENGINE_CRASH_EXTRACT is the path of the crash_extract tool (default: found under build/windows-msvc or build, or on PATH).
 param(
     [Parameter(Position = 0)] [string] $Binary,
     [Parameter(Position = 1)] [string] $Store = 'symbols'
@@ -18,8 +18,8 @@ $ErrorActionPreference = 'Stop'
 function Find-CrashExtract {
     if ($env:ENGINE_CRASH_EXTRACT) { return $env:ENGINE_CRASH_EXTRACT }
     $root = Split-Path -Parent $PSScriptRoot
-    foreach ($candidate in @("$root\build-msvc\tools\crash_extract\crash_extract.exe", "$root\build\tools\crash_extract\crash_extract.exe",
-                              ".\build-msvc\tools\crash_extract\crash_extract.exe", ".\build\tools\crash_extract\crash_extract.exe")) {
+    foreach ($candidate in @("$root\build\windows-msvc\tools\crash_extract\crash_extract.exe", "$root\build\linux\tools\crash_extract\crash_extract.exe",
+                              ".\build\windows-msvc\tools\crash_extract\crash_extract.exe", ".\build\linux\tools\crash_extract\crash_extract.exe")) {
         if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
     }
     $onPath = Get-Command crash_extract.exe -ErrorAction SilentlyContinue

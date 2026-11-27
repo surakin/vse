@@ -14,7 +14,7 @@ and get a shader handle. You touch this page when you add or change a `.slang` f
 | I need | Do | Notes |
 |---|---|---|
 | to add a shader | put `<name>.<vert\|frag\|comp>.slang` in `shaders/`, add the name to `ENGINE_SHADERS` | entry point is `main`; the stage comes from the file name |
-| to rebuild after editing | `cmake --build build --target shaders` | needs `slangc`; without it your edit is silently ignored |
+| to rebuild after editing | `cmake --build build/linux --target shaders` | needs `slangc`; without it your edit is silently ignored |
 | to create a module in C++ | `ShaderDesc` + `Device::CreateShader`, or `CreateShaderFromSet` | a bad module gives an invalid handle and a logged reason |
 | a bind group layout or vertex layout | `renderer::BuildBindGroupLayout` / `BuildVertexLayout` from reflection | do not write layouts by hand |
 | variants (normal map, alpha test, ...) | permutations: a `.perm` manifest and `MakePermutationKey` / `FindPermutation` | only listed combinations exist |
@@ -73,7 +73,7 @@ The generated files are committed, so a checkout without a shader compiler build
 change a `.slang` file, run:
 
 ```
-cmake --build build --target shaders
+cmake --build build/linux --target shaders
 ```
 
 That runs `slangc` (with the arguments from `slang_compile_args()` in `shaders/names.cmake`, plus
@@ -190,7 +190,7 @@ A permuted shader has three parts:
    combinations exist; adding an option does not build every combination.
 3. **Add the shader to `ENGINE_SHADERS`** like any other. The presence of the `.perm` file is what makes it permuted.
 
-`cmake --build build --target shaders` then runs `slangc` once per listed key (the cost of the manifest is one compiler
+`cmake --build build/linux --target shaders` then runs `slangc` once per listed key (the cost of the manifest is one compiler
 run per line: the 7-key test shader takes about a second), mints each result like a plain shader, drops modules whose SPIR-V and
 reflection are identical to an earlier key's, and commits four files: `<name>.spv.inc` and `<name>.refl.inc` (the base
 module, as for any shader) and `<name>.perm.inc` (the other modules and the table). The output is deterministic, and

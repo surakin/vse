@@ -6,7 +6,7 @@
 
 ## Steps
 
-1. **Run the demo first.** `./build/game/hello_window/hello_window` opens a 1280x720 window for six seconds and exits. Closing it earlier ends the program at once. If nothing
+1. **Run the demo first.** `./build/linux/game/hello_window/hello_window` opens a 1280x720 window for six seconds and exits. Closing it earlier ends the program at once. If nothing
    appears, you are probably on a machine without a display; the program logs why.
 2. **Pick a backend.** `hello_window --backend=x11` or `--backend=wayland` forces one; without the flag the program reads `ENGINE_WINDOW_BACKEND`, and without
    that it takes Wayland when `$WAYLAND_DISPLAY` is set and X11 otherwise. A forced backend never falls back: if it cannot open, the program says so and stops.

@@ -55,14 +55,14 @@ that names a different MSVC stops the configure. For an unusual install, set any
 Two configurations, both kept building every day (warnings are errors in both):
 
 ```
-cmake --preset windows-msvc          # build-msvc: MSVC, the main one, with the asan flavor
+cmake --preset windows-msvc          # build/windows-msvc: MSVC, the main one, with the asan flavor
 cmake --build --preset windows-msvc
-cmake --preset windows-clang-cl      # build-clang-cl: the second compiler
+cmake --preset windows-clang-cl      # build/windows-clang-cl: the second compiler
 cmake --build --preset windows-clang-cl
 ```
 
 The unity build is on by default; `-DENGINE_UNITY_BUILD=OFF` (the trees `build-windows-msvc-nounity`, `build-windows-clang-cl-nounity` by
-convention) must build clean too. A Release tree is `cmake -S . -B build-msvc-release -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/windows-msvc.cmake
+convention) must build clean too. A Release tree is `cmake -S . -B build/windows-msvc-release -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/windows-msvc.cmake
 -DCMAKE_BUILD_TYPE=Release`; every program still gets its PDB beside it.
 
 Windowed programs (`rhi_demo`, `renderer_demo`, `hello_window`) use the GUI subsystem through `ENGINE_WINDOWED_PROGRAM` in their source; their
@@ -73,11 +73,11 @@ log still reaches a console they were started from. Tests and tools are console 
 From Git Bash, as on Linux (`docs/guide/building-and-testing.md`, "Test phases and scoped runs"):
 
 ```
-scripts/test-phase.sh --affected                  # build-msvc by default on Windows
+scripts/test-phase.sh --affected                  # build/windows-msvc by default on Windows
 scripts/test-phase.sh --affected --flavor asan
 scripts/test-phase.sh --all --flavor all          # plain and asan: there is no ThreadSanitizer on Windows
-scripts/test-phase.sh --all --build-dir build-clang-cl
-ctest --test-dir build-msvc -L docs
+scripts/test-phase.sh --all --build-dir build/windows-clang-cl
+ctest --test-dir build/windows-msvc -L docs
 ```
 
 The GPU tests run once per backend (`FOR_EACH_GPU_BACKEND` in `tests/rhi/backend_fixture.h`): Vulkan and Direct3D 12 here. Set
@@ -89,9 +89,9 @@ assertion shows the C runtime's "abort() has been called" box and waits (`KNOWN-
 ## Running the demos
 
 ```
-build-msvc/game/renderer_demo/renderer_demo.exe                      # Direct3D 12 (auto)
-build-msvc/game/renderer_demo/renderer_demo.exe --rhi vulkan --validation
-build-msvc/game/rhi_demo/rhi_demo.exe --list-gpus --rhi dx12         # the hardware adapters and WARP
+build/windows-msvc/game/renderer_demo/renderer_demo.exe                      # Direct3D 12 (auto)
+build/windows-msvc/game/renderer_demo/renderer_demo.exe --rhi vulkan --validation
+build/windows-msvc/game/rhi_demo/rhi_demo.exe --list-gpus --rhi dx12         # the hardware adapters and WARP
 ```
 
 `--rhi` (the `renderer.backend` setting) chooses the graphics API when the program starts: `auto` is Direct3D 12 on Windows. It does not change
@@ -111,9 +111,9 @@ The crash handler (sentry-native with Breakpad, no upload) is on by default in D
 leaves an envelope with the minidump and the engine's crash report in `%LOCALAPPDATA%\<app>\crashes`. Then:
 
 ```
-scripts/store-symbols.ps1 build-msvc-release/game/renderer_demo/renderer_demo.exe symbols    # file the PDB and the image under the build id
+scripts/store-symbols.ps1 build/windows-msvc-release/game/renderer_demo/renderer_demo.exe symbols    # file the PDB and the image under the build id
 scripts/find-dump.ps1 renderer_demo                                                           # list the envelopes
-scripts/crash-report.ps1 <envelope> build-msvc-release/game/renderer_demo/renderer_demo.exe symbols
+scripts/crash-report.ps1 <envelope> build/windows-msvc-release/game/renderer_demo/renderer_demo.exe symbols
 scripts/open-dump.ps1 <envelope> symbols                                                      # WinDbg or cdb, if installed
 ```
 

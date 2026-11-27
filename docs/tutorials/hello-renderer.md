@@ -20,7 +20,7 @@ and a display are needed only for the last step.
 4. **The frame.** A `Renderer` runs the frame loop (acquire, build the graph, compile, record, submit, present). Your build
    callback fills the graph: write the per-frame data, `Prepare` the G-buffer and lighting passes, and add the G-buffer,
    lighting and tonemap passes to the graph. The target is the swapchain image, or an offscreen texture.
-5. **Run it for real:** `./build/game/renderer_demo/renderer_demo` (add `--backend x11` or `--backend wayland`,
+5. **Run it for real:** `./build/linux/game/renderer_demo/renderer_demo` (add `--backend x11` or `--backend wayland`,
    `--validation`, `--frames 1000`, `--screenshot out.ppm`). Tab switches between the orbit and fly cameras; see
    [the demo's README](../../game/renderer_demo/README.md).
 

@@ -7,7 +7,7 @@
 # `srv*<store>` with no server after it, and _NT_SYMBOL_PATH is cleared for the debugger, so nothing is fetched from the network.
 # With -Batch, cdb prints every thread's stack and the modules and exits (for a script or a test).
 # Exit status: the debugger's; 64 bad usage; 66 no debugger installed; 2 other failure.
-# Environment: ENGINE_CRASH_EXTRACT is the path of the crash_extract tool (default: found under build-msvc or build, or on PATH).
+# Environment: ENGINE_CRASH_EXTRACT is the path of the crash_extract tool (default: found under build/windows-msvc or build, or on PATH).
 param(
     [Parameter(Position = 0)] [string] $Dump,
     [Parameter(Position = 1)] [string] $Store,
@@ -18,7 +18,7 @@ $ErrorActionPreference = 'Stop'
 function Find-CrashExtract {
     if ($env:ENGINE_CRASH_EXTRACT) { return $env:ENGINE_CRASH_EXTRACT }
     $root = Split-Path -Parent $PSScriptRoot
-    foreach ($candidate in @("$root\build-msvc\tools\crash_extract\crash_extract.exe", "$root\build\tools\crash_extract\crash_extract.exe")) {
+    foreach ($candidate in @("$root\build\windows-msvc\tools\crash_extract\crash_extract.exe", "$root\build\linux\tools\crash_extract\crash_extract.exe")) {
         if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
     }
     $onPath = Get-Command crash_extract.exe -ErrorAction SilentlyContinue

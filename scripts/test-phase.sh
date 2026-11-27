@@ -30,9 +30,9 @@
 #   --display / --no-display       include or leave out the window tests (label `display`); by default left out of
 #                                  --current/--affected unless phase 1 is selected or engine/foundation changed
 #   --jobs N                       parallel build jobs and tests (default: the number of CPUs; CMAKE_BUILD_PARALLEL_LEVEL, if set, wins for the build)
-#   --build-dir DIR                the CMake build directory (default: build; on Windows build-msvc, the windows-msvc preset's; on
-#                                  macOS build-macos-arm64 on an Apple silicon Mac (the macos-clang-arm64 preset's), else build-macos,
-#                                  the macos-clang-x86_64 preset's; pass --build-dir build-macos for the x86-64 tree there)
+#   --build-dir DIR                the CMake build directory (default: build/linux; on Windows build/windows-msvc, the windows-msvc preset's; on
+#                                  macOS build/macos-clang-arm64 on an Apple silicon Mac (the macos-clang-arm64 preset's), else build/macos-clang-x86_64,
+#                                  the macos-clang-x86_64 preset's; pass --build-dir build/macos-clang-x86_64 for the x86-64 tree there)
 #   --no-build                     do not build first (the build makes only the chosen flavors' targets, engine_tests_<flavor>)
 #   --dry-run                      print what would run and stop
 #   --since REF                    base commit for --affected
@@ -59,10 +59,10 @@ case "$(uname -s)" in
     *) platform=linux ;;
 esac
 case "$platform" in
-    windows) build="$root/build-msvc" ;;
+    windows) build="$root/build/windows-msvc" ;;
     macos)
-        if [ "$(uname -m)" = arm64 ]; then build="$root/build-macos-arm64"; else build="$root/build-macos"; fi ;;
-    *) build="$root/build" ;;
+        if [ "$(uname -m)" = arm64 ]; then build="$root/build/macos-clang-arm64"; else build="$root/build/macos-clang-x86_64"; fi ;;
+    *) build="$root/build/linux" ;;
 esac
 mode=current
 phase_arg=""
@@ -395,7 +395,7 @@ if [ "$platform" = windows ]; then
 elif [ "$platform" = macos ]; then
     [ -d "$build" ] || die "no build directory at $build (configure first: cmake --preset macos-clang-x86_64)"
 else
-    [ -d "$build" ] || die "no build directory at $build (configure first: cmake -S . -B build)"
+    [ -d "$build" ] || die "no build directory at $build (configure first: cmake --preset linux)"
 fi
 if [ -n "$reasons" ] && [ "$mode" = affected ]; then
     echo "test-phase: running everything because of:$reasons (the build starts now; --dry-run prints this without building)"
@@ -479,13 +479,13 @@ status=0
 ulimit -S -c 0 2>/dev/null || true
 # This run's own JUnit file (the process id keeps two runs on one tree apart), read by the long-test warning and then removed, so a
 # run that writes none cannot report an earlier run's tests.
-junit="$build/Testing/test-phase-$$.xml"
-mkdir -p "$build/Testing"
+junit="$build/linux/Testing/test-phase-$$.xml"
+mkdir -p "$build/linux/Testing"
 rm -f "$junit"
 # The full output of the run also goes to a file of its own under Testing/Temporary: the long-test warning below runs `ctest -N`, which
 # rewrites LastTest.log empty, and the CI jobs upload this directory when a test failed (a hosted runner, run 8).
-mkdir -p "$build/Testing/Temporary"
-ctest --test-dir "$build" -j"$jobs" --output-on-failure --output-junit "$junit" --output-log "$build/Testing/Temporary/test-phase-output.log" ${sel[@]+"${sel[@]}"} || status=$?
+mkdir -p "$build/linux/Testing/Temporary"
+ctest --test-dir "$build" -j"$jobs" --output-on-failure --output-junit "$junit" --output-log "$build/linux/Testing/Temporary/test-phase-output.log" ${sel[@]+"${sel[@]}"} || status=$?
 elapsed=$((SECONDS - started))
 long_test_warning "$junit"
 rm -f "$junit"

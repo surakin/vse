@@ -7,19 +7,19 @@ the RHI into a window (Wayland or X11 on Linux, Win32 on Windows, Cocoa on macOS
 ## Build and run
 
 ```
-cmake --build build --target rhi_demo
-./build/game/rhi_demo/rhi_demo                           # a window, until you close it
-./build/game/rhi_demo/rhi_demo --backend x11             # force a display backend (or wayland)
-./build/game/rhi_demo/rhi_demo --frames 1000 --validation   # a bounded run with the validation layer
-./build/game/rhi_demo/rhi_demo --screenshot out.ppm      # offscreen, no window: writes a 256x256 PPM
+cmake --build build/linux --target rhi_demo
+./build/linux/game/rhi_demo/rhi_demo                           # a window, until you close it
+./build/linux/game/rhi_demo/rhi_demo --backend x11             # force a display backend (or wayland)
+./build/linux/game/rhi_demo/rhi_demo --frames 1000 --validation   # a bounded run with the validation layer
+./build/linux/game/rhi_demo/rhi_demo --screenshot out.ppm      # offscreen, no window: writes a 256x256 PPM
 ```
 
-On Windows (Phase 13), from a terminal in the checkout (`BUILD.md` has the prerequisites; `build-msvc` is configured with the MSVC toolchain file):
+On Windows (Phase 13), from a terminal in the checkout (`BUILD.md` has the prerequisites; `build/windows-msvc` is configured with the MSVC toolchain file):
 
 ```
-cmake --build build-msvc --target rhi_demo
-build-msvc\game\rhi_demo\rhi_demo.exe --frames 1000 --validation
-build-msvc\game\rhi_demo\rhi_demo.exe --help              # printed to the terminal it was started from
+cmake --build build/windows-msvc --target rhi_demo
+build\windows-msvc\game\rhi_demo\rhi_demo.exe --frames 1000 --validation
+build\windows-msvc\game\rhi_demo\rhi_demo.exe --help              # printed to the terminal it was started from
 ```
 
 It is a windowed program (the Windows subsystem, `ENGINE_WINDOWED_PROGRAM`): started from Explorer it opens no console window; started from a
@@ -30,7 +30,7 @@ On macOS (Phase 21), with the `macos-clang-x86_64` preset (`BUILD.md`): the devi
 
 ```
 cmake --build --preset macos-clang-x86_64 --target rhi_demo
-./build-macos/game/rhi_demo/rhi_demo --frames 1000
+./build/macos-clang-x86_64/game/rhi_demo/rhi_demo --frames 1000
 ```
 
 Run Metal's validation with `MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert` (and `MTL_SHADER_VALIDATION=1`) in the environment: `--validation`
@@ -67,7 +67,7 @@ the same; the wheel zooms. The light circles the cube every eight seconds and th
   window resizes;
 - indexed drawing, a `UniformRing` slice and a transient bind group per draw, the lit pipeline (`shaders/lit.*`);
 - a mipmapped sRGB texture loaded from `assets/checker.rtex` (a throwaway raw container; regenerate it with
-  `ENGINE_RHI_UPDATE_GOLDEN=1 ./build/tests/rhi/rhi_tests "The demo asset is a valid rtex file"`), sampled with trilinear
+  `ENGINE_RHI_UPDATE_GOLDEN=1 ./build/linux/tests/rhi/rhi_tests "The demo asset is a valid rtex file"`), sampled with trilinear
   filtering and anisotropy 16.
 
 The offscreen screenshot target is linear (UNORM), so it looks darker than the window, whose swapchain is sRGB.

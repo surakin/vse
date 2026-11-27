@@ -457,7 +457,7 @@ kinds, newest first.
 **Keeping symbols.** For every build you ship, file the program and its PDB in a symbol store:
 
 ```text
-powershell -File scripts\store-symbols.ps1 build-msvc\game\rhi_demo\rhi_demo.exe symbols
+powershell -File scripts\store-symbols.ps1 build\windows-msvc\game\rhi_demo\rhi_demo.exe symbols
 ```
 
 This writes `symbols\<name>.pdb\<GUID+age>\<name>.pdb` and `symbols\<name>.exe\<timestamp><size>\<name>.exe`, the layout WinDbg and
@@ -484,7 +484,7 @@ debugger stays offline too; without either debugger it exits with status 66 and 
 **Keeping symbols.** The build writes a dSYM beside each program (`engine_dsym`). For every build you ship, file it in a symbol store:
 
 ```text
-scripts/store-symbols.sh build-macos/game/rhi_demo/rhi_demo symbols
+scripts/store-symbols.sh build/macos-clang-x86_64/game/rhi_demo/rhi_demo symbols
 ```
 
 This writes `symbols/<name>/<UUID>/<name>.dSYM`, where the UUID is the program's `LC_UUID` as `dwarfdump --uuid` prints it (the build id the
@@ -529,7 +529,7 @@ valgrind) to build with `-g` and have the demos and benches split after linking
 For every build you ship, file the debug information in a symbol store:
 
 ```text
-scripts/store-symbols.sh build/game/rhi_demo/rhi_demo.debug  symbols
+scripts/store-symbols.sh build/linux/game/rhi_demo/rhi_demo.debug  symbols
 ```
 
 This writes `symbols/<name>/<build-id>/<name>.debug` and a link under `symbols/.build-id/` (the layout `lldb` and `gdb` search by

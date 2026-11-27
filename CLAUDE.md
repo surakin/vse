@@ -139,8 +139,8 @@ Linux x86-64 is where every system is built and proven first: Wayland primary, X
 Windows x64 builds and runs everything, with the Vulkan and Direct3D 12 backends (`docs/guide/windows.md`, `BUILD.md`).
 
 - **Build and test** from a plain PowerShell or Git Bash (never a Developer Command Prompt; the toolchain files find MSVC, the SDK and LLVM):
-  `cmake --preset windows-msvc` / `cmake --build --preset windows-msvc` (tree `build-msvc`, plain and asan) and `windows-clang-cl`
-  (`build-clang-cl`, plain only); tests through `scripts/test-phase.sh` under Git Bash, as on Linux. A change must build clean with both compilers
+  `cmake --preset windows-msvc` / `cmake --build --preset windows-msvc` (tree `build/windows-msvc`, plain and asan) and `windows-clang-cl`
+  (`build/windows-clang-cl`, plain only); tests through `scripts/test-phase.sh` under Git Bash, as on Linux. A change must build clean with both compilers
   and in both unity modes there as well.
 - **Flavors per platform:** Windows runs plain and asan (MSVC has no ThreadSanitizer); tsan runs on Linux only. A phase's closing
   `--all --flavor all` therefore runs on both machines.
@@ -159,9 +159,9 @@ macOS builds and runs everything, with the Cocoa window and the Metal backend (`
 third-party, Phase 21 decision 8).
 
 - **Build and test** with Apple clang from the Command Line Tools (no Xcode): `cmake --preset macos-clang-x86_64` / `cmake --build --preset macos-clang-x86_64` (tree
-  `build-macos`, x86-64; under Rosetta 2 on Apple silicon) and `macos-clang-arm64` (tree `build-macos-arm64`, native on Apple silicon, compile-only when
-  configured on an Intel Mac), tests through `scripts/test-phase.sh` (the system's bash 3.2; it defaults to `build-macos-arm64` on an Apple silicon Mac,
-  `--build-dir build-macos` for the x86-64 tree). Flavors are plain, asan and tsan (no LeakSanitizer). A change must build clean in both unity modes
+  `build/macos-clang-x86_64`, x86-64; under Rosetta 2 on Apple silicon) and `macos-clang-arm64` (tree `build/macos-clang-arm64`, native on Apple silicon, compile-only when
+  configured on an Intel Mac), tests through `scripts/test-phase.sh` (the system's bash 3.2; it defaults to `build/macos-clang-arm64` on an Apple silicon Mac,
+  `--build-dir build/macos-clang-x86_64` for the x86-64 tree). Flavors are plain, asan and tsan (no LeakSanitizer). A change must build clean in both unity modes
   there as well, and a day that changes macOS code builds both architectures in both unity modes. Format with MacPorts' `clang-format` 23.x, never the Command Line Tools' Apple one.
 - **macOS code lives in macOS directories:** Apple's headers and `.mm` files only under `*/macos/` (and `engine/rhi/metal/`); Metal only in
   `engine/rhi/metal/` and `tools/metal_mint/` (the `platform_neutral_check`, `rhi_boundary_check` and `net_access_check` gates enforce it). Objective-C++
@@ -217,7 +217,7 @@ documented.** "Public API" is anything in a header named by
    (summary, plus the contract labels the module's `strict` rules demand),
    and `docgen lint` passes with the baseline at zero known findings —
    no new undocumented symbol is parked in the baseline.
-2. `cmake --build build --target docs` has been run and its output
+2. `cmake --build build/linux --target docs` has been run and its output
    (`docs/reference/`) is committed with the code.
 3. The relevant guide page under `docs/guide/` is updated or created, and
    any tagged code samples in it compile and run.

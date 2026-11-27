@@ -2,7 +2,7 @@
 
 **Goal:** Put bodies, a joint, a character and a trigger in a world through the C API, step them with `frame`, read what happened, and rewind the physics with a snapshot.
 
-**You need:** the program of [A 3D Scene in Your Window](a-3d-scene-in-your-window.md) working, or just [Load the Engine and Clear a Window](loading-the-engine.md) (physics needs no window). The program of this page is `tests/engine_library/physics_sample.c`; `cmake --build build --target physics_sample` builds it and `./build/tests/engine_library/physics_sample` runs it: it needs no display, runs 600 frames, rewinds to frame 300 and prints a checksum that is the same on every build and machine. The guide: [Physics](../guide/physics.md) and [The Engine as a Loadable Library](../guide/engine-library.md).
+**You need:** the program of [A 3D Scene in Your Window](a-3d-scene-in-your-window.md) working, or just [Load the Engine and Clear a Window](loading-the-engine.md) (physics needs no window). The program of this page is `tests/engine_library/physics_sample.c`; `cmake --build build/linux --target physics_sample` builds it and `./build/linux/tests/engine_library/physics_sample` runs it: it needs no display, runs 600 frames, rewinds to frame 300 and prints a checksum that is the same on every build and machine. The guide: [Physics](../guide/physics.md) and [The Engine as a Loadable Library](../guide/engine-library.md).
 
 ## Steps
 

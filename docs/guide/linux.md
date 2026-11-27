@@ -14,7 +14,7 @@ primary one, and X11 as the fallback) and three sanitizer flavors (plain, ASan w
 | I want to | Do this |
 |---|---|
 | build | `cmake --preset linux` then `cmake --build --preset linux` (tree `build`, Ninja, Clang) |
-| build without LuaJIT's JIT | the `linux-nojit` preset (tree `build-nojit`) |
+| build without LuaJIT's JIT | the `linux-nojit` preset (tree `build/linux-nojit`) |
 | run tests | `scripts/test-phase.sh --affected` (add `--flavor asan` or `--flavor tsan`) |
 | close a phase | `scripts/test-phase.sh --all --flavor all` |
 | pick the window system | `--backend=wayland\|x11` (demos) or `ENGINE_WINDOW_BACKEND`; the default is Wayland when `$WAYLAND_DISPLAY` is set, else X11 |
@@ -49,7 +49,7 @@ cmake --preset linux
 cmake --build --preset linux
 ```
 
-The preset uses Ninja and a Debug build in `build/`. The unity build is on by default; `-DENGINE_UNITY_BUILD=OFF` must build clean too. Warnings are
+The preset uses Ninja and a Debug build in `build/linux/`. The unity build is on by default; `-DENGINE_UNITY_BUILD=OFF` must build clean too. Warnings are
 errors, and both compilers have to pass: Clang reports some things GCC does not, and GCC reports others (`-Wformat-truncation`,
 `-Wsubobject-linkage`). To build with GCC, configure a tree with `-DCMAKE_CXX_COMPILER=g++` (or without Clang installed). The test suite also runs
 cross-target syntax checks of the Windows and macOS code (the `*_cross_syntax_*` tests), so most platform mistakes show up here.
@@ -85,9 +85,9 @@ script prints says what ran (`ran X of Y tests ...`); quote it, and never call a
 ## Running the demos
 
 ```
-build/game/renderer_demo/renderer_demo
-build/game/renderer_demo/renderer_demo --backend=x11 --validation
-build/game/rhi_demo/rhi_demo --list-gpus
+build/linux/game/renderer_demo/renderer_demo
+build/linux/game/renderer_demo/renderer_demo --backend=x11 --validation
+build/linux/game/rhi_demo/rhi_demo --list-gpus
 ```
 
 Programs that open a window choose Wayland when `$WAYLAND_DISPLAY` is set and X11 otherwise. A forced backend never falls back: `--backend=wayland`

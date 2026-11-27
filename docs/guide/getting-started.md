@@ -33,10 +33,10 @@ On Linux, from the repository root:
 
 ```bash
 cmake --preset linux
-cmake --build build
+cmake --build build/linux
 ```
 
-The preset makes `build/`, a Debug tree built with Ninja. A tree made by an older configure with Make has to be removed first: CMake refuses to
+The preset makes `build/linux/`, a Debug tree built with Ninja. A tree made by an older configure with Make has to be removed first: CMake refuses to
 change the generator of an existing tree.
 
 The first build compiles everything, so expect it to take a while. Our own targets are built as *unity builds* (several source files merged into one translation unit) to be fast;
@@ -46,7 +46,7 @@ The first build compiles everything, so expect it to take a while. Our own targe
 Developer Command Prompt is needed.
 
 ```
-cmake --preset windows-msvc            # or windows-clang-cl; the build tree is build-msvc (build-clang-cl)
+cmake --preset windows-msvc            # or windows-clang-cl; the build tree is build/windows-msvc (build/windows-clang-cl)
 cmake --build --preset windows-msvc
 ctest --preset windows-msvc
 ```
@@ -56,7 +56,7 @@ ctest --preset windows-msvc
 **On macOS**, with the Command Line Tools (no Xcode), CMake and Ninja; the graphics backend is Metal. [macOS](macos.md) has the rest.
 
 ```
-cmake --preset macos-clang-x86_64             # the build tree is build-macos
+cmake --preset macos-clang-x86_64             # the build tree is build/macos-clang-x86_64
 cmake --build --preset macos-clang-x86_64
 ctest --preset macos-clang-x86_64
 ```
@@ -66,8 +66,8 @@ ctest --preset macos-clang-x86_64
 `hello_window` is the smallest program: it opens a window, prints the keyboard and mouse state when it changes, and closes itself after six seconds.
 
 ```bash
-build/game/hello_window/hello_window
-build/game/hello_window/hello_window --run-seconds=30 --log-level=info
+build/linux/game/hello_window/hello_window
+build/linux/game/hello_window/hello_window --run-seconds=30 --log-level=info
 ```
 
 | Flag | Meaning |
@@ -84,10 +84,10 @@ The source is `game/hello_window/main.cpp`; reading it is the next step ([Window
 Explorer they open no console window; started from a terminal, their output and `--help` go to that terminal.
 
 ```
-build-msvc\game\hello_window\hello_window.exe
-build-msvc\game\rhi_demo\rhi_demo.exe --frames 1000 --validation
-build-msvc\game\renderer_demo\renderer_demo.exe --list-settings
-build-msvc\game\renderer_demo\renderer_demo.exe --set renderer.fullscreen=true
+build\windows-msvc\game\hello_window\hello_window.exe
+build\windows-msvc\game\rhi_demo\rhi_demo.exe --frames 1000 --validation
+build\windows-msvc\game\renderer_demo\renderer_demo.exe --list-settings
+build\windows-msvc\game\renderer_demo\renderer_demo.exe --set renderer.fullscreen=true
 ```
 
 A demo's settings file is `%APPDATA%\<demo>\settings.cfg` (`--save-settings` writes it) and its crash dumps go to
@@ -95,7 +95,7 @@ A demo's settings file is `%APPDATA%\<demo>\settings.cfg` (`--save-settings` wri
 
 ### The demos
 
-| Program (`build/game/<name>/<name>`) | What it shows |
+| Program (`build/linux/game/<name>/<name>`) | What it shows |
 |---|---|
 | `hello_window` | a window and the input state |
 | `input_probe` | prints the input event stream; keys try the pointer lock (`L`), cursor shapes (`C`) and the clipboard (`Y`) |

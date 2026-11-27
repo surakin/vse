@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs clang-tidy (.clang-tidy) over the engine's sources on a separate non-unity build tree, build-tidy, which exports compile_commands.json.
+# Runs clang-tidy (.clang-tidy) over the engine's sources on a separate non-unity build tree, build/tidy, which exports compile_commands.json.
 #
 #   scripts/tidy.sh                 every .cpp under engine/, game/, tools/ and tests/ (a few minutes)
 #   scripts/tidy.sh FILE...         just these files
@@ -13,7 +13,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
-build="$root/build-tidy"
+build="$root/build/tidy"
 fix=0
 changed=0
 summary=0

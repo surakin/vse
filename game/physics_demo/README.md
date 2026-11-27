@@ -10,8 +10,8 @@ which mirrors the entities into the deferred renderer's scene. `physics::SyncBod
 spawned since the last frame. The camera and the sun are entities too.
 
 ```bash
-build/game/physics_demo/physics_demo                       # a window; Space pauses, Left/Right turn the camera
-build/game/physics_demo/physics_demo --frames 600 --screenshot shot.ppm   # offscreen, no window
+build/linux/game/physics_demo/physics_demo                       # a window; Space pauses, Left/Right turn the camera
+build/linux/game/physics_demo/physics_demo --frames 600 --screenshot shot.ppm   # offscreen, no window
 ```
 
 Options: `--shapes N`, `--seed N`, `--paused`, `--frames N`, `--screenshot P`, `--backend B`, and the settings system's

@@ -2,7 +2,7 @@
 
 **Goal:** Know which numbers of the engine are double precision and which are single, why the line is where it is, and how a scene a hundred thousand kilometres from the origin keeps its millimetres and still draws without jitter.
 
-**You need:** a built tree (`cmake --build build`); the samples on this page are compiled and run by `docgen samples`. The reference pages are [Math](../guide/foundation-math.md), [ECS](../guide/ecs.md) and [Renderer](../guide/renderer.md); a host program that uses the C API reads [The Engine as a Loadable Library](../guide/engine-library.md).
+**You need:** a built tree (`cmake --build build/linux`); the samples on this page are compiled and run by `docgen samples`. The reference pages are [Math](../guide/foundation-math.md), [ECS](../guide/ecs.md) and [Renderer](../guide/renderer.md); a host program that uses the C API reads [The Engine as a Loadable Library](../guide/engine-library.md).
 
 ## The problem in one number
 

@@ -6,7 +6,7 @@
 
 ## Steps
 
-1. **Build and run it first.** The program is `tests/engine_library/tutorial_clear_window.c`; `cmake --build build --target tutorial_clear_window` builds it and `./build/tests/engine_library/tutorial_clear_window` runs it. It shows a 320x200 window for about two seconds and prints the middle pixel. Without a display, or in a build that cannot draw into a window, it prints why it skipped and exits 0.
+1. **Build and run it first.** The program is `tests/engine_library/tutorial_clear_window.c`; `cmake --build build/linux --target tutorial_clear_window` builds it and `./build/linux/tests/engine_library/tutorial_clear_window` runs it. It shows a 320x200 window for about two seconds and prints the middle pixel. Without a display, or in a build that cannot draw into a window, it prints why it skipped and exits 0.
 2. **Ask for the function table.** The library exports one function, `engine_get_api`. Give it the version you were built against and the size of the table you know; it fills in a table of function pointers (`engine_api`). Everything else is a call through that table. To load the library at run time instead of linking it, use `engine_loader.h` (`engine_load`), which returns the same table.
 3. **Make an engine.** `create` takes a size-prefixed `engine_create_info` (zeroed, with its `struct_size` set: every struct of the API starts with its size, which is how it grows without breaking you) and returns a handle.
 4. **Ask what this build can do.** `get_info` reports `caps`; `ENGINE_CAP_SURFACE_X11` means `surface_create` accepts an X11 window. A build that cannot says so with a status, never a crash.

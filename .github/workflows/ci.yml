@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-test-logs
-          path: build/Testing/Temporary/
+          path: build/linux/Testing/Temporary/
           if-no-files-found: ignore
 
   windows:
@@ -126,7 +126,7 @@ jobs:
         shell: pwsh
         run: |
           $cdb = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64" -Filter cdb.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-          $exe = Get-ChildItem -Path build-msvc -Recurse -Filter host_acceptance_scene.exe | Select-Object -First 1
+          $exe = Get-ChildItem -Path build/windows-msvc -Recurse -Filter host_acceptance_scene.exe | Select-Object -First 1
           if (-not $cdb) { Write-Host "no cdb on this image"; exit 0 }
           if (-not $exe) { Write-Host "no host_acceptance_scene.exe"; exit 0 }
           Write-Host "cdb: $($cdb.FullName)"
@@ -138,7 +138,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-test-logs
-          path: build-msvc/Testing/Temporary/
+          path: build/windows-msvc/Testing/Temporary/
           if-no-files-found: ignore
 
   macos:
@@ -164,5 +164,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-test-logs
-          path: build-macos-arm64/Testing/Temporary/
+          path: build/macos-clang-arm64/Testing/Temporary/
           if-no-files-found: ignore

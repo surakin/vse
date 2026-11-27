@@ -685,8 +685,8 @@ in every mode, and only the speed differs (`tests/script/script_jit_test.cpp`; t
 | Android | JIT allowed | not decided yet |
 | iOS, consoles | interpreter only | `ENGINE_LUAJIT_JIT=OFF` |
 
-**The `script_nojit` flavor.** The preset `linux-nojit` (tree `build-nojit`) configures `-DENGINE_LUAJIT_JIT=OFF`; the phase runs on it with
-`scripts/test-phase.sh 27 --no-display --build-dir build-nojit`. Tests that expect the compiler check `luajit::JitCompiledIn()` first.
+**The `script_nojit` flavor.** The preset `linux-nojit` (tree `build/linux-nojit`) configures `-DENGINE_LUAJIT_JIT=OFF`; the phase runs on it with
+`scripts/test-phase.sh 27 --no-display --build-dir build/linux-nojit`. Tests that expect the compiler check `luajit::JitCompiledIn()` first.
 
 ## The script demo
 

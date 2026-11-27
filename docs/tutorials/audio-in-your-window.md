@@ -2,7 +2,7 @@
 
 **Goal:** Give a program that owns its window (and its audio callback) sound from the engine through the C API: clips from PCM you hold, voices, a bus with an effect, streamed music, and sounds that sit on entities of a world and are placed by a listener.
 
-**You need:** the program of [Load the Engine and Clear a Window](loading-the-engine.md) working. The programs of this page are `tests/engine_library/host_audio.c` (clips, voices, buses, the render call), `host_audio_streams.c` (streams, music, effects, snapshots) and `host_audio_world.c` (sounds on entities); `cmake --build build --target host_audio_world` builds one and `./build/tests/engine_library/host_audio_world` runs it. The guide: [Audio](../guide/audio.md) and [The Engine as a Loadable Library](../guide/engine-library.md).
+**You need:** the program of [Load the Engine and Clear a Window](loading-the-engine.md) working. The programs of this page are `tests/engine_library/host_audio.c` (clips, voices, buses, the render call), `host_audio_streams.c` (streams, music, effects, snapshots) and `host_audio_world.c` (sounds on entities); `cmake --build build/linux --target host_audio_world` builds one and `./build/linux/tests/engine_library/host_audio_world` runs it. The guide: [Audio](../guide/audio.md) and [The Engine as a Loadable Library](../guide/engine-library.md).
 
 ## Steps
 

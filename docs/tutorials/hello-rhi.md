@@ -14,7 +14,7 @@ app.
 3. Each frame: `BeginFrame`, `Acquire`, record a command list, `Submit`, `EndFrame`, `Present`.
 4. Record the clear. The image starts in no particular state, so move it to `ColorAttachment`, run a pass whose
    color attachment has `LoadOp::Clear`, and move it to `Present`.
-5. Run it for real: `ENGINE_WINDOW_BACKEND=wayland ./build/game/rhi_demo/rhi_demo` (or `x11`). Set
+5. Run it for real: `ENGINE_WINDOW_BACKEND=wayland ./build/linux/game/rhi_demo/rhi_demo` (or `x11`). Set
    `RHI_DEMO_FRAMES=300` to stop after 300 frames, and `ENGINE_RHI_VALIDATION=1` to turn on the validation layer.
 6. Shut down in order: `WaitIdle`, `DestroySwapchain`, then the device.
 
@@ -388,7 +388,7 @@ light. Both shaders read the same uniform block (model-view-projection, model, n
 application rewrites every frame in a `UniformRing` slice and binds through a transient bind group - so moving the
 light is just writing different numbers. `rhi_demo` orbits the light around the cube and the camera with the arrow
 keys; `shaders/lit.frag` has the math in its header, and `tests/rhi/lit_cube_test.cpp` checks it against pixels.
-Run it: `./build/game/rhi_demo/rhi_demo --validation`; see `game/rhi_demo/README.md` for the options.
+Run it: `./build/linux/game/rhi_demo/rhi_demo --validation`; see `game/rhi_demo/README.md` for the options.
 
 ## Where next
 
